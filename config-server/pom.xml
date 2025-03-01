@@ -12,7 +12,6 @@
     </parent>
 
     <groupId>com.tjtechy</groupId>
-
     <version>1.0-SNAPSHOT</version>
     <name>config-server</name>
     <description>Ecommerce-Microservices</description>
@@ -38,6 +37,11 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-config-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <dependency>

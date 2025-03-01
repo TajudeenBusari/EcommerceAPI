@@ -1,8 +1,8 @@
 server:
-    port: 8761
+  port: 8761
 spring:
-    application:
-      name: eureka-server
+  application:
+    name: eureka-server
 eureka:
   client:
     register-with-eureka: false #DISABLING THE REGISTRATION OF THE EUREKA-SERVER WITH ITSELF

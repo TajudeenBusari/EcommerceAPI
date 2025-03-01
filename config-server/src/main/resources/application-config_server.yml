@@ -9,6 +9,8 @@ spring:
             git:
             uri: https://github.com/TajudeenBusari/EcommerceAPI
             search-paths: applicationConfig # Folder containing config files
+            default-label: master
+            clone-on-start: false
 #Register with Eureka service discovery
 eureka:
     client:
