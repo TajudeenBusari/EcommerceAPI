@@ -2,7 +2,7 @@
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of product-service module of the Ecommerce Microservices project.
+ * This file is part of modelNotFound package of the Ecommerce Microservices project.
  */
 package modelNotFound;
 
@@ -15,6 +15,7 @@ import java.util.UUID;
  */
 public class ProductNotFoundException extends RuntimeException {
     public ProductNotFoundException(UUID id) {
+
         super("Product not found with id: " + id);
     }
 }

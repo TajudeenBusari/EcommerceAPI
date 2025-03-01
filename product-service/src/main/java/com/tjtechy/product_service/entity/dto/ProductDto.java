@@ -6,6 +6,7 @@
  */
 package com.tjtechy.product_service.entity.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -17,7 +18,8 @@ public record ProductDto(
         String productDescription,
         Integer productQuantity,
         Integer availableStock,
-        LocalDate expiryDate
+        LocalDate expiryDate,
+        BigDecimal productPrice
 
 ) {
 

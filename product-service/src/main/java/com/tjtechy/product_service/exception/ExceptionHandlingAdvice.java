@@ -45,8 +45,10 @@ public class ExceptionHandlingAdvice {
 
 
   /**
-   * Handles validation errors when request data fails validation constraints.
-   * <p>
+   * <p>Handles validation errors when request data fails validation constraints.
+   * When @Valid annotation is used in the controller method request,
+   * this method will be triggered if that validation fails.
+   * </p>
    * This method catches {@link MethodArgumentNotValidException} which occurs when
    * request body parameters fail validation annotations (e.g., {@code @NotNull, @Size, @Min}).
    * </p>
