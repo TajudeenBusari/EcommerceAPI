@@ -102,7 +102,6 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product);
     }
 
-
     /**
      * Updates a product with the specified ID.
      * manufacturedDate and expiryDate should not be updated.

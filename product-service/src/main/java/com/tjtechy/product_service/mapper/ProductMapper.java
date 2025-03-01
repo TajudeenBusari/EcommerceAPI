@@ -34,7 +34,8 @@ public class ProductMapper {
             product.getProductDescription(),
             product.getProductQuantity(),
             product.getAvailableStock(),
-            product.getExpiryDate()
+            product.getExpiryDate(),
+            product.getProductPrice()
            );
   }
 
@@ -54,7 +55,7 @@ public class ProductMapper {
             productDto.productId(),
             productDto.productName(),
             productDto.productDescription(),
-            null,
+            productDto.productPrice(), //BigDecimal
             productDto.productQuantity(), //int
             productDto.productCategory(), //String
             productDto.availableStock(),

@@ -9,5 +9,8 @@
     </content>
     <orderEntry type="jdk" jdkName="corretto-17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot:3.4.2" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-autoconfigure:3.4.2" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-context:6.2.2" level="project" />
   </component>
 </module>

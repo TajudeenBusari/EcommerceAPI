@@ -3,7 +3,7 @@ server:
   port: 8083
 spring:
   application:
-    name: product-service
+    name: product-service # This name is used in WebClient URI
   datasource:
     url: jdbc:postgresql://localhost:5432/ECommerce-Product-Service
     username: postgres
@@ -32,3 +32,14 @@ api:
     jackson:
         serialization:
         write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
+#Register with Eureka service discovery
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
