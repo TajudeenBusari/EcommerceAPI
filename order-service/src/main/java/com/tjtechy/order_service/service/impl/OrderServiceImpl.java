@@ -72,9 +72,9 @@ public class OrderServiceImpl implements OrderService {
       //a. Call product service to get product details
       var productResponse = webClientBuilder.build()
               .get()
-              //.uri("http://localhost:8083/api/v1/product/" + productId)//Using service name from Eureka
+              .uri("http://localhost:8083/api/v1/product/" + productId)//Using service name from Eureka
               //.uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)//Using service name from Eureka
-              .uri("http://product-service${api.endpoint.base-url}/product/" + productId)//Using service name from Eureka
+              //.uri("http://product-service${api.endpoint.base-url}/product/" + productId)//Using service name from Eureka
               .retrieve()
               .bodyToMono(Result.class)
               .block(); //block to wait for the response, can be replaced with async
