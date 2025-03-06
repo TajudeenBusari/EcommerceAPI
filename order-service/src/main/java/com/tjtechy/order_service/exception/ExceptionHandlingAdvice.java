@@ -1,8 +1,9 @@
 package com.tjtechy.order_service.exception;
 
-import businessException.InsufficientStockQuantityException;
-import com.tjtechy.system.Result;
-import com.tjtechy.system.StatusCode;
+
+import com.tjtechy.businessException.InsufficientStockQuantityException;
+import com.tjtechy.Result;
+import com.tjtechy.StatusCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;

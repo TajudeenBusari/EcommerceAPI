@@ -1,0 +1,24 @@
+server:
+    port: 8888
+spring:
+    application:
+        name: config-server
+    cloud:
+        config:
+            server:
+                git:
+                    uri: https://github.com/TajudeenBusari/EcommerceAPI
+                    search-paths: applicationsConfiguration
+                    clone-on-start: true
+#                    username: ${GIT_USERNAME}
+#                    password: ${GIT_PASSWORD}
+security:
+    basic:
+        enabled: false
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8762/eureka/
+    instance:
+        prefer-ip-address: true
+        instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}

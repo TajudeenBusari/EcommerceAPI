@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/EcommerceMicroservices.iml" filepath="$PROJECT_DIR$/EcommerceMicroservices.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ECommerceMicroservices.iml" filepath="$PROJECT_DIR$/ECommerceMicroservices.iml" />
     </modules>
   </component>
 </project>

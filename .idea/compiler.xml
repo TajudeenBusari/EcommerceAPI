@@ -6,6 +6,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="exception" />
+        <module name="config-server" />
+        <module name="system" />
         <module name="api-gateway" />
         <module name="product-service" />
         <module name="order-service" />
@@ -13,17 +16,20 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="config-server" target="17" />
-
+      <module name="common-exception" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ECommerceMicroservices" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
-
+      <module name="common-exception" options="-parameters" />
+      <module name="config-server" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
+      <module name="exception" options="-parameters" />
       <module name="order-service" options="-parameters" />
       <module name="product-service" options="-parameters" />
+      <module name="system" options="-parameters" />
     </option>
   </component>
 </project>

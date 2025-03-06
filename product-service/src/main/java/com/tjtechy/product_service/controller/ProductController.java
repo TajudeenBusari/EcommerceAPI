@@ -10,12 +10,11 @@ import com.tjtechy.product_service.entity.dto.CreateProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
 import com.tjtechy.product_service.mapper.ProductMapper;
 import com.tjtechy.product_service.service.ProductService;
-import com.tjtechy.system.StatusCode;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import com.tjtechy.system.Result;
-
 import java.util.UUID;
+import com.tjtechy.Result;
+import com.tjtechy.StatusCode;
 
 
 @RestController

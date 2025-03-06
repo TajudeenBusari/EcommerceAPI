@@ -6,9 +6,10 @@
  */
 package com.tjtechy.product_service.exception;
 
-import com.tjtechy.system.Result;
-import com.tjtechy.system.StatusCode;
-import modelNotFound.ProductNotFoundException;
+
+import com.tjtechy.Result;
+import com.tjtechy.StatusCode;
+import com.tjtechy.modelNotFoundException.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
