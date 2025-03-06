@@ -10,8 +10,10 @@ spring:
                     uri: https://github.com/TajudeenBusari/EcommerceAPI
                     search-paths: applicationsConfiguration
                     clone-on-start: true
+                    default-label: master
 #                    username: ${GIT_USERNAME}
 #                    password: ${GIT_PASSWORD}
+
 security:
     basic:
         enabled: false

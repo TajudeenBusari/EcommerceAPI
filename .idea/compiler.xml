@@ -15,15 +15,11 @@
         <module name="eureka-server" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="common-exception" target="17" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="ECommerceMicroservices" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
-      <module name="common-exception" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="exception" options="-parameters" />
