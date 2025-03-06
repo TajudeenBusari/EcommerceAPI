@@ -1,3 +1,9 @@
+/**
+ *Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of api-gateway module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.api_gateway;
 
 import org.springframework.boot.SpringApplication;

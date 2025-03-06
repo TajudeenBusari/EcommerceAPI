@@ -8,7 +8,7 @@ package com.tjtechy.product_service.service.impl;
 
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.repository.ProductRepository;
-import modelNotFound.ProductNotFoundException;
+import com.tjtechy.modelNotFoundException.ProductNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

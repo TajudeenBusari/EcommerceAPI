@@ -3,18 +3,24 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>com.tjtechy</groupId>
-        <artifactId>ECommerceMicroservices</artifactId>
-        <version>0.0.1</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
+    <groupId>com.tjtechy</groupId>
     <artifactId>exception</artifactId>
+    <version>0.0.1</version>
+    <packaging>jar</packaging>  <!-- ✅ Add this -->
+    <name>exception</name>
+    <description>Shared system utilities for the microservices</description>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>17</java.version>
+        <spring-cloud.version>2024.0.0</spring-cloud.version>
     </properties>
 
 </project>

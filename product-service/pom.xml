@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.tjtechy</groupId>
 	<artifactId>product-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>product-service</name>
 	<description>Ecommerce-Microservices</description>
 	<url/>
@@ -60,6 +60,18 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>system</artifactId>
+			<version>0.0.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>exception</artifactId>
+			<version>0.0.1</version>
 		</dependency>
 
 		<dependency>
@@ -115,9 +127,15 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
+        <dependency>
+            <groupId>com.tjtechy</groupId>
+            <artifactId>ECommerceMicroservices</artifactId>
+            <version>0.0.1</version>
+            <scope>compile</scope>
+        </dependency>
 
-		<!--Add spring cloud config client dependency so application can use the
-		config server config file-->
+        <!--Add spring cloud config client dependency so application can use the
+        config server config file-->
 <!--		<dependency>-->
 <!--			<groupId>org.springframework.cloud</groupId>-->
 <!--			<artifactId>spring-cloud-starter-config</artifactId>-->

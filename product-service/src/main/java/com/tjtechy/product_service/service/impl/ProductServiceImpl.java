@@ -8,7 +8,8 @@ package com.tjtechy.product_service.service.impl;
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.repository.ProductRepository;
 import com.tjtechy.product_service.service.ProductService;
-import modelNotFound.ProductNotFoundException;
+import com.tjtechy.modelNotFoundException.ProductNotFoundException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
