@@ -35,6 +35,12 @@
         <spring-boot.version>3.4.2</spring-boot.version>  <!-- ✅ Define spring boot version -->
         <spring-cloud.version>2024.0.0</spring-cloud.version>
     </properties>
+    <dependencies>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-starter-config</artifactId>-->
+<!--        </dependency>-->
+    </dependencies>
 
     <dependencyManagement>
         <dependencies>

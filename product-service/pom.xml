@@ -136,9 +136,14 @@
 
         <!--Add spring cloud config client dependency so application can use the
         config server config file-->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-config</artifactId>
+		</dependency>
+
 <!--		<dependency>-->
 <!--			<groupId>org.springframework.cloud</groupId>-->
-<!--			<artifactId>spring-cloud-starter-config</artifactId>-->
+<!--			<artifactId>spring-cloud-starter-bootstrap</artifactId>-->
 <!--		</dependency>-->
 
 	</dependencies>
