@@ -10,7 +10,6 @@ package com.tjtechy.order_service.service.impl;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.repository.OrderRepository;
 import com.tjtechy.order_service.service.OrderService;
@@ -39,7 +38,6 @@ public class OrderServiceImpl implements OrderService {
     //this.productServiceConfig = productServiceConfig;
   }
 
-
   /**
    * Use Transactional context to ensure that the operation is atomic
    * For example, if the order creation fails, the transaction will be rolled back
@@ -62,7 +60,6 @@ public class OrderServiceImpl implements OrderService {
       throw new IllegalArgumentException("Order details are not complete");
     }
 
-
     BigDecimal totalAmount = BigDecimal.ZERO;
 
     //2. Retrieve product details and validate stock
@@ -73,7 +70,7 @@ public class OrderServiceImpl implements OrderService {
       //a. Call product service to get product details
       var productResponse = webClientBuilder.build()
               .get()
-              .uri("http://localhost:8083/api/v1/product/" + productId)//Using service name from Eureka
+              .uri("http://localhost:8083/api/v1/product/" + productId)//Using service name from Eureka discovery
               //.uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)//Using service name from Eureka
               //.uri("http://product-service${api.endpoint.base-url}/product/" + productId)//Using service name from Eureka
               .retrieve()

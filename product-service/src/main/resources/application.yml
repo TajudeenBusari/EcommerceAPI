@@ -16,32 +16,32 @@ spring:
       hibernate:
         format_sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-api:
-  endpoint:
-    base-url: /api/v1
-  redis:
-    host: localhost
-    port: 6379
-        #port: 6000
-        #timeout: 2000
-        #cache-timeout: 3600
-    cache-prefix: product-service
-  cache:
-    type: REDIS
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
-#Register with Eureka service discovery
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8762/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-#  cloud:
-#    bootstrap:
-#      enabled: true
+#api:
+#  endpoint:
+#    base-url: /api/v1
+#  redis:
+#    host: localhost
+#    port: 6379
+#        #port: 6000
+#        #timeout: 2000
+#        #cache-timeout: 3600
+#    cache-prefix: product-service
+#  cache:
+#    type: REDIS
+#  jackson:
+#    serialization:
+#      write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
+##Register with Eureka service discovery
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8762/eureka/
+#    fetch-registry: true
+#    register-with-eureka: true
+#  instance:
+#    prefer-ip-address: true
+#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+##  cloud:
+##    bootstrap:
+##      enabled: true
 

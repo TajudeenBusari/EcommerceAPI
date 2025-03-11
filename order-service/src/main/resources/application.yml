@@ -1,22 +1,20 @@
 server:
   port: 8082 #Optional: can be ovverriden by Config Server
-#spring:
-#  application:
-#    name: order-service # This name is used in WebClient URI
-##  config:
-##    import: optional:configserver:http://localhost:8888
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/ECommerce-Order-Service
-#    username: postgres
-#    password: postgres
-#  jpa:
-#      hibernate:
-#        ddl-auto: update
-#      show-sql: true
-#      properties:
-#        hibernate:
-#            format_sql: true
-#      database-platform: org.hibernate.dialect.PostgreSQLDialect
+spring:
+  application:
+    name: order-service # This name is used in WebClient URI
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ECommerce-Order-Service
+    username: postgres
+    password: postgres
+  jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+      properties:
+        hibernate:
+            format_sql: true
+      database-platform: org.hibernate.dialect.PostgreSQLDialect
 #api:
 #  endpoint:
 #      base-url: /api/v1
