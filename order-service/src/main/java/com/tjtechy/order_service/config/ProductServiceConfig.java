@@ -1,18 +1,19 @@
 package com.tjtechy.order_service.config;
-//NOT IN USE FOR NOW
-//import org.springframework.boot.context.properties.ConfigurationProperties;
-//import org.springframework.context.annotation.Configuration;
-//
-//@Configuration
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
 //@ConfigurationProperties(prefix = "api.endpoint")
-//public class ProductServiceConfig {
-//  private String baseUrl;
-//
-//  public String getBaseUrl() {
-//    return baseUrl;
-//  }
-//
-//  public void setBaseUrl(String baseUrl) {
-//    this.baseUrl = baseUrl;
-//  }
-//}
+public class ProductServiceConfig {
+  @Value("${api.endpoint.base-url}")
+  private String baseUrl;
+
+  public String getBaseUrl() {
+    return baseUrl;
+  }
+
+  public void setBaseUrl(String baseUrl) {
+    this.baseUrl = baseUrl;
+  }
+}

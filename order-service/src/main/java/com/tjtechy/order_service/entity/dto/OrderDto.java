@@ -17,7 +17,7 @@ public class OrderDto {
   private String shippingAddress;
   private BigDecimal totalAmount; // Total amount of the order
   private LocalDate orderDate;
-  private String orderStatus; // Order status (e.g., PENDING, SHIPPED, DELIVERED)
+  private String orderStatus; // Order status (e.g., PLACED, SHIPPED, DELIVERED, CANCELLED)
   private List<OrderItemDto> orderItems; // List of products in the order
 
   public OrderDto() {

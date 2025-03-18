@@ -1,6 +1,7 @@
 package com.tjtechy.order_service.service;
 
 import com.tjtechy.order_service.entity.Order;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -8,6 +9,7 @@ public interface OrderService {
   Order createOrder(Order order);
   Order getOrderById(Long orderId);
   List<Order> getAllOrders();
+  List<Order> getAllOrdersWithoutCancelledOnes();
 
   /**
    * Get all orders by customer email and status
@@ -30,7 +32,7 @@ public interface OrderService {
 
   Order updateOrderStatus(Long orderId, String orderStatus);
 
-  Order updateOrder(Long orderId, Order order);
+  Mono<Order> updateOrder(Long orderId, Order order);
 
   void deleteOrder(Long orderId);
 

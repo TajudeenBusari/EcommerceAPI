@@ -4,6 +4,7 @@ package com.tjtechy.order_service.exception;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
+import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -18,6 +19,21 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ExceptionHandlingAdvice {
+
+  /**
+   * Handles exceptions of type {@link OrderNotFoundException}.
+   * <p>
+   * This method is triggered whenever an {@code OrderNotFoundException} is thrown within the application.
+   * It returns a standardized error response with an HTTP 404 (Not Found) status.
+   * </p>
+   * @param e The exception instance containing details about the missing order.
+   * @return A {@link Result} object containing an error message, a failure flag, and a corresponding status code.
+   */
+  @ExceptionHandler(OrderNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public Result handleOrderNotFoundException(OrderNotFoundException e) {
+    return new Result(e.getMessage(), false, StatusCode.NOT_FOUND);
+  }
 
   /**A general runtime exception that occurs when a method receives an invalid argument
    * that it cannot handle. It is part of Java core exception and extends {@link RuntimeException}.

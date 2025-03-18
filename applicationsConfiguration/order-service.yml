@@ -21,6 +21,18 @@ spring:
 api:
   endpoint:
     base-url: /api/v1
+  redis:
+    host: localhost
+    port: 6379
+          #port: 6000
+          #timeout: 2000
+        #cache-timeout: 3600
+    cache-prefix: order-service
+  cache:
+    type: REDIS
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
 
 #Register with Eureka service discovery
 eureka:

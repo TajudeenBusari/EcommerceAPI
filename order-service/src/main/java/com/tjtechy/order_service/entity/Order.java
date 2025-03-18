@@ -48,7 +48,7 @@ public class Order implements Serializable {
     private LocalDate orderDate;
 
     @Column(nullable = false)
-    private String orderStatus;
+    private String orderStatus; // PENDING, SHIPPED, DELIVERED, CANCELLED
 
     //Relationship with product via OrderItem (composition)
     /**
@@ -141,6 +141,14 @@ public class Order implements Serializable {
         if (orderItems != null){
             orderItems.forEach(orderItem -> orderItem.setOrder(this)); // Ensure each OrderItem has reference to Order
         }
+    }
+
+    /**
+     * Helper method to validate order status
+     * @return
+     */
+    public boolean isOrderStatusValid(String orderStatus) {
+        return List.of("PLACED", "SHIPPED", "DELIVERED", "CANCELLED").contains(orderStatus);
     }
 
 

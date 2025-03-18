@@ -7,7 +7,8 @@
 package com.tjtechy.product_service.mapper;
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.entity.dto.CreateProductDto;
-import com.tjtechy.product_service.entity.dto.ProductDto;
+//import com.tjtechy.product_service.entity.dto.ProductDto;
+import com.tjtechy.ProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
 
 import java.util.List;

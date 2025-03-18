@@ -10,3 +10,5 @@ spring:
 #logging:
 #  level:
 #    org.springframework.cloud: DEBUG
+#https://github.com/TajudeenBusari/EcommerceAPI/blob/master/applicationsConfiguration/product-service.yml
+#https://github.com/TajudeenBusari/EcommerceAPI/applicationsConfiguration/product-service.yml

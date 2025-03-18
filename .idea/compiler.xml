@@ -11,6 +11,7 @@
         <module name="system" />
         <module name="api-gateway" />
         <module name="product-service" />
+        <module name="common-utils" />
         <module name="order-service" />
         <module name="eureka-server" />
       </profile>
@@ -23,6 +24,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="ECommerceMicroservices" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
+      <module name="common-utils" options="-parameters" />
       <module name="config-server" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="exception" options="-parameters" />

@@ -52,6 +52,5 @@ public record CreateProductDto(
  "productPrice": 999.99,
  "manufacturedDate": "2025-02-20",
  "expiryDate": "2027-02-20"
- expiryDate": "2027-02-20"
  }
  */
