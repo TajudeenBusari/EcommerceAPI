@@ -14,8 +14,10 @@ import java.math.BigDecimal;
 public record UpdateProductDto(
         @NotEmpty(message = "Product Name is required")
         String productName,
+
         @NotEmpty(message = "Product Description is required")
         String productDescription,
+
         @NotEmpty(message = "Product Category is required")
         String productCategory,
 
@@ -26,6 +28,7 @@ public record UpdateProductDto(
         @Positive(message = "Product Quantity must be greater than 0")
                 @NotNull(message = "Product Quantity is required")
         Integer productQuantity,
+
         @Positive(message = "Available Stock must be greater than 0")
         @NotNull(message = "Available Stock is required")
         Integer availableStock

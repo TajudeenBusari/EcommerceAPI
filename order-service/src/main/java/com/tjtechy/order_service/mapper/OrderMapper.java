@@ -9,6 +9,8 @@ package com.tjtechy.order_service.mapper;
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.OrderDto;
+import com.tjtechy.order_service.entity.dto.UpdateOrderDto;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +42,17 @@ public class OrderMapper {
     order.setCustomerEmail(createOrderDto.getCustomerEmail());
     order.setShippingAddress(createOrderDto.getShippingAddress());
     order.setOrderItems(OrderItemMapper.mapFromOrderItemDtosToOrderItems(createOrderDto.getOrderItems())); //from OrderItemMapper
+
+    return order;
+  }
+
+  public static Order mapFromUpdateOrderDtoToOrder(UpdateOrderDto updateOrderDto) {
+    var order = new Order();
+
+    order.setCustomerName(updateOrderDto.customerName());
+    order.setCustomerEmail(updateOrderDto.customerEmail());
+    order.setShippingAddress(updateOrderDto.shippingAddress());
+    order.setOrderItems(OrderItemMapper.mapFromOrderItemDtosToOrderItems(updateOrderDto.orderItems())); //from OrderItemMapper
 
     return order;
   }

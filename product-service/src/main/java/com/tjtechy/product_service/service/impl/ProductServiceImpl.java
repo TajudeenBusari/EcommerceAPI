@@ -171,5 +171,7 @@ public class ProductServiceImpl implements ProductService {
 
   }
 
+  //TODO: LOGIC TO CLEAR CACHE FOR A SPECIFIC PRODUCT. LOGIC MUST BE IMPLEMENTED IN THE INTERFACE
+
 
 }

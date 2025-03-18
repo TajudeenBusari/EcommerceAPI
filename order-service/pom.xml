@@ -3,16 +3,21 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<groupId>com.tjtechy</groupId>
+		<artifactId>ECommerceMicroservices</artifactId>
+		<version>0.0.1</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<groupId>com.tjtechy</groupId>
+<!--	<parent>-->
+<!--		<groupId>org.springframework.boot</groupId>-->
+<!--		<artifactId>spring-boot-starter-parent</artifactId>-->
+<!--		<version>3.4.2</version>-->
+<!--		<relativePath/> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
+<!--	</parent>-->
 	<artifactId>order-service</artifactId>
 	<version>0.0.1</version>
 	<name>order-service</name>
-	<description>Ecommerce-Microservices</description>
+	<description>Order Service Module for ECommerce Microservices</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -67,12 +72,14 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>com.tjtechy</groupId>
-            <artifactId>product-service</artifactId>
-            <version>0.0.1</version>
-            <scope>compile</scope>
-        </dependency>
+		<!-- I don't need this anymore because the ProductDto class has been moved
+		 to the common-utils module-->
+<!--        <dependency>-->
+<!--            <groupId>com.tjtechy</groupId>-->
+<!--            <artifactId>product-service</artifactId>-->
+<!--            <version>0.0.1</version>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
 		<dependency>
 			<groupId>com.tjtechy</groupId>
 			<artifactId>system</artifactId>
@@ -84,6 +91,12 @@
 			<artifactId>exception</artifactId>
 			<version>0.0.1</version>
 		</dependency>
+		<!-- Add common-utils Dependency -->
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>common-utils</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
 		<!--dev tools-->
 		<dependency>
@@ -93,12 +106,12 @@
 			<optional>true</optional>
 		</dependency>
 
-		<dependency>
-			<groupId>com.tjtechy</groupId>
-			<artifactId>ECommerceMicroservices</artifactId>
-			<version>0.0.1</version>
-			<scope>compile</scope>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.tjtechy</groupId>-->
+<!--			<artifactId>ECommerceMicroservices</artifactId>-->
+<!--			<version>0.0.1</version>-->
+<!--			<scope>compile</scope>-->
+<!--		</dependency>-->
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
@@ -126,7 +139,9 @@
 
     </dependencies>
 
-	<!-- Spring Cloud Dependency Management -->
+	<!-- Spring Cloud Dependency Management.
+	Actually not needed here because, already defined in the p
+	 parent ECommerceMicroservices pom.xml -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>

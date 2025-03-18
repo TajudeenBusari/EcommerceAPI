@@ -25,9 +25,7 @@
         <module>product-service</module>
         <module>system</module>
         <module>exception</module>
-
-
-        <!-- ✅ Add system module -->
+        <module>common-utils</module>
     </modules>
 
     <properties>
