@@ -2,9 +2,15 @@ package com.tjtechy.order_service.repository;
 
 import com.tjtechy.order_service.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
+
 //TODO: Convert this interface to a reactive repository
 /**
  * public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
@@ -24,6 +30,11 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+
+//  @EntityGraph(attributePaths = {"orderItems", "orderItems.order"})
+//  Optional<Order> findById(Long orderId);
+  //Mono<Order> findByIdMono(Long orderId);
+
   /**
    * Retrieve all orders by customer email
    * @param customerEmail
@@ -50,4 +61,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * @return
    */
   List<Order> findByOrderStatusIgnoreCase(String orderStatus);
+
+  /**
+   * Delete an orderItem by id
+   * @param orderItemId
+   * This method is used to delete order items by id when order is
+   * updated. It is annotated with @Modifying and @Transactional
+   * @Transactional because it involves database operations and
+   * @Modifying because it modifies the database by deleting an order item.
+   * So, when update is done, the old order items are deleted and new ones are added.
+   */
+  @Transactional
+  @Modifying
+  @Query("DELETE FROM OrderItem oi WHERE oi.orderItemId = :orderItemId")
+  void deleteOrderItemById(@Param("orderItemId")Long orderItemId);
 }

@@ -2,9 +2,10 @@
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of product-service module of the Ecommerce Microservices project.
+ * This file is part of common-utils module of the Ecommerce Microservices project.
  */
 package com.tjtechy;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -21,6 +22,9 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+
+
 
 import java.time.Duration;
 
@@ -61,6 +65,8 @@ public class RedisCacheConfig {
     // custom object with JavaTimeModule
     var objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule()); // Enables LocalDateTime serialization
+    //objectMapper.registerModule(new Hibernate6Module()); // Enables Hibernate6Module. Handles Hibernate proxies
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL); // Excludes null values from serialization
     objectMapper.activateDefaultTyping(
         objectMapper.getPolymorphicTypeValidator(),
         ObjectMapper.DefaultTyping.NON_FINAL,
@@ -86,3 +92,5 @@ public class RedisCacheConfig {
         .build();
   }
 }
+//mvn clean install
+//to verify dependency tree: mvn dependency:tree

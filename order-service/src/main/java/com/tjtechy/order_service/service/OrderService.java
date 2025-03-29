@@ -1,15 +1,23 @@
+/**
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of order-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.order_service.service;
 
 import com.tjtechy.order_service.entity.Order;
+import com.tjtechy.order_service.entity.dto.OrderDto;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 public interface OrderService {
   Order createOrder(Order order);
+  Mono<Order> processOrderReactively(Order order);
   Order getOrderById(Long orderId);
-  List<Order> getAllOrders();
-  List<Order> getAllOrdersWithoutCancelledOnes();
+  List<OrderDto> getAllOrders();
+  List<OrderDto> getAllOrdersWithoutCancelledOnes();
 
   /**
    * Get all orders by customer email and status
@@ -26,9 +34,9 @@ public interface OrderService {
    * @param customerEmail
    * @return
    */
-  List<Order>  getOrdersByCustomerEmail(String customerEmail);
+  List<OrderDto>  getOrdersByCustomerEmail(String customerEmail);
 
-  List<Order> getOrdersByStatus(String orderStatus);
+  List<OrderDto> getOrdersByStatus(String orderStatus);
 
   Order updateOrderStatus(Long orderId, String orderStatus);
 
@@ -39,5 +47,7 @@ public interface OrderService {
   void cancelOrder(Long orderId);
 
   void clearAllCache();
+
+  OrderDto getOrderDtoById(Long orderId);
 
 }

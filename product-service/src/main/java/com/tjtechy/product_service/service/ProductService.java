@@ -12,4 +12,5 @@ public interface ProductService {
   Product updateProduct(UUID productId, Product product);
   void deleteProduct(UUID productId);
   void clearAllCache();
+
 }

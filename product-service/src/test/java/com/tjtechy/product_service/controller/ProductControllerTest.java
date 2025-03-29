@@ -6,21 +6,25 @@
  */
 package com.tjtechy.product_service.controller;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tjtechy.RedisCacheConfig;
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.entity.dto.CreateProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
 import com.tjtechy.product_service.service.ProductService;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.cloud.config.client.ConfigServerBootstrapper;
+import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,10 +41,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ProductController.class)
 @AutoConfigureMockMvc
+@TestPropertySource(properties = {
+        "api.endpoint.base-url=/api/v1",
+        "spring.cache.type=none",
+        "spring.redis.enabled=false",
+        "eureka.client.enabled=false",
+        "spring.cloud.config.enabled=false"
+})
+@ImportAutoConfiguration(exclude = {
+        RedisCacheConfig.class,
+        EurekaClientAutoConfiguration.class,
+        ConfigServerBootstrapper.class
+})
 class ProductControllerTest {
 
   @MockitoBean
   private ProductService productService;
+
+  @MockitoBean
+  private RedisConnectionFactory redisConnectionFactory;
 
   @Autowired
   ObjectMapper objectMapper;

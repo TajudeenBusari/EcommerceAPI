@@ -14,6 +14,8 @@ import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.order_service.config.ProductServiceConfig;
 import com.tjtechy.order_service.entity.Order;
 
+import com.tjtechy.order_service.entity.dto.OrderDto;
+import com.tjtechy.order_service.mapper.OrderMapper;
 import com.tjtechy.order_service.repository.OrderRepository;
 import com.tjtechy.order_service.service.OrderService;
 import com.tjtechy.Result;
@@ -21,7 +23,12 @@ import com.tjtechy.Result;
 import com.tjtechy.ProductDto;
 import jakarta.transaction.Transactional;
 import com.tjtechy.modelNotFoundException.ProductNotFoundException;
+import org.hibernate.Hibernate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -29,6 +36,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -39,6 +48,8 @@ public class OrderServiceImpl implements OrderService {
   private final WebClient.Builder webClientBuilder;
 
   private final ProductServiceConfig productServiceConfig;
+
+  private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
   public OrderServiceImpl(OrderRepository orderRepository, WebClient.Builder webClientBuilder, ProductServiceConfig productServiceConfig) {
     this.orderRepository = orderRepository;
@@ -149,15 +160,81 @@ public class OrderServiceImpl implements OrderService {
   }
 
   /**
+   * Use Transactional context to ensure that the operation is atomic
+   * The method is implemented using reactive programming to create order,
+   * avoid blocking and returns a Mono
+   * @param order
+   * @return
+   */
+  @Override
+  @Transactional
+  public Mono<Order> processOrderReactively(Order order) {
+
+    return Flux.fromIterable(order.getOrderItems())
+            .flatMap(orderItem -> {
+              var productId = orderItem.getProductId();
+              var quantity = orderItem.getProductQuantity();
+
+              //a. call product service to get product details
+              return webClientBuilder.build()
+                      .get()
+                      .uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)
+                      .retrieve()
+                      .bodyToMono(Result.class)
+                      .map(productResponse -> {
+                        if (productResponse == null || productResponse.getData() == null) {
+                          throw new ProductNotFoundException(productId);
+                        }
+                        // Convert LinkedHashMap to ProductDto manually
+                        var objectMapper = new ObjectMapper(); //Jackson ObjectMapper
+                        objectMapper.registerModule(new JavaTimeModule());
+                        return objectMapper.convertValue(productResponse.getData(), ProductDto.class);
+                      }).
+                      flatMap(productDto -> {
+                        if (productDto == null) {
+                          return Mono.error(new ProductNotFoundException(productId));
+                        }
+                        //b. check if product quantity is available
+                        if (productDto.productQuantity() < quantity) {
+                          return Mono.error(new InsufficientStockQuantityException(productId));
+                        }
+                        //c update order item with validated product details
+                        orderItem.setProductName(productDto.productName());
+                        orderItem.setProductPrice(productDto.productPrice());
+                        orderItem.setOrder(order);
+                        //d. calculate the subtotal for the order item
+                        var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
+                        System.out.println("Product Price: " + itemTotal);
+                        System.out.println("Product Quantity: " + quantity);
+                        //TODO: Implement Inventory deduction
+                        return Mono.just(itemTotal);
+                      });
+            })
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .doOnNext(order::setTotalAmount)
+            .then(Mono.defer(()-> {
+
+              order.setOrderStatus("PLACED");
+              return Mono.fromCallable(() -> orderRepository.save(order));
+            }));
+
+  }
+
+  /**
    * Retrieve an order by its ID
    * @param orderId
    * @return
+   * This is not being cached because the order entity it is
+   * returning is giving issue during serialization in Redis.
+   * The method will be removed from the class because
+   * the OrderDto is being used to retrieve the order by ID
    */
   @Override
   public Order getOrderById(Long orderId) {
 
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
+
     return foundOrder;
 
   }
@@ -167,14 +244,23 @@ public class OrderServiceImpl implements OrderService {
    * @return
    */
   @Override
-  public List<Order> getAllOrders() {
+  @Cacheable(value = "orders")
 
-    return orderRepository.findAll();
+  //DONE: The return type has been changed to OrderDto
+  public List<OrderDto> getAllOrders() {
+
+    var foundOrders = orderRepository.findAll();
+    //Convert Orders to OrderDtos and return
+    return  OrderMapper.mapFromOrdersToOrderDtos(foundOrders);
   }
 
   @Override
-  public List<Order> getAllOrdersWithoutCancelledOnes() {
-    return orderRepository.findByOrderStatusNot("CANCELLED");
+  @Cacheable(value = "ordersWithoutTheCancelledOnes")
+  public List<OrderDto> getAllOrdersWithoutCancelledOnes() {
+
+    var foundOrders = orderRepository.findByOrderStatusNot("CANCELLED");
+    //Convert Orders to OrderDtos and return
+    return  OrderMapper.mapFromOrdersToOrderDtos(foundOrders);
   }
 
   /**The method findOrderByEmail is a custom method created in the
@@ -184,17 +270,25 @@ public class OrderServiceImpl implements OrderService {
    * @return
    */
   @Override
-  public List<Order> getOrdersByCustomerEmail(String customerEmail) {
+  @Cacheable(value = "orders", key = "#customerEmail")
+  //TODO: Change the return type to OrderDto to fix the serialization issue
+  //DONE: The return type has been changed to OrderDto
+  public List<OrderDto> getOrdersByCustomerEmail(String customerEmail) {
     if (customerEmail == null || customerEmail.isEmpty()) {
       throw new IllegalArgumentException("Customer email is required");
     }
     var orders = orderRepository.findByCustomerEmail(customerEmail);
-    return orders;
+    //Convert Orders to OrderDtos and return
+    return OrderMapper.mapFromOrdersToOrderDtos(orders);
+
     //TODO: Implement pagination and filtering
   }
 
   @Override
-  public List<Order> getOrdersByStatus(String orderStatus) {
+  @Cacheable(value = "orders", key = "#orderStatus")
+  //TODO: Change the return type to OrderDto to fix the serialization issue
+  //DONE: The return type has been changed to OrderDto
+  public List<OrderDto> getOrdersByStatus(String orderStatus) {
     if (orderStatus == null || orderStatus.isBlank()) {
       throw new IllegalArgumentException("Order status is required");
     }
@@ -210,11 +304,16 @@ public class OrderServiceImpl implements OrderService {
       throw new IllegalArgumentException("Invalid order status: " + orderStatus);
 
     }
-    return orderRepository.findByOrderStatusIgnoreCase(orderStatus);
+    var foundOrders = orderRepository.findByOrderStatusIgnoreCase(orderStatus);
+
+    //Convert Orders to OrderDtos and return
+    return OrderMapper.mapFromOrdersToOrderDtos(foundOrders);
+
     //TODO: Implement pagination and filtering
   }
 
   @Override
+  @CachePut(value = "order", key = "#orderId")
   public Order updateOrderStatus(Long orderId, String orderStatus) {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -233,16 +332,25 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   @CachePut(value = "order", key = "#orderId")
+
   public Mono<Order> updateOrder(Long orderId, Order updateOrder) {
 
     //1. Find the existing order
     return Mono.justOrEmpty(orderRepository.findById(orderId)) //convert Optional to Mono
             .switchIfEmpty(Mono.error(new OrderNotFoundException(orderId)))
             .flatMap(existingOrder -> {
+              System.out.println("Updating Order: " + existingOrder);
+              // Update logic here
               //update basic details
               existingOrder.setCustomerName(updateOrder.getCustomerName());
               existingOrder.setCustomerEmail(updateOrder.getCustomerEmail());
               existingOrder.setShippingAddress(updateOrder.getShippingAddress());
+
+              //delete old order items entities from the database
+              var oldOrderItems = new ArrayList<>(existingOrder.getOrderItems());
+              existingOrder.getOrderItems().clear();
+              //delete old order items
+              oldOrderItems.forEach(orderItem -> orderRepository.deleteOrderItemById(orderItem.getOrderItemId()));
 
               //validate and update order items
               return Flux.fromIterable(updateOrder.getOrderItems())
@@ -288,11 +396,10 @@ public class OrderServiceImpl implements OrderService {
                         if (validatedOrderItems.isEmpty()) {
                           throw new IllegalArgumentException("No valid order items to update");
                         }
+
                         //update order with validated order items
-                        existingOrder.getOrderItems().clear();
                         existingOrder.addOrderItems(validatedOrderItems);
 
-                        //existingOrder.setOrderItems(validatedOrderItems);
                         //calculate total amount
                         var totalAmount = validatedOrderItems.stream()
                                 .map(item -> item
@@ -323,6 +430,7 @@ public class OrderServiceImpl implements OrderService {
    */
   @Transactional
   @Override
+  @CacheEvict(value = "order", key = "#orderId")
   public void deleteOrder(Long orderId) {
 
     var foundOrder = orderRepository.findById(orderId)
@@ -343,7 +451,26 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
+  @CacheEvict(value = "orders", allEntries = true)
   public void clearAllCache() {
+    //clear all cache entries
+    logger.info("*******Clearing all Order cache entries*******");
+    logger.info("*******All Order cache cleared successfully*******");
 
   }
+
+  @Override
+  @Cacheable(value = "orderDto", key = "#orderId")
+  @Transactional
+  public OrderDto getOrderDtoById(Long orderId) {
+    //1. Find the order
+    var foundOrder = orderRepository.findById(orderId)
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
+    //2. Convert Order to OrderDto
+    var orderDto = OrderMapper.mapFromOrderToOrderDto(foundOrder);
+
+    return orderDto;
+  }
+
+
 }
