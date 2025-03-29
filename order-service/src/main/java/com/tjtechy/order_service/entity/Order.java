@@ -7,6 +7,7 @@
 package com.tjtechy.order_service.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -50,18 +51,34 @@ public class Order implements Serializable {
     @Column(nullable = false)
     private String orderStatus; // PENDING, SHIPPED, DELIVERED, CANCELLED
 
-    //Relationship with product via OrderItem (composition)
     /**
+     * //Relationship with product via OrderItem (composition)
      * The one side of the relationship is Order
      * The many side of the relationship is OrderItem
+     * The JsonManagedReference annotation is used to manage
+     * the relationship between Order and OrderItem to prevent infinite recursion.
      */
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "order")
+    //@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "order")
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "order", orphanRemoval = true)
+    @JsonManagedReference //Manages the relationship between Order and OrderItem to prevent infinite recursion
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
         this.orderDate = LocalDate.now();
     }
+
+    public Order(Long orderId, String customerName, String customerEmail, String shippingAddress, BigDecimal totalAmount, LocalDate orderDate, String orderStatus, List<OrderItem> orderItems) {
+        this.orderId = orderId;
+        this.customerName = customerName;
+        this.customerEmail = customerEmail;
+        this.shippingAddress = shippingAddress;
+        this.totalAmount = totalAmount;
+        this.orderDate = orderDate;
+        this.orderStatus = orderStatus;
+        this.orderItems = orderItems;
+    }
+
 
 
     public Order() {

@@ -30,6 +30,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
 
   public ProductServiceImpl(ProductRepository productRepository) {
+
     this.productRepository = productRepository;
   }
 
@@ -65,7 +66,7 @@ public class ProductServiceImpl implements ProductService {
     /**
      * Log the number of products fetched
      * log.info is used and other log levels can be used.
-     * E.g log.debug, log.error, log.warn etc.
+     * E.g., log.debug, log.error, log.warn etc.
      */
     logger.info("*******Fetched {} products*******", products.size());
       return products;
@@ -171,7 +172,7 @@ public class ProductServiceImpl implements ProductService {
 
   }
 
-  //TODO: LOGIC TO CLEAR CACHE FOR A SPECIFIC PRODUCT. LOGIC MUST BE IMPLEMENTED IN THE INTERFACE
+
 
 
 }

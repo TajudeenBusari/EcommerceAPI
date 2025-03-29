@@ -1,9 +1,24 @@
+/**
+ *Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of System module of the Ecommerce Microservices project.
+ */
 package com.tjtechy;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Result {
+
+  @JsonProperty("message")
   private String message;
+  @JsonProperty("flag")
   private boolean flag;
+  @JsonProperty("data")
   private Object data;
+  @JsonProperty("code")
   private Integer code;
 
   public Result(){

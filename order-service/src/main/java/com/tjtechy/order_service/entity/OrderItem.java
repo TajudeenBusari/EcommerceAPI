@@ -6,6 +6,8 @@
  */
 package com.tjtechy.order_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -39,12 +41,27 @@ public class OrderItem implements Serializable {
    * Relationship with Order via OrderItem (composition)
    * The many side of the relationship is OrderItem
    * The one side of the relationship is Order
+   * The JsonBackReference annotation is used to
+   * manage the relationship between Order and OrderItem to prevent infinite recursion.
+   * Infinite recursion occurs when the Order entity is serialized to JSON
+   * because the Order entity has a reference to the OrderItem entity,
    */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "order_id", nullable = false)
+  @JsonBackReference //Prevents infinite recursion
+  //@JsonIgnore // Prevents serialization of the lazy field
   private Order order;
 
   public OrderItem() {
+  }
+
+  public OrderItem(Long orderItemId, UUID productId, String productName, BigDecimal productPrice, Integer productQuantity) {
+    this.orderItemId = orderItemId;
+    this.productId = productId;
+    this.productName = productName;
+    this.productPrice = productPrice;
+    this.productQuantity = productQuantity;
+
   }
 
   public Long getOrderItemId() {

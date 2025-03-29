@@ -128,6 +128,12 @@
 			<version>2.18.2</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-hibernate6</artifactId>
+			<version>2.18.2</version> <!-- Use the latest version -->
+		</dependency>
+
 		<!--dev tools-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -163,11 +169,53 @@
 			<version>0.0.1</version>
 		</dependency>
 
+		<!-- Add dependencies for caching -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>com.tjtechy</groupId>-->
 <!--			<artifactId>product-service</artifactId>-->
 <!--			<version>0.0.1</version>-->
 <!--		</dependency>-->
+
+		<!-- PostgreSQL Test Container -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>1.20.4</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!--JUnit-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.20.4</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Embedded Redis for Testing -->
+		<dependency>
+			<groupId>it.ozimov</groupId>
+			<artifactId>embedded-redis</artifactId>
+			<version>0.7.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Optional: For using JSON serialization in Redis
+			 You don't need this if we are not serializing in redis
+			 -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.18.2</version>
+		</dependency>
 
 	</dependencies>
 
