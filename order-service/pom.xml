@@ -8,12 +8,7 @@
 		<version>0.0.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-<!--	<parent>-->
-<!--		<groupId>org.springframework.boot</groupId>-->
-<!--		<artifactId>spring-boot-starter-parent</artifactId>-->
-<!--		<version>3.4.2</version>-->
-<!--		<relativePath/> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
-<!--	</parent>-->
+
 	<artifactId>order-service</artifactId>
 	<version>0.0.1</version>
 	<name>order-service</name>
@@ -35,11 +30,14 @@
 		<java.version>17</java.version>
 		<spring-cloud.version>2024.0.0</spring-cloud.version>
 	</properties>
+
 	<dependencies>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -96,6 +94,7 @@
 			<groupId>com.tjtechy</groupId>
 			<artifactId>common-utils</artifactId>
 			<version>0.0.1</version>
+<!--			<scope>test</scope>-->
 		</dependency>
 
 		<!--dev tools-->
@@ -105,13 +104,6 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-
-<!--		<dependency>-->
-<!--			<groupId>com.tjtechy</groupId>-->
-<!--			<artifactId>ECommerceMicroservices</artifactId>-->
-<!--			<version>0.0.1</version>-->
-<!--			<scope>compile</scope>-->
-<!--		</dependency>-->
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
@@ -148,9 +140,66 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- PostgreSQL Test Container -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>1.20.4</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!--JUnit-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.20.4</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Embedded Redis for Testing -->
+		<dependency>
+			<groupId>it.ozimov</groupId>
+			<artifactId>embedded-redis</artifactId>
+			<version>0.7.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Optional: For using JSON serialization in Redis
+			 You don't need this if we are not serializing in redis
+			 -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.18.2</version>
+		</dependency>
+
+		<!-- Add dependencies for caching -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+		<!-- WireMock Dependency -->
+		<dependency>
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock</artifactId>
+			<version>3.0.1</version>
+			<scope>test</scope>
+		</dependency>
+
+<!--		&lt;!&ndash; JavaTime dependency to deserialize LocalDate &ndash;&gt;-->
+<!--		<dependency>-->
+<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
+<!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
+<!--			<version>2.18.2</version>-->
+<!--		</dependency>-->
+
 	</dependencies>
-
-
 
 	<!-- Spring Cloud Dependency Management.
 	Actually not needed here because, already defined in the p
@@ -164,6 +213,14 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-bom</artifactId>
+				<version>11.0.15</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -174,6 +231,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<!-- Maven Compiler Plugin -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.13.0</version>

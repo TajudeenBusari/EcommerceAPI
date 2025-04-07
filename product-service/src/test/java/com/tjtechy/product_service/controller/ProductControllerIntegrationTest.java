@@ -20,6 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import redis.embedded.RedisServer;
@@ -44,7 +45,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
         "eureka.client.enabled=false",//disable eureka client
 })
 public class ProductControllerIntegrationTest {
-
+  /**
+   * MockMvc is used to test Spring boot mvc controllers
+   * without starting a full HTTP server.
+   * Simulates HTTP requests and responses.
+   */
   @Autowired
   private MockMvc mockMvc;
 
@@ -60,7 +65,8 @@ public class ProductControllerIntegrationTest {
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:15.0")
           .withDatabaseName("productdb")
           .withUsername("testuser")
-          .withPassword("testpassword");
+          .withPassword("testpassword")
+          .waitingFor(Wait.forListeningPort());
 
   @BeforeAll
   static void startContainers(){
