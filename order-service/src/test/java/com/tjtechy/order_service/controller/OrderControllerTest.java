@@ -1,6 +1,6 @@
 package com.tjtechy.order_service.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
 import com.tjtechy.Result;
@@ -38,13 +38,13 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
-import static org.mockito.BDDMockito.given;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(OrderController.class)
+@WebMvcTest(OrderController.class) //Recommended for unit testing for controllers
 @AutoConfigureMockMvc
 @TestPropertySource(
         properties = {
@@ -53,8 +53,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.cloud.config.enabled=false",
                 "eureka.client.enabled=false",
                 "spring.redis.enabled=false",
-
-
         }
 )
 @ImportAutoConfiguration(exclude = {
@@ -65,6 +63,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class OrderControllerTest {
 
+  /**
+   * The MockitoBean annotation is used to create a mock instance of the OrderService
+   */
   @MockitoBean
   private OrderService orderService;
 
