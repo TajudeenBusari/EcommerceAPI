@@ -10,6 +10,7 @@
         <module name="exception" />
         <module name="config-server" />
         <module name="system" />
+        <module name="inventory-service" />
         <module name="api-gateway" />
         <module name="product-service" />
         <module name="common-utils" />
@@ -29,6 +30,7 @@
       <module name="config-server" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="exception" options="-parameters" />
+      <module name="inventory-service" options="-parameters" />
       <module name="order-service" options="-parameters" />
       <module name="product-service" options="-parameters" />
       <module name="system" options="-parameters" />

@@ -26,6 +26,7 @@
         <module>system</module>
         <module>exception</module>
         <module>common-utils</module>
+        <module>inventory-service</module>
     </modules>
 
     <properties>
