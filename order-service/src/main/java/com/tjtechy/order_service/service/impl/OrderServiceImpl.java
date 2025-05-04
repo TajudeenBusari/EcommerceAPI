@@ -7,10 +7,13 @@
 package com.tjtechy.order_service.service.impl;
 
 
+import com.netflix.discovery.converters.Auto;
+import com.tjtechy.DeductInventoryRequestDto;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
+import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
 import com.tjtechy.order_service.entity.Order;
 
@@ -26,9 +29,11 @@ import com.tjtechy.modelNotFoundException.ProductNotFoundException;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -49,12 +54,15 @@ public class OrderServiceImpl implements OrderService {
 
   private final ProductServiceConfig productServiceConfig;
 
+  private final InventoryServiceConfig inventoryServiceConfig;
+
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
-  public OrderServiceImpl(OrderRepository orderRepository, WebClient.Builder webClientBuilder, ProductServiceConfig productServiceConfig) {
+  public OrderServiceImpl(OrderRepository orderRepository, WebClient.Builder webClientBuilder, ProductServiceConfig productServiceConfig, InventoryServiceConfig inventoryServiceConfig) {
     this.orderRepository = orderRepository;
     this.webClientBuilder = webClientBuilder;
     this.productServiceConfig = productServiceConfig;
+    this.inventoryServiceConfig = inventoryServiceConfig;
   }
 
   /**
@@ -91,9 +99,7 @@ public class OrderServiceImpl implements OrderService {
       //a. Call product service to get product details
       var productResponse = webClientBuilder.build()
               .get()
-              //.uri("http://localhost:8083/api/v1/product/" + productId)//Using service name from Eureka discovery
               .uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)//Using service name from Eureka
-              //.uri("http://product-service${api.endpoint.base-url}/product/" + productId)//Using service name from Eureka
               .retrieve()
               .bodyToMono(Result.class)
               .block(); //block to wait for the response, can be replaced with async;
@@ -121,6 +127,8 @@ public class OrderServiceImpl implements OrderService {
       if (productDto.productQuantity() < quantity) {
         throw new InsufficientStockQuantityException(productId);
       }
+
+      //TODO. Call inventory service to deduct stock
 
       //c update order item with product details
       orderItem.setProductName(productDto.productName());
@@ -198,17 +206,35 @@ public class OrderServiceImpl implements OrderService {
                         if (productDto.productQuantity() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
-                        //c update order item with validated product details
-                        orderItem.setProductName(productDto.productName());
-                        orderItem.setProductPrice(productDto.productPrice());
-                        orderItem.setOrder(order);
-                        //d. calculate the subtotal for the order item
-                        var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
-                        System.out.println("Product Price: " + itemTotal);
-                        System.out.println("Product Quantity: " + quantity);
-                        //TODO: Implement Inventory deduction
-                        return Mono.just(itemTotal);
+
+//                       TODO. Call inventory service to deduct stock
+                        var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
+                        return webClientBuilder.build()
+                                .patch()
+                                .uri("http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "inventory/internal/deduct-reactive")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(deductInventoryRequestDto)
+                                .retrieve()
+                                .bodyToMono(Result.class)
+                                .flatMap(inventoryResponse -> {
+                                  if (inventoryResponse == null || !inventoryResponse.isFlag()) {
+                                    return Mono.error(new IllegalArgumentException("Failed to deduct inventory"));
+                                  }
+
+                                  //c update order item with validated product details
+                                  orderItem.setProductName(productDto.productName());
+                                  orderItem.setProductPrice(productDto.productPrice());
+                                  orderItem.setOrder(order);
+                                  //d. calculate the subtotal for the order item
+                                  var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
+                                  System.out.println("Product Price: " + itemTotal);
+                                  System.out.println("Product Quantity: " + quantity);
+
+                                  return Mono.just(itemTotal);
+                                });
+
                       });
+
             })
             .reduce(BigDecimal.ZERO, BigDecimal::add)
             .doOnNext(order::setTotalAmount)

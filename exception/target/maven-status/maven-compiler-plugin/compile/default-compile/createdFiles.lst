@@ -1,0 +1,4 @@
+com\tjtechy\businessException\InsufficientStockQuantityException.class
+com\tjtechy\modelNotFoundException\InventoryNotFoundException.class
+com\tjtechy\modelNotFoundException\ProductNotFoundException.class
+com\tjtechy\modelNotFoundException\OrderNotFoundException.class

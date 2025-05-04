@@ -22,7 +22,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("${api.endpoint.base-url}/order")
 public class OrderController {
   private final OrderService orderService;
-
   public OrderController(OrderService orderService) {
     this.orderService = orderService;}
 

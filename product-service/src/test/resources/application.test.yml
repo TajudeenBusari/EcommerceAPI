@@ -21,6 +21,10 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+inventory-service:
+  url: http://localhost:9096/api/v1 # mock web service URL
+  #url: http://inventory-service/api/v1 # mock web service URL
+  timeout: 5000 # Timeout for the Inventory Service calls
 
 
 

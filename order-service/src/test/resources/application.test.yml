@@ -25,6 +25,9 @@ spring:
       root: INFO
       org.springframework: DEBUG
       org.hibernate.SQL: DEBUG
+logging:
+  level:
+    org.springframework.web.reactive.function.client.WebClient: DEBUG
 #  product-service:
 #    url: http://localhost:8083/api/v1 # WireMock URL for product-service
 #product:
