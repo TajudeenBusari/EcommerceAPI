@@ -201,10 +201,20 @@
 		</dependency>
 
 		<!-- Embedded Redis for Testing -->
+		<!--This is causing issue when starting embedded redis server, that is why I switched to
+		com.github.kstyrc-->
+<!--		<dependency>-->
+<!--			<groupId>it.ozimov</groupId>-->
+<!--			<artifactId>embedded-redis</artifactId>-->
+<!--			<version>0.7.2</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
+
+		<!-- https://mvnrepository.com/artifact/com.github.kstyrc/embedded-redis -->
 		<dependency>
-			<groupId>it.ozimov</groupId>
+			<groupId>com.github.kstyrc</groupId>
 			<artifactId>embedded-redis</artifactId>
-			<version>0.7.2</version>
+			<version>0.6</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -216,6 +226,24 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.18.2</version>
 		</dependency>
+
+		<!--MockWbServer dependency is designed only for testing, keep it under scope
+		It spins up local HTTP Server, you can queue response on and
+		verify requests made to it-perfect for integration test service to service communication -->
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>mockwebserver</artifactId>
+			<version>5.0.0-alpha.14</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock</artifactId>
+			<version>3.12.1</version>
+			<scope>test</scope>
+		</dependency>
+
 
 	</dependencies>
 

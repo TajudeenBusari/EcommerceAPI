@@ -7,23 +7,38 @@
 package com.tjtechy.product_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.tjtechy.product_service.config.InventoryServiceConfig;
 import com.tjtechy.product_service.entity.dto.CreateProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import redis.embedded.RedisServer;
+
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,9 +49,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 
+
 @SpringBootTest
+@Import(TestInventoryWebClientConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Tag("ProductControllerIntegrationTest")
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @TestPropertySource(properties = {
@@ -53,13 +71,21 @@ public class ProductControllerIntegrationTest {
   @Autowired
   private MockMvc mockMvc;
 
+
   @Autowired
   private ObjectMapper objectMapper;
 
   @Value("${api.endpoint.base-url}")
   private  String API_URL;
 
+
+  @Autowired
+  @Qualifier("inventoryServiceWebClient")
+  private WebClient webClient;
   private static RedisServer redisServer;
+
+  @Autowired
+  private InventoryServiceConfig inventoryServiceConfig;
 
   @Container
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:15.0")
@@ -68,8 +94,11 @@ public class ProductControllerIntegrationTest {
           .withPassword("testpassword")
           .waitingFor(Wait.forListeningPort());
 
+  private static MockWebServer mockWebServer;
+
+
   @BeforeAll
-  static void startContainers(){
+  static void startContainers() throws IOException {
     postgreSQLContainer.start();
 
     //wait for PostgreSQL to be ready
@@ -86,7 +115,6 @@ public class ProductControllerIntegrationTest {
     System.setProperty("spring.datasource.password", postgreSQLContainer.getPassword());
 
     //start redis server on a specific port
-    //int redisPort = 6379;
     redisServer = new RedisServer(); //bind to a random port
     redisServer.start();
 
@@ -98,19 +126,30 @@ public class ProductControllerIntegrationTest {
         e.printStackTrace();
       }
     }
-
-    //System.setProperty("spring.redis.host", String.valueOf(redisPort));
-
     System.setProperty("spring.redis.port", String.valueOf(redisServer.ports().get(0)));
 
+    //start mockserver for inventory service simulation
+    mockWebServer = new MockWebServer();
+    try {;
+      mockWebServer.start(9096);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    //now the InventoryServiceConfig will point to the mock web server
   }
 
   @AfterAll
   static void stopContainers(){
     postgreSQLContainer.stop();
     redisServer.stop();
+    if (mockWebServer != null){
+      try {
+        mockWebServer.shutdown();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
-
 
   /**
    * Helper method to create a product
@@ -280,6 +319,155 @@ public class ProductControllerIntegrationTest {
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Delete One Success"));
   }
+
+  @Test
+  @DisplayName("Check AddProductWithInventory (POST /api/v1/product/with-inventory)")
+  void testAddProductWithInventory() throws Exception {
+   var createProductDto = new CreateProductDto(
+            "Product 1",
+            "Product 1 description",
+            "Product 1 category",
+            10,
+            10,
+            BigDecimal.valueOf(1000.00),
+            LocalDate.now(),
+            LocalDate.now().plusYears(1)
+    );
+    var json = objectMapper.writeValueAsString(createProductDto);
+
+    var result = mockMvc.perform(post(API_URL + "/product/with-inventory")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json))
+            .andExpect(jsonPath("$.flag").value(true))
+            .andExpect(jsonPath("$.message").value("Add One Success"))
+            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.productQuantity").value(10)).andReturn();
+    var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), Map.class);
+    var productDetails = (Map<String, Object>) responseBody.get("data");
+    var productId = productDetails.get("productId");
+    System.out.println("Product ID: " + productId);
+
+  }
+
+  @Test
+  @DisplayName("Check UpdateProductWithInventory (PUT /api/v1/product/{productId}/with-inventory)")
+  void testUpdateProductWithInventory() throws Exception {
+    var productDetails = createProduct();
+    var productId = productDetails.get("productId");
+
+    //Update the product
+    var updateProductDto = new UpdateProductDto(
+            "Updated1 Product Name",
+            "Updated1 Product Description",
+            "Updated1 Product Category",
+            BigDecimal.valueOf(1000.00),
+            20,
+            10
+    );
+    var json = objectMapper.writeValueAsString(updateProductDto);
+    var result = mockMvc.perform(put(API_URL + "/product/" + productId + "/with-inventory")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json))
+            .andExpect(jsonPath("$.flag").value(true))
+            .andExpect(jsonPath("$.message").value("Update One Success"))
+            .andExpect(jsonPath("$.data.productId").value(productId))
+            .andExpect(jsonPath("$.data.productName").value("Updated1 Product Name"))
+            .andExpect(jsonPath("$.data.productDescription").value("Updated1 Product Description"))
+            .andExpect(jsonPath("$.data.productCategory").value("Updated1 Product Category"))
+            .andExpect(jsonPath("$.data.productQuantity").value(20))
+            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.productPrice").value(1000.00))
+            .andExpect(jsonPath("$.data.expiryDate").isNotEmpty())
+            .andReturn();
+    var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), Map.class);
+    var updatedProductDetails = (Map<String, Object>) responseBody.get("data");
+    var updatedProductId = updatedProductDetails.get("productId");
+    System.out.println("Updated Product ID: " + updatedProductId);
+  }
+
+  @Test
+  @DisplayName("Check bulkDeleteProducts (DELETE /api/v1/product/bulk-delete)")
+  void testBulkDeleteProducts() throws Exception {
+    // Create 3 products
+    var product1 = createProduct();
+    var product2 = createProduct();
+    var product3 = createProduct();
+
+    // Get the product IDs
+    var productId1 = (String) product1.get("productId");
+    var productId2 = (String) product2.get("productId");
+    var productId3 = (String) product3.get("productId");
+
+    // Perform bulk delete
+    mockMvc.perform(delete(API_URL + "/product/bulk-delete")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(List.of(productId1, productId2, productId3))))
+            .andExpect(jsonPath("$.flag").value(true))
+            .andExpect(jsonPath("$.message").value("Bulk Delete Success"));
+  }
+
+
+  /**This is a nested class to test the delete product with inventory endpoint
+   * It has it own configuration for the inventory service and uses the MockWebServer
+   * This test is to check the delete product with inventory endpoint
+   * It will first create a product, then create an inventory for that product,
+   * and then delete the product with the inventory.
+   * The inventory service is mocked using MockWebServer.
+   */
+  @Nested
+  @Import(TestInventoryWebClientConfig.class)
+  class DeleteProductWithInventoryTest {
+
+    @Autowired
+    @Qualifier("inventoryServiceWebClient")
+    private WebClient inventoryServiceWebClient;
+
+    @DynamicPropertySource
+    static void dynamicProperties(DynamicPropertyRegistry registry) {
+      //dynamically inject the inventory service url
+      String inventoryServiceUrl = mockWebServer.url("/api/v1").toString();
+      System.out.println("Injected Inventory Service Url: " + inventoryServiceUrl);
+      registry.add("api.endpoint.base-url", () -> inventoryServiceUrl);
+    }
+
+    //TODO: Fix the GET request to the inventory service
+    @Test
+    void testDeleteProductWithInventory() throws Exception {
+      var productDetails = createProduct();
+      var productId = productDetails.get("productId");
+      var inventoryId = 1L; //mock inventory id
+      var reservedQuantity = 5;
+
+      //mock the GET request to the inventory service
+      String getInventoryResponse = """
+      {
+      "flag": true,
+      "message": "Get Inventory Success",
+      "data": {
+              "inventoryId": %d,
+              "productId": "%s",
+              "reservedQuantity": %d
+              }
+            }"""
+              .formatted(inventoryId, productId, reservedQuantity);
+
+      mockWebServer.enqueue(new MockResponse()
+              .setBody(getInventoryResponse)
+              .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE));
+
+      //mock the delete request to the inventory service
+      mockWebServer.enqueue(new MockResponse()
+              .setBody("{\"flag\":true,\"message\":\"Delete One Success\"}")
+              .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE));
+
+      //Delete the product
+      mockMvc.perform(delete(API_URL + "/product/delete/with-inventory/" + productId))
+              .andExpect(jsonPath("$.flag").value(true))
+              .andExpect(jsonPath("$.message").value("Delete One Success"));
+
+    }
+  }
+
 
 
 }

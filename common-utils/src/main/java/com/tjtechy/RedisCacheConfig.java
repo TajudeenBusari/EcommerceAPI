@@ -13,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,9 +33,13 @@ import java.time.Duration;
  *Configuration class for setting up Redis cache.
  * This class defines a {@link RedisCacheManager} bean that is responsible for configuring Redis cache
  * and a default TTL (Time To Live) of 1 minute.
+ * @ConditionalOnProperty is used to enable or disable the Redis cache based on the property "redis.enabled".
+ * If the property is set to false, the Redis cache will be disabled.
+ * This is useful for integration tests where Redis caching may not be needed.
  */
 @Configuration
 @AutoConfigureBefore(RedisAutoConfiguration.class)
+@ConditionalOnProperty(name ="redis.enabled", havingValue = "true", matchIfMissing = true) //disable Redis cache if redis.enabled is false, useful for integration tests
 public class RedisCacheConfig {
 
   private static final Logger logger = LoggerFactory.getLogger(RedisCacheConfig.class);

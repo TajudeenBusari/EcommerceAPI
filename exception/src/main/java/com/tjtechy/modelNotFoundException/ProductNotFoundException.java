@@ -6,6 +6,7 @@
  */
 package com.tjtechy.modelNotFoundException;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -14,8 +15,12 @@ import java.util.UUID;
  * It should be handled in the ExceptionHandlerAdvice class.
  */
 public class ProductNotFoundException extends RuntimeException {
+
     public ProductNotFoundException(UUID id) {
 
         super("Product not found with id: " + id);
+    }
+    public ProductNotFoundException(List<UUID> ids) {
+        super("Product not found with ids: " + ids);
     }
 }

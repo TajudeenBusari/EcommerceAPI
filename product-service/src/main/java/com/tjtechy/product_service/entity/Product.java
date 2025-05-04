@@ -18,7 +18,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "products")
 
-public class Product implements Serializable {
+public class
+Product implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID productId;

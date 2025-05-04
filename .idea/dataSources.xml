@@ -22,5 +22,12 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/ECommerce-Order-Service</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="ECommerce-Inventory-Service@localhost" uuid="dbb0ccd9-06dd-407f-b700-8142fac9bbbd">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/ECommerce-Inventory-Service</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

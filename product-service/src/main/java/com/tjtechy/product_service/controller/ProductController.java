@@ -12,6 +12,8 @@ import com.tjtechy.product_service.mapper.ProductMapper;
 import com.tjtechy.product_service.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.UUID;
 import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
@@ -68,6 +70,29 @@ public class ProductController {
     var savedProductDto = ProductMapper.mapFromProductToProductDto(savedProduct);
     return new Result("Add One Success", true, savedProductDto, StatusCode.SUCCESS);
   }
+  /**
+   * Endpoint to add a new product with inventory.
+   *
+   * @param createProductDto the DTO containing the product details to create
+   * @return a Result object containing the created product details
+   */
+  @PostMapping("/with-inventory")
+  public Result addProductWithInventory(@Valid @RequestBody CreateProductDto createProductDto){
+    var product = ProductMapper.mapFromCreateProductDtoToProduct(createProductDto);
+    var savedProduct = productService.saveProductWithInventory(product);
+    //map to dto
+    var savedProductDto = ProductMapper.mapFromProductToProductDto(savedProduct);
+    return new Result("Add One Success", true, savedProductDto, StatusCode.SUCCESS);
+  }
+
+  @PutMapping("/{productId}/with-inventory")
+  public Result updateProductWithInventory(@PathVariable UUID productId, @Valid @RequestBody UpdateProductDto updateProductDto){
+    var product = ProductMapper.mapFromUpdateProductDtoToProduct(updateProductDto);
+    var updatedProduct = productService.updateProductWithInventory(productId, product);
+    //map to dto
+    var updatedProductDto = ProductMapper.mapFromProductToProductDto(updatedProduct);
+    return new Result("Update One Success", true, updatedProductDto, StatusCode.SUCCESS);
+  }
 
   /**
    * Endpoint to update an existing product.
@@ -106,6 +131,28 @@ public class ProductController {
   public Result clearCache(){
     productService.clearAllCache();
     return new Result("Clear Cache Success", true, null, StatusCode.SUCCESS);
+  }
+  /**
+   * Endpoint to bulk delete products by their IDs.
+   *
+   * @param productIds the list of UUIDs of the products to delete
+   * @return a Result object indicating the success of the bulk deletion
+   */
+  @DeleteMapping("/bulk-delete")
+  public Result bulkDeleteProducts(@RequestBody List<UUID> productIds){
+    productService.bulkDeleteProducts(productIds);
+    return new Result("Bulk Delete Success", true, null, StatusCode.SUCCESS);
+  }
+
+  @DeleteMapping("/delete/with-inventory/{productId}")
+  public Result deleteProductWithInventory(@PathVariable UUID productId){
+    productService.deleteProductWithInventory(productId);
+    return new Result("Delete One Success", true, null, StatusCode.SUCCESS);
+  }
+  @DeleteMapping("/bulk-delete/with-inventory")
+  public Result bulkDeleteProductsWithInventories(@RequestBody List<UUID> productIds){
+    productService.bulkDeleteProductsWithInventories(productIds);
+    return new Result("Bulk Delete With Inventories Success", true, null, StatusCode.SUCCESS);
   }
 
 

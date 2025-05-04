@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 //@ConfigurationProperties(prefix = "api.endpoint")
-public class ProductServiceConfig {
+public class  ProductServiceConfig {
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
 

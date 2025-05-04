@@ -15,3 +15,9 @@ spring:
       hibernate:
         format_sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+logging:
+  level:
+    com.tjtechy.common-utils.RedisCacheConfig: INFO
+#api:
+#  endpoint:
+#    base-url: /api/v1

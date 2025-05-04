@@ -157,12 +157,22 @@
 		</dependency>
 
 		<!-- Embedded Redis for Testing -->
+
+		<!-- https://mvnrepository.com/artifact/com.github.kstyrc/embedded-redis
+		BETTER FOR REDIS EMBEDDED TESTING. This: it.ozimov is causing some issues-->
 		<dependency>
-			<groupId>it.ozimov</groupId>
+			<groupId>com.github.kstyrc</groupId>
 			<artifactId>embedded-redis</artifactId>
-			<version>0.7.2</version>
+			<version>0.6</version>
 			<scope>test</scope>
 		</dependency>
+
+<!--		<dependency>-->
+<!--			<groupId>it.ozimov</groupId>-->
+<!--			<artifactId>embedded-redis</artifactId>-->
+<!--			<version>0.7.2</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
 
 		<!-- Optional: For using JSON serialization in Redis
 			 You don't need this if we are not serializing in redis
@@ -189,6 +199,16 @@
 			<groupId>org.wiremock</groupId>
 			<artifactId>wiremock</artifactId>
 			<version>3.0.1</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!--MockWbServer dependency is designed only for testing, keep it under scope
+		It spins up local HTTP Server, you can queue response on and
+		verify requests made to it-perfect for integration test service to service communication -->
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>mockwebserver</artifactId>
+			<version>5.0.0-alpha.14</version>
 			<scope>test</scope>
 		</dependency>
 

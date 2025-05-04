@@ -17,12 +17,6 @@
     <packaging>jar</packaging>
     <name>common-utils</name>
     <description>Shared system utilities for the Ecommerce-Microservices</description>
-<!--    <parent>-->
-<!--        <groupId>com.tjtechy</groupId>-->
-<!--        <artifactId>ECommerceMicroservices</artifactId>-->
-<!--        <version>0.0.1</version>-->
-<!--    </parent>-->
-
 
 
     <properties>
@@ -32,26 +26,15 @@
 
     <!--If you want common-utils to be automatically detected, add this to common-utils/pom.xml-->
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-autoconfigure</artifactId>-->
-<!--        </dependency>-->
 
-<!--        &lt;!&ndash; Spring Boot Starter Dependencies &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter</artifactId>-->
-<!--        </dependency>-->
-        <!-- Add dependencies required by the utility module -->
+    <!--Core spring dependencies-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <optional>true</optional> <!-- Optional to avoid pulling unnecessary dependencies -->
         </dependency>
-        <!-- Other dependencies -->
 
         <!-- Spring Boot Cache and Redis Dependencies -->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
@@ -59,6 +42,21 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
         <!-- Jackson for JSON serialization -->
@@ -79,15 +77,13 @@
             <artifactId>jackson-datatype-hibernate6</artifactId>
             <version>2.18.2</version> <!-- Use the latest version -->
         </dependency>
+        <!-- Utility and validation -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
@@ -96,9 +92,15 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
@@ -117,16 +119,13 @@
             <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>it.ozimov</groupId>
-            <artifactId>embedded-redis</artifactId>
-            <version>0.7.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>it.ozimov</groupId>-->
+<!--            <artifactId>embedded-redis</artifactId>-->
+<!--            <version>0.7.2</version>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
+
 
         <!--JUnit-->
         <dependency>
@@ -135,10 +134,14 @@
             <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
+
+
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webflux</artifactId>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
         </dependency>
+
+
 
     </dependencies>
 
