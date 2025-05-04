@@ -46,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * In @WebMvcTest, adding @ContextConfiguration(classes = {InventoryController.class}) helps you:
  * Explicitly isolate the controller
  * Prevent JPA and Redis config from being loaded
- * Speed up your tests and avoid irrelevant bean creation erro
+ * Speed up your tests and avoid irrelevant bean creation errors
  */
 @ContextConfiguration(classes = {InventoryController.class})
 @TestPropertySource(properties = {

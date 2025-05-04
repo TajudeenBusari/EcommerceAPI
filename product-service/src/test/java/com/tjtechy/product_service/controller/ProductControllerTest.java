@@ -7,11 +7,12 @@
 package com.tjtechy.product_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tjtechy.RedisCacheConfig;
+
 import com.tjtechy.modelNotFoundException.ProductNotFoundException;
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.entity.dto.CreateProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
+import com.tjtechy.product_service.exception.ExceptionHandlingAdvice;
 import com.tjtechy.product_service.service.ProductService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,13 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.cloud.config.client.ConfigServerBootstrapper;
-import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -50,18 +49,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "eureka.client.enabled=false",
         "spring.cloud.config.enabled=false"
 })
-@ImportAutoConfiguration(exclude = {
-        RedisCacheConfig.class,
-        EurekaClientAutoConfiguration.class,
-        ConfigServerBootstrapper.class
-})
+/**
+ * So @ContextConfiguration(classes = {...}) forces Spring to load only what you need,
+ * overriding the default component scan or @SpringBootApplication class
+ * In @WebMvcTest, adding @ContextConfiguration(classes = {ProductController.class}) helps you:
+ * Explicitly isolate the controller
+ * Prevent JPA and Redis config from being loaded
+ * Speed up your tests and avoid irrelevant bean creation errors
+ */
+@ContextConfiguration(classes = {ProductController.class})
+@Import(ExceptionHandlingAdvice.class)//Import the ExceptionHandlingAdvice class to handle exceptions in the controller tests
 class ProductControllerTest {
 
   @MockitoBean
   private ProductService productService;
-
-  @MockitoBean
-  private RedisConnectionFactory redisConnectionFactory;
 
   @Autowired
   ObjectMapper objectMapper;
@@ -103,7 +104,6 @@ class ProductControllerTest {
   @AfterEach
   void tearDown() {
   }
-
 
 
   /**
