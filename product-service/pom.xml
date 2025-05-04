@@ -2,12 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-<!--	<parent>-->
-<!--		<groupId>org.springframework.boot</groupId>-->
-<!--		<artifactId>spring-boot-starter-parent</artifactId>-->
-<!--		<version>3.4.2</version>-->
-<!--		<relativePath/> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
-<!--	</parent>-->
+
 	<!--inherit from ECommerceMicroservices-->
 	<parent>
 		<groupId>com.tjtechy</groupId>
@@ -43,13 +38,33 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.boot</groupId>-->
-<!--			<artifactId>spring-boot-starter-security</artifactId>-->
-<!--		</dependency>-->
+
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-util</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-io</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty.http2</groupId>
+					<artifactId>http2-server</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!--Spring boot Starter WebFlux (For WebClient)-->
@@ -92,34 +107,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.security</groupId>-->
-<!--			<artifactId>spring-security-test</artifactId>-->
-<!--			<scope>test</scope>-->
-<!--		</dependency>-->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-
-<!--		&lt;!&ndash;Add dependency for caching&ndash;&gt;-->
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.boot</groupId>-->
-<!--			<artifactId>spring-boot-starter-cache</artifactId>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.boot</groupId>-->
-<!--			<artifactId>spring-boot-starter-data-redis</artifactId>-->
-<!--		</dependency>-->
-
-<!--		&lt;!&ndash; Optional: For using JSON serialization in Redis-->
-<!--			 You don't need this if we are not serializing in redis-->
-<!--			 &ndash;&gt;-->
-<!--		<dependency>-->
-<!--			<groupId>com.fasterxml.jackson.core</groupId>-->
-<!--			<artifactId>jackson-databind</artifactId>-->
-<!--			<version>2.18.2</version>-->
-<!--		</dependency>-->
 
 		<!-- JavaTime dependency to deserialize LocalDate -->
 		<dependency>
@@ -141,12 +133,6 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.tjtechy</groupId>-->
-<!--            <artifactId>ECommerceMicroservices</artifactId>-->
-<!--            <version>0.0.1</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
 
         <!--Add spring cloud config client dependency so application can use the
         config server config file-->
@@ -178,11 +164,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>com.tjtechy</groupId>-->
-<!--			<artifactId>product-service</artifactId>-->
-<!--			<version>0.0.1</version>-->
-<!--		</dependency>-->
 
 		<!-- PostgreSQL Test Container -->
 		<dependency>
@@ -230,19 +211,34 @@
 		<!--MockWbServer dependency is designed only for testing, keep it under scope
 		It spins up local HTTP Server, you can queue response on and
 		verify requests made to it-perfect for integration test service to service communication -->
+<!--		<dependency>-->
+<!--			<groupId>com.squareup.okhttp3</groupId>-->
+<!--			<artifactId>mockwebserver</artifactId>-->
+<!--			<version>5.0.0-alpha.14</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
+
+<!--		<dependency>-->
+<!--			<groupId>org.wiremock</groupId>-->
+<!--			<artifactId>wiremock</artifactId>-->
+<!--			<version>3.9.1</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
+
+		<!-- Add Jetty 11 backend explicitly -->
 		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>mockwebserver</artifactId>
-			<version>5.0.0-alpha.14</version>
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock-jetty12</artifactId>
+			<version>3.9.1</version>
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.wiremock</groupId>
-			<artifactId>wiremock</artifactId>
-			<version>3.12.1</version>
-			<scope>test</scope>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.github.tomakehurst</groupId>-->
+<!--			<artifactId>wiremock-jre8</artifactId>-->
+<!--			<version>2.35.0</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
 
 
 	</dependencies>

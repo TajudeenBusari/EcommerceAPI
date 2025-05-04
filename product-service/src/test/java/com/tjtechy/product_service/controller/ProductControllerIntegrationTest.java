@@ -8,19 +8,23 @@ package com.tjtechy.product_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.tjtechy.product_service.config.InventoryServiceConfig;
 import com.tjtechy.product_service.entity.dto.CreateProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
-
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -30,15 +34,16 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import redis.embedded.RedisServer;
 
-import java.io.IOException;
+
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -50,8 +55,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 
 
-@SpringBootTest
-@Import(TestInventoryWebClientConfig.class)
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Tag("ProductControllerIntegrationTest")
@@ -61,7 +67,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
         "api.endpoint.base-url=/api/v1",
         "spring.cloud.config.enabled=false",//disable spring cloud config
         "eureka.client.enabled=false",//disable eureka client
+        "spring.datasource.url=jdbc:tc:postgresql:15.0:///productdb",
+        "spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
+        "spring.datasource.username=testuser",
+        "spring.datasource.password=testpassword",
+        "redis.enabled=false", //disable redis
+        "spring.profiles.active=test",
+        "spring.cache.type=none", //disable caching
+        "inventory-service.base-url=http://localhost:9562/api/v1" // Base URL for Inventory Service
 })
+@WireMockTest(httpPort = 9562)
+@Import(ProductControllerIntegrationTest.TestInventoryClientConfig.class)
 public class ProductControllerIntegrationTest {
   /**
    * MockMvc is used to test Spring boot mvc controllers
@@ -80,9 +96,8 @@ public class ProductControllerIntegrationTest {
 
 
   @Autowired
-  @Qualifier("inventoryServiceWebClient")
-  private WebClient webClient;
-  private static RedisServer redisServer;
+  private WebTestClient webClient;
+
 
   @Autowired
   private InventoryServiceConfig inventoryServiceConfig;
@@ -94,11 +109,30 @@ public class ProductControllerIntegrationTest {
           .withPassword("testpassword")
           .waitingFor(Wait.forListeningPort());
 
-  private static MockWebServer mockWebServer;
+  @DynamicPropertySource
+  static void dynamicProperties(DynamicPropertyRegistry registry) {
+    //dynamically inject the database url
+    registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
+    registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
+    registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
+    registry.add("spring.datasource.driver-class-name", postgreSQLContainer::getDriverClassName);
+    //override the base url used in WebClient
+    registry.add("inventory-service.base-url", () -> "http://localhost:9562/api/v1");
+  }
+
+  @TestConfiguration
+  static class TestInventoryClientConfig{
+    @Bean
+    public WebClient inventoryWebClient(WebClient.Builder builder) {
+      return builder.baseUrl("http://localhost:9562/api/v1").build();
+    }
+  }
+
+
 
 
   @BeforeAll
-  static void startContainers() throws IOException {
+  static void startContainers() {
     postgreSQLContainer.start();
 
     //wait for PostgreSQL to be ready
@@ -109,46 +143,12 @@ public class ProductControllerIntegrationTest {
         e.printStackTrace();
       }
     }
-
-    System.setProperty("spring.datasource.url", postgreSQLContainer.getJdbcUrl());
-    System.setProperty("spring.datasource.username", postgreSQLContainer.getUsername());
-    System.setProperty("spring.datasource.password", postgreSQLContainer.getPassword());
-
-    //start redis server on a specific port
-    redisServer = new RedisServer(); //bind to a random port
-    redisServer.start();
-
-    //wait for redis server to be ready
-    while (!redisServer.isActive()){
-      try {
-        Thread.sleep(5000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-    System.setProperty("spring.redis.port", String.valueOf(redisServer.ports().get(0)));
-
-    //start mockserver for inventory service simulation
-    mockWebServer = new MockWebServer();
-    try {;
-      mockWebServer.start(9096);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    //now the InventoryServiceConfig will point to the mock web server
   }
 
   @AfterAll
   static void stopContainers(){
     postgreSQLContainer.stop();
-    redisServer.stop();
-    if (mockWebServer != null){
-      try {
-        mockWebServer.shutdown();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+
   }
 
   /**
@@ -406,31 +406,36 @@ public class ProductControllerIntegrationTest {
             .andExpect(jsonPath("$.message").value("Bulk Delete Success"));
   }
 
+  @Test
+  void testDeleteProductWithInventory() throws Exception {
+    var productDetails = createProduct();
+    var productId = productDetails.get("productId");
+
+    mockMvc.perform(delete(API_URL + "/product/delete/with-inventory/" + productId)
+    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.flag").value(true))
+            .andExpect(jsonPath("$.message").value("Delete One Success"));
+  }
+
 
   /**This is a nested class to test the delete product with inventory endpoint
-   * It has it own configuration for the inventory service and uses the MockWebServer
+   * It has it own configuration for the inventory service and uses the WireMock server
    * This test is to check the delete product with inventory endpoint
    * It will first create a product, then create an inventory for that product,
    * and then delete the product with the inventory.
-   * The inventory service is mocked using MockWebServer.
    */
   @Nested
-  @Import(TestInventoryWebClientConfig.class)
   class DeleteProductWithInventoryTest {
 
-    @Autowired
-    @Qualifier("inventoryServiceWebClient")
-    private WebClient inventoryServiceWebClient;
-
-    @DynamicPropertySource
-    static void dynamicProperties(DynamicPropertyRegistry registry) {
-      //dynamically inject the inventory service url
-      String inventoryServiceUrl = mockWebServer.url("/api/v1").toString();
-      System.out.println("Injected Inventory Service Url: " + inventoryServiceUrl);
-      registry.add("api.endpoint.base-url", () -> inventoryServiceUrl);
-    }
+    private static final String INVENTORY_BASE_API_URL = "/inventory/";
 
     //TODO: Fix the GET request to the inventory service
+    /**IMPORTANT NOTE:
+     * This test still has some issues with the GET request to the inventory service and
+     * the DELETE request to the inventory service. But it still works.
+     *
+     */
+
     @Test
     void testDeleteProductWithInventory() throws Exception {
       var productDetails = createProduct();
@@ -439,35 +444,36 @@ public class ProductControllerIntegrationTest {
       var reservedQuantity = 5;
 
       //mock the GET request to the inventory service
-      String getInventoryResponse = """
-      {
-      "flag": true,
-      "message": "Get Inventory Success",
-      "data": {
-              "inventoryId": %d,
-              "productId": "%s",
-              "reservedQuantity": %d
-              }
-            }"""
-              .formatted(inventoryId, productId, reservedQuantity);
+      WireMock.stubFor(WireMock.get(WireMock.urlEqualTo(INVENTORY_BASE_API_URL + "internal/product/" + productId))
+              .willReturn(WireMock.okJson(String.format("""
+                      {
+                      flag": true,
+                      "message": "Inventory with productId retrieved successfully",
+                      "data": {"inventoryId": %d, "productId": "%s", "reservedQuantity": %d},
+                      "code": 200
+                      }
+                      """, inventoryId, productId, reservedQuantity))));
 
-      mockWebServer.enqueue(new MockResponse()
-              .setBody(getInventoryResponse)
-              .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE));
-
-      //mock the delete request to the inventory service
-      mockWebServer.enqueue(new MockResponse()
-              .setBody("{\"flag\":true,\"message\":\"Delete One Success\"}")
-              .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE));
-
-      //Delete the product
-      mockMvc.perform(delete(API_URL + "/product/delete/with-inventory/" + productId))
+      //mock the DELETE request to the inventory service
+      WireMock.stubFor(WireMock.delete(WireMock.urlEqualTo(INVENTORY_BASE_API_URL  + inventoryId))
+              .willReturn(WireMock.okJson("""
+                      {
+                      "flag": true,
+                      "message": "Inventory deleted successfully",
+                      "data": null,
+                      "code": 200
+                      }
+                      """)));
+      // Perform the delete product with inventory request
+      mockMvc.perform(delete(API_URL + "/product/delete/with-inventory/" + productId)
+                      .contentType(MediaType.APPLICATION_JSON))
               .andExpect(jsonPath("$.flag").value(true))
               .andExpect(jsonPath("$.message").value("Delete One Success"));
 
+        }
     }
   }
 
 
 
-}
+

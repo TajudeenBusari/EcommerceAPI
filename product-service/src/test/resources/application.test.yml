@@ -1,30 +1,31 @@
 #This file will be used to run integration tests configuration
-server:
-  port: 9095
-spring:
-  application:
-    name: product-service
-  profiles:
-    active: test
-  datasource:
-    url: ${POSTGRES_URL} #Dynamically set by the test container.
-    username: testuser #Dynamically set by the test container.
-    password: testpassword #Dynamically set by the test container.
-    driver-class-name: org.postgresql.Driver
-  redis:
-    host: ${REDIS_HOST} #Dynamically set by the test container.
-    port: ${REDIS_PORT} #Dynamically set by the test container.
-    cache-prefix: product-service
-  cache:
-    type: REDIS
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-inventory-service:
-  url: http://localhost:9096/api/v1 # mock web service URL
-  #url: http://inventory-service/api/v1 # mock web service URL
-  timeout: 5000 # Timeout for the Inventory Service calls
+#These properties have already been defined in the TestPropertySource in the main test class
+#server:
+#  port: 9095
+#spring:
+#  application:
+#    name: product-service
+#  profiles:
+#    active: test
+#  datasource:
+#    url: ${POSTGRES_URL} #Dynamically set by the test container.
+#    username: testuser #Dynamically set by the test container.
+#    password: testpassword #Dynamically set by the test container.
+#    driver-class-name: org.postgresql.Driver
+#  redis:
+#    host: ${REDIS_HOST} #Dynamically set by the test container.
+#    port: ${REDIS_PORT} #Dynamically set by the test container.
+#    cache-prefix: product-service
+#  cache:
+#    type: REDIS
+#  jpa:
+#    hibernate:
+#      ddl-auto: create-drop
+#    show-sql: true
+#inventory-service:
+#  url: http://localhost:9096/api/v1 # mock web service URL
+#  #url: http://inventory-service/api/v1 # mock web service URL
+#  timeout: 5000 # Timeout for the Inventory Service calls
 
 
 
