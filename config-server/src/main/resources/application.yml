@@ -7,7 +7,8 @@ spring:
         config:
             server:
                 git:
-                    uri: https://github.com/TajudeenBusari/EcommerceAPI
+                    #uri: https://github.com/TajudeenBusari/EcommerceAPI #not used anymore
+                    uri: https://github.com/TajudeenBusari/ecommerce-configurations.git #submodule of ecommerce-microservices
                     search-paths: applicationsConfiguration
                     clone-on-start: true
                     default-label: master
@@ -24,3 +25,5 @@ eureka:
     instance:
         prefer-ip-address: true
         instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+#the config server has been updated to use the configuration from ecommerce-configurations repository which
+#is a submodule of the ecommerce-microservices repository
