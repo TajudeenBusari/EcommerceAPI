@@ -194,23 +194,15 @@
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 
-		<!-- WireMock Dependency -->
-		<dependency>
-			<groupId>org.wiremock</groupId>
-			<artifactId>wiremock</artifactId>
-			<version>3.0.1</version>
-			<scope>test</scope>
-		</dependency>
-
 		<!--MockWbServer dependency is designed only for testing, keep it under scope
 		It spins up local HTTP Server, you can queue response on and
 		verify requests made to it-perfect for integration test service to service communication -->
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>mockwebserver</artifactId>
-			<version>5.0.0-alpha.14</version>
-			<scope>test</scope>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.squareup.okhttp3</groupId>-->
+<!--			<artifactId>mockwebserver</artifactId>-->
+<!--			<version>5.0.0-alpha.14</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
 
 <!--		&lt;!&ndash; JavaTime dependency to deserialize LocalDate &ndash;&gt;-->
 <!--		<dependency>-->
@@ -218,6 +210,12 @@
 <!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
 <!--			<version>2.18.2</version>-->
 <!--		</dependency>-->
+		<!-- WireMock Dependency -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
+			<scope>test</scope>
+		</dependency>
 
 	</dependencies>
 

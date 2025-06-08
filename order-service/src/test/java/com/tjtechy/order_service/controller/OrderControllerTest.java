@@ -136,7 +136,7 @@ class OrderControllerTest {
             new OrderItemDto(UUID.randomUUID(), "PRODUCT2", 20)
 
     );
-    //create a create order dto
+    //create a createOrder dto
     CreateOrderDto createOrderDto = new CreateOrderDto();
     createOrderDto.setCustomerName("customer1 name");
     createOrderDto.setCustomerEmail("customer1@email.com");
@@ -144,7 +144,6 @@ class OrderControllerTest {
     createOrderDto.setOrderItems(orderItemDtos);
 
     var json = objectMapper.writeValueAsString(createOrderDto);
-
 
     //mock the save order of the order service
     var savedOrder = new Order();

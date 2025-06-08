@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) //prevents the test from using an embedded database
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc //enables MockMvc for testing the controller
 @Tag("InventoryControllerIntegrationTest")
 @ActiveProfiles("test")
 @TestPropertySource(properties = {

@@ -5,7 +5,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class InventoryServiceConfig {
-  @Value("${api.endpoint.base-url}")
+ @Value("${api.endpoint.base-url}")
+  //@Value("${inventory.service.base-url}")
   private String baseUrl;
   public String getBaseUrl() {
     return baseUrl;

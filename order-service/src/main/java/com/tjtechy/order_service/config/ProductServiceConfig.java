@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 //@ConfigurationProperties(prefix = "api.endpoint")
 public class  ProductServiceConfig {
   @Value("${api.endpoint.base-url}")
+  //@Value("${product.service.base-url}")
   private String baseUrl;
 
   public String getBaseUrl() {
