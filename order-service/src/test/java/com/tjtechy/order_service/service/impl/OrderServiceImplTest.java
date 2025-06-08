@@ -1,9 +1,8 @@
 package com.tjtechy.order_service.service.impl;
 
-import com.tjtechy.ProductDto;
-import com.tjtechy.Result;
-import com.tjtechy.StatusCode;
+import com.tjtechy.*;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
+import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.OrderItem;
@@ -20,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -43,19 +43,11 @@ class OrderServiceImplTest {
 
   @Mock
   private ProductServiceConfig productServiceConfig;
+
+  @Mock
+  private InventoryServiceConfig inventoryServiceConfig;
+
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImplTest.class);
-//
-//  @Mock
-//  private WebClient webClient;
-//
-//  @Mock
-//  private WebClient.ResponseSpec responseSpec;
-//
-//  @Mock
-//  private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
-//
-//  @Mock
-//  private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
 
 
   @InjectMocks
@@ -151,6 +143,8 @@ class OrderServiceImplTest {
   @Test
   void createOrderReactivelySuccess() {
     //Given
+
+    //Get product logic
     var productId1 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
     var productId2 = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
 
@@ -160,7 +154,7 @@ class OrderServiceImplTest {
             new OrderItem(null, productId2, null, null, 3)
     ));
 
-    //mock product response
+    //1.mock product response
     ProductDto productDto1 = new ProductDto(
             productId1,
             "PRODUCT1",
@@ -185,8 +179,29 @@ class OrderServiceImplTest {
     Result productDtoResult1 = new Result("Product retrieved successfully", true, productDto1, StatusCode.SUCCESS);
     Result productDtoResult2 = new Result("Product retrieved successfully", true, productDto2, StatusCode.SUCCESS);
 
+    //2.Deduct inventory logic
+    var deductInventoryDto1= new DeductInventoryRequestDto(productId1, 2);
+    var deductInventoryDto2= new DeductInventoryRequestDto(productId2, 3);
+
+    //mock inventory service response
+    InventoryDto inventoryDto1 = new InventoryDto(
+            1L,
+            productId1,
+            2
+    );
+    InventoryDto inventoryDto2 = new InventoryDto(
+            2L,
+            productId2,
+            3
+    );
+    Result inventoryDtoResult1 = new Result("Inventory deducted successfully", true, inventoryDto1, StatusCode.SUCCESS);
+    Result inventoryDtoResult2 = new Result("Inventory deducted successfully", true, inventoryDto2, StatusCode.SUCCESS);
+
+
     //mock product service config
     when(productServiceConfig.getBaseUrl()).thenReturn("/api/v1");
+    //mock inventory service config
+    when(inventoryServiceConfig.getBaseUrl()).thenReturn("/api/v1");
 
     //mock web client for first product
     WebClient webClient1 = mock(WebClient.class);
@@ -216,6 +231,25 @@ class OrderServiceImplTest {
     when(webClientBuilder.build())
             .thenReturn(webClient1)
             .thenReturn(webClient2);
+//TODO
+    //mock web client for deduct inventory for product 1
+    WebClient webClient3 = mock(WebClient.class);
+    WebClient.RequestHeadersUriSpec<?> patchUri1 = mock(WebClient.RequestHeadersUriSpec.class);
+    WebClient.RequestHeadersSpec<?> patchSpec1 = mock(WebClient.RequestHeadersSpec.class);
+    WebClient.RequestBodySpec patchRequestBodySpec1 = mock(WebClient.RequestBodySpec.class);
+    WebClient.ResponseSpec patchResponse1 = mock(WebClient.ResponseSpec.class);
+
+    //configure deduct inventory call
+    doReturn(patchUri1).when(webClient3).patch();
+    doReturn(patchSpec1).when(patchUri1).uri("http://inventory-service/api/v1/inventory/internal/deduct-reactive");
+    doReturn(patchSpec1).when(patchRequestBodySpec1).accept(MediaType.APPLICATION_JSON);
+    doReturn(patchSpec1).when(patchRequestBodySpec1).bodyValue(deductInventoryDto1);
+    doReturn(patchResponse1).when(patchRequestBodySpec1).retrieve();
+    when(patchResponse1.bodyToMono(Result.class)).thenReturn(Mono.just(inventoryDtoResult1));
+
+
+
+
 
 
     //mock repository save behaviour

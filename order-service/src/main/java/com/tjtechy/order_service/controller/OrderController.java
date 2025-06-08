@@ -25,7 +25,6 @@ public class OrderController {
   public OrderController(OrderService orderService) {
     this.orderService = orderService;}
 
-
   /**
    * This is the method to create order
    * Non-reactive method, blocking and synchronous

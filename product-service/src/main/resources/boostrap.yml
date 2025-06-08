@@ -3,12 +3,3 @@ spring:
     name: product-service
   config:
     import: optional:configserver:http://localhost:8888
-#  cloud:
-#    config:
-#      uri: http://localhost:8888
-#      fail-fast: true
-#logging:
-#  level:
-#    org.springframework.cloud: DEBUG
-#https://github.com/TajudeenBusari/EcommerceAPI/blob/master/applicationsConfiguration/product-service.yml
-#https://github.com/TajudeenBusari/EcommerceAPI/applicationsConfiguration/product-service.yml

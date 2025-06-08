@@ -1,2 +1,2 @@
 #All test profile configuration are already set with the TestPropertySource in the main test class,
-#so no need to set them here. Infact the yml file can be removed.
+#so no need to set them here. In fact the yml file can be removed.

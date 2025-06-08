@@ -1,10 +1,4 @@
-#server:
-#  port: 8082 #Optional: can be ovverriden by Config Server
-#spring:
-#  application:
-#    name: order-service # This name is used in WebClient URI
-#  #  config:
-#  #    import: optional:configserver:http://localhost:8888
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/ECommerce-Order-Service

@@ -99,7 +99,7 @@ public class OrderServiceImpl implements OrderService {
       //a. Call product service to get product details
       var productResponse = webClientBuilder.build()
               .get()
-              .uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)//Using service name from Eureka
+              .uri(productServiceConfig.getBaseUrl() + "/product/" + productId)//Using service name from Eureka
               .retrieve()
               .bodyToMono(Result.class)
               .block(); //block to wait for the response, can be replaced with async;
@@ -187,6 +187,7 @@ public class OrderServiceImpl implements OrderService {
               return webClientBuilder.build()
                       .get()
                       .uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)
+                      //.uri(productServiceConfig.getBaseUrl() + "/product/" + productId)
                       .retrieve()
                       .bodyToMono(Result.class)
                       .map(productResponse -> {
@@ -208,10 +209,12 @@ public class OrderServiceImpl implements OrderService {
                         }
 
 //                       TODO. Call inventory service to deduct stock
+                        //DONE: Call inventory service to deduct stock
                         var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
                         return webClientBuilder.build()
                                 .patch()
                                 .uri("http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "inventory/internal/deduct-reactive")
+                                //.uri(inventoryServiceConfig.getBaseUrl() + "inventory/internal/deduct-reactive")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(deductInventoryRequestDto)
                                 .retrieve()
