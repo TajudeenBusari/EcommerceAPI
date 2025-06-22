@@ -18,6 +18,4 @@ spring:
 logging:
   level:
     com.tjtechy.common-utils.RedisCacheConfig: INFO
-#api:
-#  endpoint:
-#    base-url: /api/v1
+

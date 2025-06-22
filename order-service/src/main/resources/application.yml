@@ -1,5 +1,5 @@
 server:
-  port: 8082 #Optional: can be ovverriden by Config Server
+  port: 8082 #Optional: can be overriden by Config Server
 spring:
   application:
     name: order-service # This name is used in WebClient URI
@@ -19,19 +19,7 @@ spring:
     level:
       org.hibernate.SQL: debug
       org.hibernate.type.descriptor.sql.BasicBinder: trace
-#api:
-#  endpoint:
-#      base-url: /api/v1
-##Register with Eureka service discovery
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8762/eureka/
-#    fetch-registry: true
-#    register-with-eureka: true
-#  instance:
-#    prefer-ip-address: true
-#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
 
 
 

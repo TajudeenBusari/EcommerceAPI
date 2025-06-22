@@ -144,6 +144,8 @@ public class ProductServiceImpl implements ProductService {
 
       //2.Trigger async call to inventory service to create inventory
       String inventoryServiceUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory";
+      //String inventoryServiceUrl = inventoryServiceConfig.getBaseUrl();
+
 
       //By default, when the product is created, the available stock is set to 1.
       var createInventoryDto = new CreateInventoryDto(
@@ -233,6 +235,7 @@ public class ProductServiceImpl implements ProductService {
 
       //1. Call the GET /inventory/product/{productId} endpoint to get the inventory ID
     String getInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/internal/product/" + productId;
+    //String getInventoryUrl = inventoryServiceConfig.getBaseUrl() + "/internal/product/" + productId;
       webClientBuilder.build()
               .get()
               .uri(getInventoryUrl)
@@ -254,6 +257,7 @@ public class ProductServiceImpl implements ProductService {
                   //2. Call PUT /inventory/internal/update/{inventoryId} endpoint to update the inventory
                   //Trigger async call to inventory service to update inventory
                   String updateInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/internal/update/" + inventoryId;
+                  //String updateInventoryUrl = inventoryServiceConfig.getBaseUrl() + "/internal/update/" + inventoryId;
                   return webClientBuilder.build()
                           .put()
                           .uri(updateInventoryUrl)
@@ -362,6 +366,7 @@ public class ProductServiceImpl implements ProductService {
             .orElseThrow(() -> new ProductNotFoundException(productId));
     //1. Call the GET /inventory/product/{productId} endpoint to get the inventory ID
     String getInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/internal/product/" + productId;
+    //String getInventoryUrl = inventoryServiceConfig.getBaseUrl() + "/internal/product/" + productId;
     webClientBuilder.build()
             .get()
             .uri(getInventoryUrl)
@@ -375,6 +380,7 @@ public class ProductServiceImpl implements ProductService {
 
                 //2. Call DELETE /inventory/{inventoryId} endpoint to delete the inventory
                 String deleteInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/" + inventoryId;
+                //String deleteInventoryUrl = inventoryServiceConfig.getBaseUrl() + "/inventory/" + inventoryId;
                 return webClientBuilder.build()
                         .delete()
                         .uri(deleteInventoryUrl)
@@ -428,6 +434,7 @@ public class ProductServiceImpl implements ProductService {
 
       //Step1. Call the GET /inventory/product/{productId} endpoint to get the inventory ID
       var getInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/internal/product/" + productId;
+      //var getInventoryUrl = inventoryServiceConfig.getBaseUrl() + "/internal/product/" + productId;
 
       webClientBuilder.build()
               .get()
@@ -442,6 +449,7 @@ public class ProductServiceImpl implements ProductService {
 
                   //Step2. Call DELETE /inventory/{inventoryId} endpoint to delete the inventory
                   var deleteInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/" + inventoryId;
+                  //var deleteInventoryUrl = inventoryServiceConfig.getBaseUrl() + "/inventory/" + inventoryId;
                   return webClientBuilder.build()
                           .delete()
                           .uri(deleteInventoryUrl)

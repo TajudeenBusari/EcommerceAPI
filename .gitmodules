@@ -1,3 +1,4 @@
 [submodule "applicationsConfiguration"]
 	path = applicationsConfiguration
 	url = https://github.com/TajudeenBusari/ecommerce-configurations.git
+	branch = master

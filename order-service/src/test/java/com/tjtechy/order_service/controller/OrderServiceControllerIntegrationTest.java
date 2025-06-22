@@ -130,7 +130,7 @@ public class OrderServiceControllerIntegrationTest {
 
   }
 
-  // Add your test methods here, using MockMvc or WebTestClient to test the OrderController
+
   @Test
   void testCreateOrderSuccess(WireMockRuntimeInfo wireMockRuntimeInfo) throws Exception {
     var productServiceBaseUrl = wireMockRuntimeInfo.getHttpBaseUrl() + "/api/v1/product";

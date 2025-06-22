@@ -100,6 +100,7 @@ public class OrderServiceImpl implements OrderService {
       var productResponse = webClientBuilder.build()
               .get()
               .uri(productServiceConfig.getBaseUrl() + "/product/" + productId)//Using service name from Eureka
+              //.uri(productServiceConfig.getBaseUrl() + "/" + productId)
               .retrieve()
               .bodyToMono(Result.class)
               .block(); //block to wait for the response, can be replaced with async;
@@ -187,7 +188,7 @@ public class OrderServiceImpl implements OrderService {
               return webClientBuilder.build()
                       .get()
                       .uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)
-                      //.uri(productServiceConfig.getBaseUrl() + "/product/" + productId)
+                      //.uri(productServiceConfig.getBaseUrl() + "/" + productId)
                       .retrieve()
                       .bodyToMono(Result.class)
                       .map(productResponse -> {
@@ -214,7 +215,7 @@ public class OrderServiceImpl implements OrderService {
                         return webClientBuilder.build()
                                 .patch()
                                 .uri("http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "inventory/internal/deduct-reactive")
-                                //.uri(inventoryServiceConfig.getBaseUrl() + "inventory/internal/deduct-reactive")
+                                //.uri(inventoryServiceConfig.getBaseUrl() + "/internal/deduct-reactive")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(deductInventoryRequestDto)
                                 .retrieve()
@@ -390,6 +391,7 @@ public class OrderServiceImpl implements OrderService {
                         return webClientBuilder.build()
                                 .get()
                                 .uri("http://product-service" + productServiceConfig.getBaseUrl() + "/product/" + productId)
+                                //.uri(productServiceConfig.getBaseUrl() + "/" + productId)
                                 .retrieve()
                                 .bodyToMono(Result.class)
                                 .map(result -> {
