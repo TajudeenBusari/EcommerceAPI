@@ -209,6 +209,98 @@ class ProductControllerTest {
   }
 
   /**
+   * Test for {@link ProductController#addProductWithInventory(CreateProductDto)} POST /api/v1/product/with-inventory
+   * <p> Verifies that the addProductWithInventory method returns a product with inventory. </p>
+   */
+  @Test
+  @DisplayName("Test for addProduct() with inventory POST /api/v1/product/with-inventory")
+  void testAddProductSuccessWithInventory() throws Exception {
+    //given
+    var createRequest = new CreateProductDto(
+            "Product 1",
+            "product 1 description",
+            "Category 1",
+            100,
+            10,
+            new BigDecimal("100.0"),
+            LocalDate.of(2024, 10, 10), //manufactured date
+            LocalDate.of(2026, 9, 5)); //expiry date
+
+    var json = objectMapper.writeValueAsString(createRequest);
+
+    //mock the saveProduct method of the service class
+    given(productService.saveProductWithInventory(any(Product.class))).willReturn(new Product(UUID.randomUUID(),
+            "Product 1",
+            "product 1 description",
+            new BigDecimal("100.0"),
+            100,
+            "Category 1",
+            10,
+            LocalDate.of(2026, 9, 5),//expiry date
+            LocalDate.of(2024, 10, 10),//manufactured date
+            LocalDate.of(2026, 9, 5)));//updated date
+
+    //when and then
+    mockMvc.perform(post(baseUrl + "/product/with-inventory")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json)
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("Add One Success"))
+            .andExpect(jsonPath("$.flag").value(true))
+            .andExpect(jsonPath("$.data.productId").isNotEmpty())
+            .andExpect(jsonPath("$.data.productName").value("Product 1"))
+            .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
+            .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
+            .andExpect(jsonPath("$.data.productQuantity").value(100))
+            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.expiryDate").value("2026-09-05"));
+  }
+
+  @Test
+  @DisplayName("Test for addProduct() with inventory using externalized service POST /api/v1/product/with-inventory/externalized")
+  void testAddProductSuccessWithExternalizedService() throws Exception {
+    //given
+    var createRequest = new CreateProductDto(
+            "Product 1",
+            "product 1 description",
+            "Category 1",
+            100,
+            10,
+            new BigDecimal("100.0"),
+            LocalDate.of(2024, 10, 10), //manufactured date
+            LocalDate.of(2026, 9, 5)); //expiry date
+
+    var json = objectMapper.writeValueAsString(createRequest);
+
+    //mock the saveProduct method of the service class
+    given(productService.saveProductWithInventoryUsingExternalizedService(any(Product.class))).willReturn(new Product(UUID.randomUUID(),
+            "Product 1",
+            "product 1 description",
+            new BigDecimal("100.0"),
+            100,
+            "Category 1",
+            10,
+            LocalDate.of(2026, 9, 5),//expiry date
+            LocalDate.of(2024, 10, 10),//manufactured date
+            LocalDate.of(2026, 9, 5)));//updated date
+
+    //when and then
+    mockMvc.perform(post(baseUrl + "/product/with-inventory/externalized")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json)
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("Add One Success Using Externalized"))
+            .andExpect(jsonPath("$.flag").value(true))
+            .andExpect(jsonPath("$.data.productId").isNotEmpty())
+            .andExpect(jsonPath("$.data.productName").value("Product 1"))
+            .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
+            .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
+            .andExpect(jsonPath("$.data.productQuantity").value(100))
+            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.expiryDate").value("2026-09-05"));
+  }
+
+  /**
    * Test for {@link ProductController#updateProduct(UUID, UpdateProductDto)} PUT /api/v1/product/{productId} success
    * <p> Verifies that the updateProduct method returns a success. </p>
    */

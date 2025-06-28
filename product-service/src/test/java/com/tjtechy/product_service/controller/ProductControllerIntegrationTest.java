@@ -417,6 +417,21 @@ public class ProductControllerIntegrationTest {
             .andExpect(jsonPath("$.message").value("Delete One Success"));
   }
 
+  @Test
+  @DisplayName("Check AddProductWithInventoryExternalized (POST /api/v1/product/with-inventory/externalized)")
+  void testAddProductWithInventoryExternalizedSuccess() throws Exception {
+    var createProductDto = new CreateProductDto(
+            "Product 1 Externalized",
+            "Product 1 description Externalized",
+            "Product 1 category Externalized",
+            10,
+            10,
+            BigDecimal.valueOf(1000.00),
+            LocalDate.now(),
+            LocalDate.now().plusYears(1));
+    var json = objectMapper.writeValueAsString(createProductDto);//convert to JSON string
+  }
+
 
   /**This is a nested class to test the delete product with inventory endpoint
    * It has it own configuration for the inventory service and uses the WireMock server

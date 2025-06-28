@@ -11,7 +11,7 @@ public class InventoryServiceConfig {
    * This class is used to configure the inventory service.
    * It contains the base URL of the inventory service.
    */
-  //@Value("${api.endpoint.base-url}")
+  @Value("${api.endpoint.base-url}")
  //@Value("${inventory.service.base-url}")
 
   private String baseUrl;
