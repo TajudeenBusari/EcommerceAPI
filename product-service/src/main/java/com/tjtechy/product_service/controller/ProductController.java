@@ -26,6 +26,7 @@ public class ProductController {
   private final ProductService productService;
 
   public ProductController(ProductService productService) {
+
     this.productService = productService;
   }
 
@@ -85,6 +86,15 @@ public class ProductController {
     return new Result("Add One Success", true, savedProductDto, StatusCode.SUCCESS);
   }
 
+  @PostMapping("/with-inventory/externalized")
+  public Result addProductWithInventoryUsingExternalizedService(@Valid @RequestBody CreateProductDto createProductDto){
+    var product = ProductMapper.mapFromCreateProductDtoToProduct(createProductDto);
+    var savedProduct = productService.saveProductWithInventoryUsingExternalizedService(product);
+    //map to dto
+    var savedProductDto = ProductMapper.mapFromProductToProductDto(savedProduct);
+    return new Result("Add One Success Using Externalized", true, savedProductDto, StatusCode.SUCCESS);
+  }
+
   @PutMapping("/{productId}/with-inventory")
   public Result updateProductWithInventory(@PathVariable UUID productId, @Valid @RequestBody UpdateProductDto updateProductDto){
     var product = ProductMapper.mapFromUpdateProductDtoToProduct(updateProductDto);
@@ -92,6 +102,22 @@ public class ProductController {
     //map to dto
     var updatedProductDto = ProductMapper.mapFromProductToProductDto(updatedProduct);
     return new Result("Update One Success", true, updatedProductDto, StatusCode.SUCCESS);
+  }
+
+  /**
+   * Endpoint to update an existing product with inventory using an externalized service.
+   *
+   * @param productId the UUID of the product to update
+   * @param updateProductDto the DTO containing the updated product details
+   * @return a Result object containing the updated product details
+   */
+  @PutMapping("/{productId}/with-inventory/externalized")
+  public Result updateProductWithInventoryUsingExternalizedService(@PathVariable UUID productId, @Valid @RequestBody UpdateProductDto updateProductDto){
+    var product = ProductMapper.mapFromUpdateProductDtoToProduct(updateProductDto);
+    var updatedProduct = productService.updateProductWithInventoryUsingExternalizedService(productId, product);
+    //map to dto
+    var updatedProductDto = ProductMapper.mapFromProductToProductDto(updatedProduct);
+    return new Result("Update One Success Using Externalized", true, updatedProductDto, StatusCode.SUCCESS);
   }
 
   /**
@@ -149,10 +175,22 @@ public class ProductController {
     productService.deleteProductWithInventory(productId);
     return new Result("Delete One Success", true, null, StatusCode.SUCCESS);
   }
+  @DeleteMapping("/delete/with-inventory/externalized/{productId}")
+  public Result deleteProductWithInventoryUsingExternalizedService(@PathVariable UUID productId){
+    productService.deleteProductWithInventoryUsingExternalizedService(productId);
+    return new Result("Delete One Success Using Externalized", true, null, StatusCode.SUCCESS);
+  }
+
   @DeleteMapping("/bulk-delete/with-inventory")
   public Result bulkDeleteProductsWithInventories(@RequestBody List<UUID> productIds){
     productService.bulkDeleteProductsWithInventories(productIds);
     return new Result("Bulk Delete With Inventories Success", true, null, StatusCode.SUCCESS);
+  }
+
+  @DeleteMapping("/bulk-delete/with-inventory/externalized")
+  public Result bulkDeleteProductsWithInventoryExternalized(@RequestBody List<UUID> productIds){
+    productService.bulkDeleteProductsWithInventoriesUsingExternalizedService(productIds);
+    return new Result("Bulk Delete With Inventories Using Externalized Success", true, null, StatusCode.SUCCESS);
   }
 
 

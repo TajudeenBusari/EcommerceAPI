@@ -10,13 +10,17 @@ public interface ProductService {
   Product getProductById(UUID productId);
   Product saveProduct(Product product);
   Product saveProductWithInventory(Product product);
+  Product saveProductWithInventoryUsingExternalizedService(Product product);
   Product updateProduct(UUID productId, Product product);
   Product updateProductWithInventory(UUID productId, Product product);
+  Product updateProductWithInventoryUsingExternalizedService(UUID productId, Product product);
   void deleteProduct(UUID productId);
   void clearAllCache();
   void bulkDeleteProducts(List<UUID> productIds);
   void deleteProductWithInventory(UUID productId);
+  void deleteProductWithInventoryUsingExternalizedService(UUID productId);
   void bulkDeleteProductsWithInventories(List<UUID> productIds);
+  void bulkDeleteProductsWithInventoriesUsingExternalizedService(List<UUID> productIds);
 
 
 }

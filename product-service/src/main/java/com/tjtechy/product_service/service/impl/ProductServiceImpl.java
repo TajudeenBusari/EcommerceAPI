@@ -7,6 +7,7 @@
 package com.tjtechy.product_service.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.*;
+import com.tjtechy.client.InventoryServiceClient;
 import com.tjtechy.product_service.config.InventoryServiceConfig;
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.repository.ProductRepository;
@@ -29,19 +30,21 @@ import java.util.UUID;
 /**
  * This class is the implementation of the ProductService interface.
  */
-@Service //create a bean of this class
+@Service //create a bean of this class and //register it in the Spring context
 public class ProductServiceImpl implements ProductService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
     private final ProductRepository productRepository;
     private final InventoryServiceConfig inventoryServiceConfig;
     private final WebClient.Builder webClientBuilder;
+    private final InventoryServiceClient inventoryServiceClient;
 
-  public ProductServiceImpl(ProductRepository productRepository, InventoryServiceConfig inventoryServiceConfig, WebClient.Builder webClientBuilder) {
+  public ProductServiceImpl(ProductRepository productRepository, InventoryServiceConfig inventoryServiceConfig, WebClient.Builder webClientBuilder, InventoryServiceClient inventoryServiceClient) {
 
     this.productRepository = productRepository;
     this.inventoryServiceConfig = inventoryServiceConfig;
     this.webClientBuilder = webClientBuilder;
+    this.inventoryServiceClient = inventoryServiceClient;
   }
 
   /**
@@ -130,6 +133,8 @@ public class ProductServiceImpl implements ProductService {
      * to create an inventory for the product in the inventory-service.
      * When a product is created, the available stock is set to 1 by default.
      * The other fields of the product are set to the values provided in the product object.
+     * This method is deprecated and should be replaced with
+     * {@link #saveProductWithInventoryUsingExternalizedService(Product)}.
      * <p>
      * At the moment, cache is not used for this method.
      * </p>
@@ -138,6 +143,7 @@ public class ProductServiceImpl implements ProductService {
      * @return the saved {@link Product} entity.
      */
     @Override
+    @Deprecated
     public Product saveProductWithInventory(Product product) {
       //1.save the product to the database
       var savedProduct = productRepository.save(product);
@@ -175,6 +181,46 @@ public class ProductServiceImpl implements ProductService {
               });
 
       // Return the saved product regardless of the inventory creation outcome
+    return savedProduct;
+  }
+
+  /**
+   * Saves a product to the database and triggers an asynchronous call to the inventory service
+   * using an externalized Inventory service to create an inventory for the product in the inventory-service.
+   * When a product is created, the available stock is set to 1 by default.
+   * The other fields of the product are set to the values provided in the product object.
+   * <p>
+   * At the moment, cache is not used for this method.
+   * </p>
+   *
+   * @param product the {@link Product} entity to save.
+   * @return the saved {@link Product} entity.
+   */
+  @Override
+  public Product saveProductWithInventoryUsingExternalizedService(Product product) {
+
+    //1.save the product to the database
+    var savedProduct = productRepository.save(product);
+
+    //2.Trigger async call to inventory service to create inventory using the externalized inventory service
+    //By default, when the product is created, the available stock is set to 1.
+    /*TODO: The CreateInventoryDto should be externalized from the product-service
+     *To ensure that the separation of concerns is maintained
+     *Product-Service should not have too much knowledge of the Inventory-service.
+     *This can be done by changing the parameter of the createInventoryForProductAsync method
+     *to accept Product (you need to add product-service module as dependency to the common-module
+     * or move the Product class to the common module)
+     * object instead of CreateInventoryDto and create an instance of
+     * CreateInventoryDto in the InventoryServiceClient class.
+    */
+
+    var createInventoryDto = new CreateInventoryDto(
+            savedProduct.getProductId(),
+            savedProduct.getAvailableStock(),
+            1
+    );
+    inventoryServiceClient.createInventoryForProductAsync(createInventoryDto);
+
     return savedProduct;
   }
 
@@ -253,7 +299,6 @@ public class ProductServiceImpl implements ProductService {
                           updatedProduct.getAvailableStock(),
                           1
                   );
-
                   //2. Call PUT /inventory/internal/update/{inventoryId} endpoint to update the inventory
                   //Trigger async call to inventory service to update inventory
                   String updateInventoryUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/internal/update/" + inventoryId;
@@ -286,6 +331,46 @@ public class ProductServiceImpl implements ProductService {
     return updatedProduct;
   }
 
+  @Override
+  public Product updateProductWithInventoryUsingExternalizedService(UUID productId, Product product) {
+    var foundProduct = productRepository.findById(productId)
+            .orElseThrow(() -> new ProductNotFoundException(productId));
+    foundProduct.setProductName(product.getProductName());
+    foundProduct.setProductCategory(product.getProductCategory());
+    foundProduct.setProductDescription(product.getProductDescription());
+    foundProduct.setProductPrice(product.getProductPrice());
+    foundProduct.setProductQuantity(product.getProductQuantity());
+    foundProduct.setAvailableStock(product.getAvailableStock());
+    var updatedProduct = productRepository.save(foundProduct);
+
+    //1. Call the GET /inventory/internal/product/{productId} endpoint to get the inventory ID
+    inventoryServiceClient.getInventoryByProductId(productId)
+            .flatMap(inventoryDto -> {
+              var inventoryId = inventoryDto.inventoryId();
+
+              var updateInventoryDto = new UpdateInventoryDto(
+                      updatedProduct.getProductId(),
+                      updatedProduct.getAvailableStock(),
+                      1
+              );
+              //2. Call PUT /inventory/internal/update/{inventoryId} endpoint to update the inventory
+              return inventoryServiceClient.updateInventory(inventoryId, updateInventoryDto);
+            })
+            .subscribe(response -> {
+              if (response != null && response.isFlag()) {
+                logger.info("*******Inventory is updated successfully for product {}*******", updatedProduct.getProductId());
+              } else {
+                logger.warn("*******Inventory update returns a failure response for product {}: {}*******",
+                        updatedProduct.getProductId(), response != null ? response.getMessage() : "No message");
+              }
+            }, error -> {
+              logger.error("*******Error occurred while updating inventory for a product {}: {}*******",
+                      updatedProduct.getProductId(), error.getMessage());
+            });
+
+    // Return the updated product regardless of the inventory update outcome
+    return updatedProduct;
+  }
 
   /**
      * Deletes a product with the specified ID.
@@ -360,6 +445,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
+  @CacheEvict(value = "product", key = "#productId") //delete cache with key as id
   public void deleteProductWithInventory(UUID productId) {
 
     productRepository.findById(productId)
@@ -408,6 +494,38 @@ public class ProductServiceImpl implements ProductService {
             })
             .subscribe();
   }
+
+  @Override
+  @CacheEvict(value = "product", key = "#productId") //delete cache with key as id
+  public void deleteProductWithInventoryUsingExternalizedService(UUID productId) {
+    productRepository.findById(productId).
+            orElseThrow(() -> new ProductNotFoundException(productId));
+    //1. Call the GET /inventory/internal/product/{productId} endpoint to get the inventory ID
+    inventoryServiceClient.getInventoryByProductId(productId)
+            .flatMap(inventoryDto -> {
+              var inventoryId = inventoryDto.inventoryId();
+              //2. Call DELETE /inventory/{inventoryId} endpoint to delete the inventory
+              return inventoryServiceClient.deleteInventory(inventoryId);
+
+            })
+            .doOnError(error ->
+                    logger.error("Error happens while deleting inventory for product {}: {}", productId, error.getMessage()))
+            .doOnSuccess(response -> {
+              if (response != null && response.isFlag()) {
+                logger.info("*******Inventory delete is successfully for product {}*******", productId);
+              } else {
+                logger.warn("*******Inventory delete returned a failure response for product {}: {}*******",
+                        productId, response != null ? response.getMessage() : "No message");
+              }
+            })
+    .doFinally(signal -> {;
+              // whatever happens, delete the product from the database
+              productRepository.deleteById(productId);
+              logger.info("*******Product {} delete is successful *******", productId);
+            })
+            .subscribe();
+  }
+
 
   @Override
   public void bulkDeleteProductsWithInventories(List<UUID> productIds) {
@@ -477,6 +595,52 @@ public class ProductServiceImpl implements ProductService {
                 logger.info("******Product {} deleted successfully *******", productId);
               })
               .subscribe();
+    }
+
+  }
+
+  /**
+   * @param productIds
+   */
+  @Override
+  public void bulkDeleteProductsWithInventoriesUsingExternalizedService(List<UUID> productIds) {
+    var products = productRepository.findAllById(productIds);
+    //1. extract all found product ids and collect them into a list
+    var foundProductIds = products.stream()
+            .map(Product::getProductId)
+            .toList();
+    //2.determine missing ids and collect them into a list
+    var missingIds = productIds.stream()
+            .filter(id -> !foundProductIds.contains(id))
+            .toList();
+    //3.throw exception if there are missing ids
+    if (!missingIds.isEmpty()) {
+      throw new ProductNotFoundException(missingIds);
+    }
+    //4.proceed to delete only found inventories and products
+    for(Product product: products){
+      //Step1. Call the GET /inventory/internal/product/{productId} endpoint to get the inventory ID
+      inventoryServiceClient.getInventoryByProductId(product.getProductId())
+              .flatMap(inventoryDto -> {
+                var inventoryId = inventoryDto.inventoryId();
+                //Step2. Call DELETE /inventory/{inventoryId} endpoint to delete the inventory
+                return inventoryServiceClient.deleteInventory(inventoryId);
+              })
+              .doOnError(error ->
+                      logger.error("Error  deleting inventory for product {}: {}", product.getProductId(), error.getMessage()))
+              .doOnSuccess(response -> {
+                if (response != null && response.isFlag()) {
+                  logger.info("******Inventory delete successfully for product {}*******", product.getProductId());
+                } else {
+                  logger.warn("******Fail to delete inventory for product {}: {}*******",
+                          product.getProductId(), response != null ? response.getMessage() : "No message");
+                }
+              })
+              .doFinally(signal -> {
+                // whatever happens, delete the products from the database
+                productRepository.deleteById(product.getProductId());
+                logger.info("******Product {} delete successfully *******", product.getProductId());
+              }).subscribe();
     }
 
   }

@@ -7,6 +7,7 @@
 package com.tjtechy.product_service.service.impl;
 
 import com.tjtechy.*;
+import com.tjtechy.client.InventoryServiceClient;
 import com.tjtechy.product_service.config.InventoryServiceConfig;
 import com.tjtechy.product_service.entity.Product;
 import com.tjtechy.product_service.repository.ProductRepository;
@@ -50,6 +51,9 @@ class ProductServiceImplTest {
 
   @Mock
   private WebClient.Builder webClientBuilder;
+
+  @Mock
+  private InventoryServiceClient inventoryServiceClient;
 
 
   @InjectMocks
@@ -232,6 +236,8 @@ class ProductServiceImplTest {
     verify(productRepository, times(1)).save(product);
   }
 
+
+
   /**
    * Test for {@link ProductServiceImpl#saveProductWithInventory(Product)}
    * <p>This test case verifies that the saveProductWithInventory method saves a product and creates inventory successfully.</p>
@@ -311,6 +317,90 @@ class ProductServiceImplTest {
     assertEquals(product.getProductId(), result.getProductId());
     assertEquals(product.getProductName(), result.getProductName());
 
+  }
+
+  /**
+   * Test for {@link ProductServiceImpl#saveProductWithInventoryUsingExternalizedService(Product)}
+   * <p>This test case verifies that the saveProductWithInventoryUsingExternalizedService method saves a product and creates inventory successfully.</p>
+   * <ul>
+   *   <li>Mocks the product repository to return the saved product.</li>
+   *   <li>Mimics the external service, the inventory service to return a success response.</li>
+   * </ul>
+   * <b>Mocks used:</b>
+   * <ul>
+   *   <li>{@code productRepository}</li>
+   *   <li>{@code inventoryServiceClient}</li>
+   * </ul>
+   * <b>Verifies:</b>
+   * <ul>
+   *   <li>{@code save} is called once</li>
+   * </ul>
+   * <b>Assertions:</b>
+   * <ul>
+   *   <li>Asserts that the returned product is not null and has the expected values.</li>
+   * </ul>
+   */
+  @Test
+  @DisplayName("Test for saveProduct method using externalized service")
+  void testSaveProductWithInventoryUsingExternalizedServiceSuccess() {
+    // Given
+    var product = productList.get(0);
+
+    given(productRepository.save(any(Product.class))).willReturn(product);
+
+    //mock the inventory service client
+    doNothing().when(inventoryServiceClient).createInventoryForProductAsync(any(CreateInventoryDto.class));
+
+
+    // When
+    Product savedProduct = productService.saveProductWithInventoryUsingExternalizedService(product);
+
+    // Then
+    assertNotNull(savedProduct);
+    verify(productRepository, times(1)).save(product);
+    assertEquals(product.getProductId(), savedProduct.getProductId());
+
+  }
+
+  /**
+   * Test for {@link ProductServiceImpl#saveProductWithInventoryUsingExternalizedService(Product)}
+   * <p>This test case verifies that the saveProductWithInventoryUsingExternalizedService method throws an error when the inventory service is down.</p>
+   * <ul>
+   *   <li>Mocks the product repository to return the saved product.</li>
+   *   <li>Mimics the external service, the inventory service to throw an exception.</li>
+   * </ul>
+   * <b>Mocks used:</b>
+   * <ul>
+   *   <li>{@code productRepository}</li>
+   *   <li>{@code inventoryServiceClient}</li>
+   * </ul>
+   * <b>Verifies:</b>
+   * <ul>
+   *   <li>{@code save} is called once</li>
+   * </ul>
+   * <b>Assertions:</b>
+   * <ul>
+   *   <li>Asserts that the exception is thrown.</li>
+   * </ul>
+   */
+  @Test
+  @DisplayName("Test for saveProductWithInventoryUsingExternalizedService method when inventory service is down")
+  void testSaveProductWithInventoryUsingExternalizedServiceWhenInventoryServiceIsDown() {
+    // Given
+    var product = productList.get(0);
+
+    given(productRepository.save(any(Product.class))).willReturn(product);
+
+    //mock the inventory service client to throw an exception
+    doThrow(new RuntimeException("Inventory service is down")).when(inventoryServiceClient).createInventoryForProductAsync(any(CreateInventoryDto.class));
+
+    // When
+    Exception exception = assertThrows(RuntimeException.class, () -> productService.saveProductWithInventoryUsingExternalizedService(product));
+
+    // Then
+    assertNotNull(exception);
+    assertEquals("Inventory service is down", exception.getMessage());
+    verify(productRepository, times(1)).save(product);
   }
 
   /**
@@ -588,7 +678,6 @@ class ProductServiceImplTest {
     when(getResponseSpec.bodyToMono(Result.class)).thenReturn(Mono.just(getInventoryResult));
 
 
-
     // Mock WebClient behavior for PUT /inventory/internal/update/{inventoryId}
     doReturn(putRequestBodyUriSpec).when(webClient).put();
     doReturn(putRequestBodySpec).when(putRequestBodyUriSpec).uri("http://inventory-service/api/v1/inventory/internal/update/" + inventoryDto.inventoryId());
@@ -606,6 +695,113 @@ class ProductServiceImplTest {
     verify(productRepository, times(1)).findById(productId);
     verify(productRepository, times(1)).save(productList.get(0));
     verify(webClientBuilder, times(2)).build(); //GET and PUT
+  }
+
+  /**
+   * Test for {@link ProductServiceImpl#updateProductWithInventoryUsingExternalizedService(UUID, Product)}
+   * <p>This test case verifies that the updateProductWithInventoryUsingExternalizedService method updates a product successfully.</p>
+   * <ul>
+   *   <li>Mocks the product repository to return an existing product.</li>
+   *   <li>Mocks the product repository to return the updated product.</li>
+   *   <li>Mimics the external service, the inventory service to return a success response.</li>
+   * </ul>
+   */
+  @Test
+  @DisplayName("Test for updateProductWithInventoryUsingExternalizedService method")
+  void testUpdateProductWithInventoryUsingExternalizedServiceSuccess(){
+    //Given
+    var product = productList.get(0);
+    var productId = productList.get(0).getProductId();
+    var updatedProduct = new Product( productId,
+            "Product 1 updated",
+            "product 1 description updated",
+            new BigDecimal("100.0"),
+            100,
+            "Category 1",
+            10,
+            LocalDate.of(2026, 10, 10),
+            LocalDate.of(2021, 9, 5),
+            LocalDate.of(2021, 9, 5));
+
+    given(productRepository.findById(productId)).willReturn(Optional.of(product));
+    given(productRepository.save(product)).willReturn(updatedProduct);
+
+    //mock the get inventory by product id
+    InventoryDto inventoryDto = new InventoryDto(
+            100L,
+            productId,
+            1
+    );
+    when(inventoryServiceClient.getInventoryByProductId(productId)).thenReturn(Mono.just(inventoryDto));
+
+    //mocks the inventory service client to update the inventory for the product
+    when(inventoryServiceClient.updateInventory(eq(inventoryDto.inventoryId()), any(UpdateInventoryDto.class)))
+            .thenReturn(Mono.just(new Result("Inventory updated successfully", true, inventoryDto, StatusCode.SUCCESS)));
+
+    //When
+    var result = productService.updateProductWithInventoryUsingExternalizedService(productId, updatedProduct);
+
+    //Then
+    assertNotNull(result);
+    assertEquals("Product 1 updated", result.getProductName());
+  }
+
+  /**
+   * Test for {@link ProductServiceImpl#updateProductWithInventory(UUID, Product)}
+   * <p>
+   *   This test case verifies that the updateProductWithInventory method updates a product successfully when the inventory is not found.
+   * </p>
+   * <ul>
+   *   <li>Mocks the repository to return an existing product.</li>
+   *   <li>Mocks the inventory service to throw an error when trying to retrieve inventory.</li>
+   * </ul>
+   *
+   * <b>Verifies:</b>
+   * <ul>
+   *   <li>{@code findById} is called once</li>
+   *   <li>{@code save }is called once</li>
+   * </ul>
+   *
+   * <b>Assertions:</b>
+   * <ul>
+   *    <li>Asserts that the returned product is not null and has the expected values.</li>
+   *    <li>Asserts that the product name is updated correctly.</li>
+   * </ul>
+   */
+  @Test
+  @DisplayName("Test for updateProductWithInventory method when inventory is not found")
+  void testUpdateProductWithInventoryNotFound(){
+    // Given
+    var productId = productList.get(0).getProductId();
+    var updatedProduct = new Product( UUID.randomUUID(),
+            "Product 1 updated",
+            "product 1 description updated",
+            new BigDecimal("100.0"),
+            100,
+            "Category 1",
+            10,
+            LocalDate.of(2026, 10, 10),
+            LocalDate.of(2021, 9, 5),
+            LocalDate.of(2021, 9, 5));
+    given(productRepository.findById(productId)).willReturn(Optional.of(productList.get(0)));
+    given(productRepository.save(productList.get(0))).willReturn(updatedProduct);
+
+    //mock inventory service to return an error when trying to retrieve inventory
+    InventoryDto inventoryDto = new InventoryDto(
+            100L,
+            productId,
+            1
+    );
+
+    //1. mock the inventory service getInventoryByProductId method to throw an error
+    when(inventoryServiceClient.getInventoryByProductId(productId)).thenReturn(Mono.error(new IllegalArgumentException("Failed to retrieve inventory for productId: " + productId)));
+    //2. No need to mock the updateInventory method as it won't be called in this case.
+
+    //When
+    var result = productService.updateProductWithInventoryUsingExternalizedService(productId, updatedProduct); //product gets updated even though inventory not found
+
+    //Then
+    assertNotNull(result);
   }
 
   /**
@@ -884,6 +1080,78 @@ class ProductServiceImplTest {
     //very GET And DELETE URLs were called
     verify(webClient).get();
     verify(webClient).delete();
+  }
+
+  /**
+   * Test for {@link ProductServiceImpl#deleteProductWithInventoryUsingExternalizedService(UUID)}
+   * <p>This test case verifies that the deleteProductWithInventoryUsingExternalizedService
+   * method deletes a product and its inventory successfully.</p>
+   * <ul>
+   *   <li>Mocks the product repository to return an existing product.</li>
+   *   <li>Mimics the external service, the inventory service to return a success response.</li>
+   * </ul>
+   *
+   */
+  @Test
+  @DisplayName("Test for deleteProductWithInventoryExternalized method Success")
+  void testDeleteProductWithInventoryExternalizedSuccess(){
+    //Given
+    var productId = productList.get(0).getProductId();
+
+    InventoryDto inventoryDto = new InventoryDto(
+            null,
+            productId,
+            10
+    );
+    //mock the product repository to return an existing product
+    given(productRepository.findById(productId)).willReturn(Optional.of(productList.get(0)));
+
+    //mock the inventory service client to return an inventory by product id
+    when(inventoryServiceClient.getInventoryByProductId(productId)).thenReturn(Mono.just(inventoryDto));
+
+    //mock the inventory service client to delete the inventory by inventory id
+    when(inventoryServiceClient.deleteInventory(inventoryDto.inventoryId()))
+            .thenReturn(Mono.just(
+                    new Result("Inventory deleted successfully", true, null, StatusCode.SUCCESS)));
+    //When
+    productService.deleteProductWithInventoryUsingExternalizedService(productId);
+
+    //Then
+    verify(productRepository, times(1)).findById(productId);
+    verify(productRepository, times(1)).deleteById(productId);
+  }
+
+  /**
+   * Test for {@link ProductServiceImpl#bulkDeleteProductsWithInventoriesUsingExternalizedService(List<UUID>)}
+   * <p>This test case verifies that the bulkDeleteProductsWithInventoriesUsingExternalizedService method deletes products and their inventories successfully.</p>
+   * <ul>
+   *   <li>Mocks the product repository to return a list of products.</li>
+   *   <li>Mimics the external service, the inventory service to delete the inventory for each product.</li>
+   * </ul>
+   *
+   */
+  @Test
+  @DisplayName("Test for bulkDeleteProductSWithInventoryExternalized method Success")
+  void testBulkDeleteProductsWithInventoryExternalizedSuccess() {
+    // Given
+    List<UUID> productIds = Arrays.asList(productList.get(0).getProductId(), productList.get(1).getProductId());
+
+    // Mock the product repository to return the found products
+    given(productRepository.findAllById(productIds)).willReturn(productList);
+
+    // Mock the inventory service client to delete the inventory for each product
+    for (Product product : productList) {
+      InventoryDto inventoryDto = new InventoryDto(null, product.getProductId(), 10);
+      when(inventoryServiceClient.getInventoryByProductId(product.getProductId())).thenReturn(Mono.just(inventoryDto));
+      when(inventoryServiceClient.deleteInventory(inventoryDto.inventoryId()))
+              .thenReturn(Mono.just(new Result("Inventory deleted successfully", true, null, StatusCode.SUCCESS)));
+    }
+
+    // When
+    productService.bulkDeleteProductsWithInventoriesUsingExternalizedService(productIds);
+
+    // Then
+    verify(productRepository, times(1)).findAllById(productIds);
   }
 
   /**
