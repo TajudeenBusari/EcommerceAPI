@@ -23,6 +23,7 @@ public class InventoryController {
 
   private final InventoryService inventoryService;
   public InventoryController(InventoryService inventoryService) {
+
     this.inventoryService = inventoryService;
   }
 
@@ -127,6 +128,11 @@ public class InventoryController {
     return new Result("Inventory deleted successfully", true, null, StatusCode.SUCCESS);
   }
 
+  /**
+   * This method is used to bulk delete inventories by inventory ids.
+   * @param inventoryIds
+   * @return Result {@link Result}
+   */
   @DeleteMapping("/bulk-delete")
   public Result bulkDeleteInventories(@RequestBody List<Long> inventoryIds) {
 
@@ -167,6 +173,21 @@ public class InventoryController {
 
   }
 
+  /**
+   * This method is used to restore inventory by product id and quantity.
+   * It is typically used internally by the Order-Service when an order is cancelled,
+   * returned or updated and the inventory needs to be restored.
+   * @param restoreInventoryDto
+   * @return Result {@link Result}
+   */
+  @PostMapping("/internal/restore-inventory")
+  public Result restoreInventory(@Valid @RequestBody RestoreInventoryDto restoreInventoryDto) {
+
+    //call the service to restore inventory
+    inventoryService.restoreInventoryStock(restoreInventoryDto.productId(), restoreInventoryDto.quantity());
+
+    return new Result("Inventory restored successfully", true, null, StatusCode.SUCCESS);
+  }
 
 
   /**
@@ -183,7 +204,6 @@ public class InventoryController {
 //
 //    return new Result("Inventory deleted successfully", true, null, StatusCode.SUCCESS);
 //  }
-
 
 }
 

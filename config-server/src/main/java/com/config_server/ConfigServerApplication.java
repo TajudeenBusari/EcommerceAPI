@@ -23,4 +23,5 @@ public class ConfigServerApplication {
 /**
  * Use mvn clean package to build the project in the terminal
  * in case of any error.
+ * mvn clean install -DskipTests
  */

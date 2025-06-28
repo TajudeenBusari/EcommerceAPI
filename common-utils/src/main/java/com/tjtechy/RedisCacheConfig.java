@@ -97,5 +97,5 @@ public class RedisCacheConfig {
         .build();
   }
 }
-//mvn clean install
+//mvn clean install -DskipTests
 //to verify dependency tree: mvn dependency:tree

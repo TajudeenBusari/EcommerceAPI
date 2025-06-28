@@ -15,6 +15,7 @@ import java.util.List;
 public interface OrderService {
   Order createOrder(Order order);
   Mono<Order> processOrderReactively(Order order);
+  Mono<Order> processOrderReactivelyByCallingExternalizedServices(Order order);
   Order getOrderById(Long orderId);
   List<OrderDto> getAllOrders();
   List<OrderDto> getAllOrdersWithoutCancelledOnes();
@@ -41,8 +42,11 @@ public interface OrderService {
   Order updateOrderStatus(Long orderId, String orderStatus);
 
   Mono<Order> updateOrder(Long orderId, Order order);
+  Mono<Order> updateOrderByCallingExternalizedServices(Long orderId, Order order);
 
   void deleteOrder(Long orderId);
+
+  void bulkDeleteOrders(List<Long> orderIds);
 
   void cancelOrder(Long orderId);
 

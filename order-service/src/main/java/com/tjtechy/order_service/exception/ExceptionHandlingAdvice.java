@@ -5,6 +5,7 @@ import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
+import com.tjtechy.modelNotFoundException.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -32,6 +33,24 @@ public class ExceptionHandlingAdvice {
   @ExceptionHandler(OrderNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public Result handleOrderNotFoundException(OrderNotFoundException e) {
+    return new Result(e.getMessage(), false, StatusCode.NOT_FOUND);
+  }
+
+  /**
+   * Handles exceptions of type {@link ProductNotFoundException}. It is important to handle
+   * this exception here so that user will get a generic error message
+   * <p>
+   * This method is triggered whenever a {@code ProductNotFoundException} is thrown within the application.
+   * It returns a standardized error response with an HTTP 404 (Not Found) status.
+   * </p>
+   * When user tries to create an order with a product that does not exist in the database,
+   * this method will be triggered.
+   * @param e The exception instance containing details about the missing product.
+   * @return A {@link Result} object containing an error message, a failure flag, and a corresponding status code.
+   */
+  @ExceptionHandler(ProductNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public Result handleProductNotFoundException(ProductNotFoundException e) {
     return new Result(e.getMessage(), false, StatusCode.NOT_FOUND);
   }
 
@@ -91,6 +110,19 @@ public class ExceptionHandlingAdvice {
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public Result handleInsufficientStockQuantityException(InsufficientStockQuantityException e) {
     return new Result(e.getMessage(), false, StatusCode.BAD_REQUEST);
+  }
+
+  /**
+   * Handles all other exceptions that are not explicitly handled by other methods.
+   * This method is a fallback for any unhandled exceptions in the application.
+   * It returns a standardized error response with an HTTP 500 (Internal Server Error) status.
+   * @param e The exception instance containing details about the error.
+   * @return A {@link Result} object containing a generic error message, a failure flag, and a corresponding status code.
+   */
+  @ExceptionHandler(Exception.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public Result handleException(Exception e) {
+    return new Result("A server internal error occurs" + e.getMessage(), false, StatusCode.INTERNAL_SERVER_ERROR);
   }
 
 }

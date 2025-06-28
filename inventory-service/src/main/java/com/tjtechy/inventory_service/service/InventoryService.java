@@ -56,6 +56,8 @@ public interface InventoryService {
 
   Mono<Void> deductInventoryReactive(UUID productId, Integer quantity);
 
+  void restoreInventoryStock(UUID productId, Integer quantity);
+
 
 
 }

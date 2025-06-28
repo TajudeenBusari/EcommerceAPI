@@ -11,9 +11,9 @@
 4||10|c|G
 4||10|C|G
 4||10|T|G</Grants>
-      <IntrospectionStateNumber>1121</IntrospectionStateNumber>
+      <IntrospectionStateNumber>1184</IntrospectionStateNumber>
       <ServerVersion>16.1</ServerVersion>
-      <StartupTime>1744158867</StartupTime>
+      <StartupTime>1750610441</StartupTime>
       <TimeZones>true ACDT
 true ACSST
 false ACST
@@ -54,7 +54,7 @@ false Africa/Bissau
 false Africa/Blantyre
 false Africa/Brazzaville
 false Africa/Bujumbura
-false Africa/Cairo
+true Africa/Cairo
 false Africa/Casablanca
 true Africa/Ceuta
 false Africa/Conakry
@@ -465,7 +465,7 @@ true EGST
 false EGT
 false EST
 true EST5EDT
-false Egypt
+true Egypt
 false Eire
 false Etc/GMT
 false Etc/GMT+0
@@ -820,7 +820,7 @@ false Zulu
 14697||10|C|G
 14697||-9223372036854775808|U|G
 14697||10|U|G</Grants>
-      <IntrospectionStateNumber>1121</IntrospectionStateNumber>
+      <IntrospectionStateNumber>1184</IntrospectionStateNumber>
       <ObjectId>41281</ObjectId>
       <OwnerName>postgres</OwnerName>
     </database>
@@ -4276,8 +4276,8 @@ false Zulu
     <schema id="275" parent="5" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>1121</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2025-04-14.05:35:58</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>1184</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2025-06-25.05:59:35</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>524</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>

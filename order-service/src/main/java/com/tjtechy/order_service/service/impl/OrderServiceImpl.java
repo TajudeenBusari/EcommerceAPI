@@ -12,6 +12,8 @@ import com.tjtechy.DeductInventoryRequestDto;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.tjtechy.client.InventoryServiceClient;
+import com.tjtechy.client.ProductServiceClient;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
@@ -58,14 +60,20 @@ public class OrderServiceImpl implements OrderService {
 
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
-  public OrderServiceImpl(OrderRepository orderRepository, WebClient.Builder webClientBuilder, ProductServiceConfig productServiceConfig, InventoryServiceConfig inventoryServiceConfig) {
+  private final ProductServiceClient productServiceClient; //newly added for externalized service calls
+  private final InventoryServiceClient inventoryServiceClient; //newly added for externalized service calls
+
+
+  public OrderServiceImpl(OrderRepository orderRepository, WebClient.Builder webClientBuilder, ProductServiceConfig productServiceConfig, InventoryServiceConfig inventoryServiceConfig, ProductServiceClient productServiceClient, InventoryServiceClient inventoryServiceClient) {
     this.orderRepository = orderRepository;
     this.webClientBuilder = webClientBuilder;
     this.productServiceConfig = productServiceConfig;
     this.inventoryServiceConfig = inventoryServiceConfig;
+    this.productServiceClient = productServiceClient;
+    this.inventoryServiceClient = inventoryServiceClient;
   }
 
-  /**
+  /**NOTE:Currently this method is not being used in the application
    * Use Transactional context to ensure that the operation is atomic
    * For example, if the order creation fails, the transaction will be rolled back
    * A good example is if saving fails after deduction from Inventory, the
@@ -73,6 +81,7 @@ public class OrderServiceImpl implements OrderService {
    * @param order
    * @return
    */
+  @Deprecated //Will be removed in future versions
   @Transactional
   @Override
   @CachePut(value = "order", key = "#order.orderId")
@@ -200,6 +209,7 @@ public class OrderServiceImpl implements OrderService {
                         objectMapper.registerModule(new JavaTimeModule());
                         return objectMapper.convertValue(productResponse.getData(), ProductDto.class);
                       }).
+
                       flatMap(productDto -> {
                         if (productDto == null) {
                           return Mono.error(new ProductNotFoundException(productId));
@@ -214,7 +224,7 @@ public class OrderServiceImpl implements OrderService {
                         var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
                         return webClientBuilder.build()
                                 .patch()
-                                .uri("http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "inventory/internal/deduct-reactive")
+                                .uri("http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory/internal/deduct-inventory-reactive")
                                 //.uri(inventoryServiceConfig.getBaseUrl() + "/internal/deduct-reactive")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(deductInventoryRequestDto)
@@ -248,6 +258,59 @@ public class OrderServiceImpl implements OrderService {
               return Mono.fromCallable(() -> orderRepository.save(order));
             }));
 
+  }
+
+  /**
+   * Use Transactional context to ensure that the operation is atomic
+   * The method is implemented using reactive programming to create order,
+   * avoid blocking and returns a Mono
+   * This method is used to create an order by calling externalized services like
+   * Get Product and Deduct Inventory in the common-utils module.
+   * The order service is the client of the product and inventory services.
+   * @param order
+   * @return
+   */
+  @Override
+  @Transactional
+  public Mono<Order> processOrderReactivelyByCallingExternalizedServices(Order order) {
+
+    return Flux.fromIterable(order.getOrderItems())
+            .flatMap(orderItem -> {
+              var productId = orderItem.getProductId();
+              var quantity = orderItem.getProductQuantity();
+
+              //a. call product service to get product details
+              return productServiceClient.getProductById(productId) //Using ProductServiceClient to call product service
+                      .flatMap(productDto -> {
+                        if (productDto == null) {
+                          return Mono.error(new ProductNotFoundException(productId));
+                        }
+                        //b. check if product quantity is available
+                        if (productDto.productQuantity() < quantity) {
+                          return Mono.error(new InsufficientStockQuantityException(productId));
+                        }
+                        //Call inventory service to deduct stock
+                        return inventoryServiceClient.deductInventory(productId, quantity) //Using InventoryServiceClient to call inventory service
+                                .then(Mono.defer(() -> {
+                                  //c update order item with validated product details
+                                  orderItem.setProductName(productDto.productName());
+                                  orderItem.setProductPrice(productDto.productPrice());
+                                  orderItem.setOrder(order);
+                                  //d. calculate the subtotal for the order item
+                                  var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
+                                  System.out.println("Product Price: " + itemTotal);
+                                  System.out.println("Product Quantity: " + quantity);
+
+                                  return Mono.just(itemTotal);
+                                }));
+                      });
+
+            }).reduce(BigDecimal.ZERO, BigDecimal::add)
+            .doOnNext(order::setTotalAmount)
+            .then(Mono.defer(() -> {
+              order.setOrderStatus("PLACED");
+              return Mono.fromCallable(() -> orderRepository.save(order));
+            }));
   }
 
   /**
@@ -360,9 +423,18 @@ public class OrderServiceImpl implements OrderService {
     return orderRepository.save(foundOrder);
   }
 
+  /**
+   * Update an existing order by its ID.
+   * This method is missing logic to restore inventory for old items and deduct from inventory for new items.,
+   * The complete logic has been implemented in the updateOrderByCallingExternalizedServices method.
+   * This is left here for backward compatibility and will be removed in future versions.
+   * @param orderId
+   * @param updateOrder
+   * @return
+   */
+  //TODO: update this code to restock inventory, deduct from inventory and update order items
   @Override
   @CachePut(value = "order", key = "#orderId")
-
   public Mono<Order> updateOrder(Long orderId, Order updateOrder) {
 
     //1. Find the existing order
@@ -370,8 +442,9 @@ public class OrderServiceImpl implements OrderService {
             .switchIfEmpty(Mono.error(new OrderNotFoundException(orderId)))
             .flatMap(existingOrder -> {
               System.out.println("Updating Order: " + existingOrder);
-              // Update logic here
-              //update basic details
+
+              //TODO: Restore inventory for old items here
+
               existingOrder.setCustomerName(updateOrder.getCustomerName());
               existingOrder.setCustomerEmail(updateOrder.getCustomerEmail());
               existingOrder.setShippingAddress(updateOrder.getShippingAddress());
@@ -387,6 +460,7 @@ public class OrderServiceImpl implements OrderService {
                       .flatMap(orderItem -> {
                         var productId = orderItem.getProductId();
                         var quantity = orderItem.getProductQuantity();
+
                         //a. call product service to get product details
                         return webClientBuilder.build()
                                 .get()
@@ -411,6 +485,8 @@ public class OrderServiceImpl implements OrderService {
                                   if (productDto.productQuantity() < quantity) {
                                     return Mono.error(new InsufficientStockQuantityException(productId));
                                   }
+                                  // Deduct from Inventory
+                                  //ToDo: Implement Inventory deduction
                                   //c update order item with validated product details
                                   orderItem.setProductName(productDto.productName());
                                   orderItem.setProductPrice(productDto.productPrice());
@@ -440,8 +516,6 @@ public class OrderServiceImpl implements OrderService {
                         existingOrder.setTotalAmount(totalAmount);
                         System.out.println("Final Total Amount: " + existingOrder.getTotalAmount());
 
-                        //3. Deduct from Inventory
-                        //ToDo: Implement Inventory deduction
 
                         //4. Set order status to "PLACED"
                         existingOrder.setOrderStatus("PLACED");
@@ -455,8 +529,114 @@ public class OrderServiceImpl implements OrderService {
   }
 
   /**
-   * Use Transactional context to ensure that the operation is atomic
-   * This prevents partial deletion of the order
+   * Update an existing order by its ID.
+   * This method is implemented using reactive programming to update order,
+   * avoid blocking and returns a Mono
+   * The method is implemented to call externalized services like
+   * Get Product, Deduct Inventory and restock inventory in the common-utils module.
+   * The order service is the client of the product and inventory services.
+   * @param orderId
+   * @param updateOrder
+   * @return
+   */
+  @Override
+  @CachePut(value = "order", key = "#orderId")
+  @Transactional
+  public Mono<Order> updateOrderByCallingExternalizedServices(Long orderId, Order updateOrder) {
+
+    //1. Find the existing order
+    return Mono.justOrEmpty(orderRepository.findById(orderId))
+            .switchIfEmpty(Mono.error(new OrderNotFoundException(orderId)))
+            .flatMap(existingOrder -> {
+              System.out.println("Updating Order: " + existingOrder);
+
+              //Restore inventory for old items
+              return Flux.fromIterable(existingOrder.getOrderItems())
+                      .flatMap(oldItem -> inventoryServiceClient.restoreInventory(
+                              oldItem.getProductId(),
+                              oldItem.getProductQuantity())
+                      )
+                      .then(Mono.defer(()-> {
+                                //update logic here, update basic details
+                                existingOrder.setCustomerName(updateOrder.getCustomerName());
+                                existingOrder.setCustomerEmail(updateOrder.getCustomerEmail());
+                                existingOrder.setShippingAddress(updateOrder.getShippingAddress());
+
+                                //delete old order items entities from the database
+                                var oldOrderItems = new ArrayList<>(existingOrder.getOrderItems());
+                                existingOrder.getOrderItems().clear();
+                                //delete old order items
+                                oldOrderItems
+                                        .forEach(orderItem ->
+                                                orderRepository.deleteOrderItemById(orderItem.getOrderItemId()));
+
+                                //validate and update order items
+                                return Flux.fromIterable(updateOrder.getOrderItems())
+                                        .flatMap(orderItem -> {
+                                          var productId = orderItem.getProductId();
+                                          var quantity = orderItem.getProductQuantity();
+
+                                          //a. call product service to get product details
+                                          return productServiceClient.getProductById(productId)
+                                                  .flatMap(productDto -> {
+                                                    if(productDto == null){
+                                                      return Mono.error(new ProductNotFoundException(productId));
+                                                    }
+                                                    //b. check if product quantity is available
+                                                    if (productDto.productQuantity() < quantity) {
+                                                      return Mono.error(new InsufficientStockQuantityException(productId));
+                                                    }
+
+                                                    //DONE: Call inventory service to deduct stock
+                                                    return inventoryServiceClient.deductInventory(productId, quantity)
+                                                            .then(Mono.fromCallable(() -> {
+                                                              // Enrich order item only after deduction
+                                                              //c update order item with validated product details
+                                                              orderItem.setProductName(productDto.productName());
+                                                              orderItem.setProductPrice(productDto.productPrice());
+                                                              orderItem.setOrder(existingOrder);
+                                                              //d. calculate the subtotal for the order item
+                                                              var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
+                                                              System.out.println("Product Price: " + itemTotal);
+                                                              System.out.println("Product Quantity: " + quantity);
+                                                              return orderItem;
+
+                                                            }));
+
+                                                  });
+                                        })
+                                        .collectList()
+                                        .doOnNext(validatedOrderItems -> {
+                                          if (validatedOrderItems.isEmpty()) {
+                                            throw new IllegalArgumentException("No valid order items to update");
+                                          }
+                                          //update order with validated order items
+                                          existingOrder.addOrderItems(validatedOrderItems);
+                                          //calculate total amount
+                                          var totalAmount = validatedOrderItems.stream()
+                                                  .map(item -> item
+                                                          .getProductPrice()
+                                                          .multiply(BigDecimal.valueOf(item.getProductQuantity())))
+                                                  .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                          existingOrder.setTotalAmount(totalAmount);
+                                          System.out.println("Final Total Amount: " + existingOrder.getTotalAmount());
+
+
+                                          //4. Set order status to "PLACED"
+                                          existingOrder.setOrderStatus("PLACED");
+                                        })
+                                        .then(Mono.just(existingOrder));
+                              }));
+
+            })
+            .flatMap(existingOrder -> Mono.fromCallable(() -> orderRepository.save(existingOrder))
+                    .subscribeOn(Schedulers.boundedElastic())); //Wrap blocking call in a reactive context
+  }
+
+  /**
+   * Use Transactional context to ensure that the operation is atomic.
+   * This prevents partial deletion of the order.
+   * When order is deleted, it will restore inventory for all order items
    * @param orderId
    */
   @Transactional
@@ -467,14 +647,100 @@ public class OrderServiceImpl implements OrderService {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
 
+    //Restore inventory for order items before deleting the order
+    foundOrder
+            .getOrderItems()
+            .forEach(orderItem -> {
+      var productId = orderItem.getProductId();
+      var quantity = orderItem.getProductQuantity();
+      //Call inventory service to restore stock
+              try{
+                inventoryServiceClient.restoreInventory(productId, quantity)
+                        .doOnError(ex ->
+                                logger.error("Failed to restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
+                        .subscribe();//fire and forget approach to keep the operation non-blocking
+              }catch (Exception e){
+                logger.error("Inventory restoration failed for product {}: {}", productId, e.getMessage());
+
+              }
+    });
+
     //Delete the order(OrderItems will be deleted automatically due to CascadeType.ALL in Order class)
     orderRepository.delete(foundOrder);
   }
 
+  /**
+   * Bulk delete orders by their IDs
+   * This method will delete all orders with the given IDs
+   * If any order ID is not found, it will throw OrderNotFoundException
+   * @param orderIds
+   */
+  @Override
+  public void bulkDeleteOrders(List<Long> orderIds) {
+    var orders = orderRepository.findAllById(orderIds);
+
+    //extract all found orders and collect them into a list
+    var foundOrders = orders
+            .stream()
+            .map(Order::getOrderId)
+            .toList();
+
+    //get the order IDs that were not found
+    var missingOrderIds = orderIds
+            .stream()
+            .filter(id -> !foundOrders.contains(id)).toList();
+
+    //Restore inventory for all found orders before deleting the orders
+    orders.forEach(order -> {
+      order.getOrderItems().forEach(orderItem -> {
+        var productId = orderItem.getProductId();
+        var quantity = orderItem.getProductQuantity();
+        //Call inventory service to restore stock
+        try{
+          inventoryServiceClient.restoreInventory(productId, quantity)
+                  .doOnError(ex ->
+                          logger.error("Could not restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
+                  .subscribe();//fire and forget approach to keep the operation non-blocking
+        }catch (Exception e){
+          logger.error("Inventory failed to restore for product {}: {}", productId, e.getMessage());
+        }
+      });
+    });
+    //delete the found orders
+    if (!orders.isEmpty()) {
+      orderRepository.deleteAll(orders);
+      logger.info("*******Deleted {} orders successfully*******", orders.size());
+      } else if (!missingOrderIds.isEmpty()) {
+      throw new OrderNotFoundException(missingOrderIds);
+    }
+
+  }
+
+  /**
+   * Cancel an order by its ID
+   * This method will soft-delete the order by setting its status to "CANCELLED"
+   * @param orderId
+   */
   @Override
   public void cancelOrder(Long orderId) {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
+    //Restore inventory for order items before cancelling the order
+    foundOrder
+            .getOrderItems()
+            .forEach(orderItem -> {
+      var productId = orderItem.getProductId();
+      var quantity = orderItem.getProductQuantity();
+      //Call inventory service to restore stock
+      try{
+        inventoryServiceClient.restoreInventory(productId, quantity)
+                .doOnError(ex ->
+                        logger.error("Fail in restoring inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
+                .subscribe();//fire and forget approach to keep the operation non-blocking
+      }catch (Exception e){
+        logger.error("Inventory restore failed for product {}: {}", productId, e.getMessage());
+      }
+    });
     //soft delete the order
     foundOrder.setOrderStatus("CANCELLED");
     orderRepository.save(foundOrder);

@@ -1,8 +1,13 @@
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\client\InventoryServiceClient.java
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\client\ProductServiceClient.java
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\config\InventoryServiceConfig.java
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\config\ProductServiceConfig.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\CreateInventoryDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\DeductInventoryRequestDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\Inventory.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\InventoryDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\ProductDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\RedisCacheConfig.java
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\RestoreInventoryDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\TestConfig.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\UpdateInventoryDto.java

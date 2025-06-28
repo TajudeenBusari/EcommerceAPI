@@ -1,8 +1,13 @@
 com\tjtechy\UpdateInventoryDto.class
-com\tjtechy\ProductDto.class
 com\tjtechy\InventoryDto.class
 com\tjtechy\DeductInventoryRequestDto.class
-com\tjtechy\Inventory.class
-com\tjtechy\CreateInventoryDto.class
+com\tjtechy\RestoreInventoryDto.class
+com\tjtechy\client\InventoryServiceClient.class
+com\tjtechy\config\InventoryServiceConfig.class
 com\tjtechy\RedisCacheConfig.class
 com\tjtechy\TestConfig.class
+com\tjtechy\client\ProductServiceClient.class
+com\tjtechy\ProductDto.class
+com\tjtechy\config\ProductServiceConfig.class
+com\tjtechy\Inventory.class
+com\tjtechy\CreateInventoryDto.class

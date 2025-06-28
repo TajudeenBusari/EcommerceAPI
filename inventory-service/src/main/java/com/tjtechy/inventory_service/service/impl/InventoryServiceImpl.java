@@ -12,6 +12,8 @@ import com.tjtechy.Inventory;
 import com.tjtechy.inventory_service.service.InventoryService;
 import com.tjtechy.modelNotFoundException.InventoryNotFoundException;
 import com.tjtechy.modelNotFoundException.ProductNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import java.util.UUID;
 public class InventoryServiceImpl implements InventoryService {
 
   private final InventoryRepository inventoryRepository;
+  private static final Logger logger = LoggerFactory.getLogger(InventoryServiceImpl.class);
   public InventoryServiceImpl(InventoryRepository inventoryRepository) {
     this.inventoryRepository = inventoryRepository;
   }
@@ -60,7 +63,7 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   /**
-   * This method is used to get inventory by id
+   * This method is used to get inventory by id and cached for performance.
    * @param inventoryId
    * @return Inventory
    */
@@ -72,6 +75,11 @@ public class InventoryServiceImpl implements InventoryService {
     return foundInventory;
   }
 
+  /**
+   * This method is used to get inventory by product id and cached for performance.
+   * @param productId
+   * @return Inventory
+   */
   @Cacheable(value = "inventoryByProductId", key = "#productId")
   @Override
   public Inventory getInventoryByProductId(UUID productId) {
@@ -81,12 +89,27 @@ public class InventoryServiceImpl implements InventoryService {
     return foundInventory;
   }
 
+  /**
+   * This method is used to get all inventories and cached for performance.
+   * @return List of Inventory
+   */
   @Cacheable(value = "inventories")
   @Override
   public List<Inventory> getAllInventory() {
     return inventoryRepository.findAll();
   }
 
+  /**
+   * Updates an existing inventory record.
+   * <p>
+   *   This method retrieves the inventory record for the specified ID, updates its available stock and
+   *   reserved quantity, and then saves the updated record back to the database.
+   * </p>
+   * @param inventoryId the ID of the inventory to update
+   * @param inventory the inventory object containing updated values
+   * @return the updated inventory object
+   * @throws InventoryNotFoundException if no inventory is found with the specified ID
+   */
   @CachePut(value = "inventory", key = "#inventoryId")
   @Override
   public Inventory updateInventory(Long inventoryId, Inventory inventory) {
@@ -100,6 +123,15 @@ public class InventoryServiceImpl implements InventoryService {
     return inventoryRepository.save(foundInventory);
   }
 
+  /**
+   * Deletes an inventory by its ID.
+   * <p>
+   *   This method retrieves the inventory record for the specified ID and deletes it from the database.
+   *   If the inventory with the given ID does not exist, it throws an {@link InventoryNotFoundException}.
+   * </p>
+   * @param inventoryId the ID of the inventory to delete
+   * @throws InventoryNotFoundException if no inventory is found with the specified ID
+   */
   @Override
   public void deleteInventory(Long inventoryId) {
     var foundInventory = inventoryRepository.findById(inventoryId)
@@ -107,6 +139,15 @@ public class InventoryServiceImpl implements InventoryService {
     inventoryRepository.delete(foundInventory);
   }
 
+  /**
+   * Deletes multiple inventories by their IDs.
+   * <p>
+   *   This method retrieves all inventory records for the specified list of IDs, deletes them from the
+   *   database, and throws an {@link InventoryNotFoundException} if any of the provided IDs do not exist.
+   * </p>
+   * @param inventoryIds the list of inventory IDs to delete
+   * @throws InventoryNotFoundException if any of the provided inventory IDs do not exist
+   */
   @Override
   public void bulkDeleteInventoriesByInventoryId(List<Long> inventoryIds) {
 
@@ -191,10 +232,31 @@ public class InventoryServiceImpl implements InventoryService {
 
   }
 
-//  @Override
-//  public void deleteInventoryByProductId(UUID productId) {
-//    var foundInventory = inventoryRepository.findByProductId(productId)
-//            .orElseThrow(() -> new ProductNotFoundException(productId));
-//    inventoryRepository.delete(foundInventory);
-//  }
+  /**
+   * Restores the specified quantity of inventory stock for a given product.
+   * <p>
+   *   This method retrieves the inventory record for the specified product ID, updates the available stock.
+   *   by adding the quantity to restore, and decreases the reserved quantity by the same amount.
+   *   It is typically used when an order is cancelled, returned/deleted, or updated and
+   *   the inventory needs to be restored.
+   * </p>
+   * @param productId the ID of the product for which to restore inventory
+   * @param quantityToRestore the quantity to restore to the inventory
+   * @throws ProductNotFoundException if the product ID does not exist in the inventory
+   */
+  @Override
+  public void restoreInventoryStock(UUID productId, Integer quantityToRestore) {
+    var foundInventory = inventoryRepository.findByProductId(productId)
+            .orElseThrow(() -> new ProductNotFoundException(productId));
+
+    //Add the quantity back to available stock
+    var updatedAvailableStock = foundInventory.getAvailableStock() + quantityToRestore;
+    //update the reserved quantity
+    foundInventory.setReservedQuantity(foundInventory.getReservedQuantity() - quantityToRestore);
+    foundInventory.setAvailableStock(updatedAvailableStock);
+    inventoryRepository.save(foundInventory);
+    logger.info("Restored {} units of inventory for productId: {}", quantityToRestore, productId);
+
+  }
+
 }

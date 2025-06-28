@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.service.annotation.GetExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("${api.endpoint.base-url}/order")
 public class OrderController {
@@ -76,6 +78,32 @@ public class OrderController {
               return new Result("Order created successfully", true, orderDto, StatusCode.SUCCESS);
             });
   }
+
+  /**
+   * This is the method to create order reactively by calling externalized services
+   * The Mono means that the result will be returned asynchronously
+   * Reactive is non-blocking and asynchronous which improves performance.
+   * Efficient when calling external services or APIs, E.g., product service etc.
+   * Returns a reactive stream, freeing up the thread to handle other requests.
+   * The createOrder is processed inside the map method.
+   * @param createOrderDto
+   * @return
+   */
+  @PostMapping("/reactive/externalized")
+  public Mono<Result> processOrderReactivelyByCallingExternalizedServices(@Valid @RequestBody CreateOrderDto createOrderDto) {
+    //map from createOrderDto to Order
+    var order = OrderMapper.mapFromCreateOrderDtoToOrder(createOrderDto);
+
+    //call orderService.processOrderReactivelyByCallingExternalizedServices
+    return orderService.processOrderReactivelyByCallingExternalizedServices(order)
+            .map(createdOrder -> {
+              //map from Order to OrderDto
+              var orderDto = OrderMapper.mapFromOrderToOrderDto(createdOrder);
+
+              return new Result("Order created successfully by calling required external services", true, orderDto, StatusCode.SUCCESS);
+            });
+  }
+
 
   /**
    * This is deprecated and will be removed in the next version
@@ -179,6 +207,19 @@ public class OrderController {
   }
 
   /**
+   * This is the method to bulk delete orders
+   * @param orderIds
+   * @return
+   */
+  @DeleteMapping("/bulk-delete")
+  public Result bulkDeleteOrders(@RequestBody List<Long> orderIds) {
+
+    orderService.bulkDeleteOrders(orderIds);
+
+    return new Result("Orders bulk deleted success", true, null, StatusCode.SUCCESS);
+  }
+
+  /**
    * This is the method to get orders by status
    * @param orderStatus
    * @return
@@ -237,6 +278,22 @@ public class OrderController {
               return new Result("Order updated successfully", true, orderDto, StatusCode.SUCCESS);
             });
   }
+
+  @PutMapping("/externalized/{orderId}")
+  public Mono<Result> updateOrderByCallingExternalizedServices(@PathVariable Long orderId, @Valid @RequestBody UpdateOrderDto updateOrderDto) {
+
+    var order = OrderMapper.mapFromUpdateOrderDtoToOrder(updateOrderDto);
+
+    //call orderService.updateOrderByCallingExternalizedServices
+    return orderService.updateOrderByCallingExternalizedServices(orderId, order)
+            .map(updatedOrder -> {
+              //map from Order to OrderDto
+              var orderDto = OrderMapper.mapFromOrderToOrderDto(updatedOrder);
+
+              return new Result("Order updated successfully by calling required external services", true, orderDto, StatusCode.SUCCESS);
+            });
+  }
+
 
   /**
    * This is the method to clear all cache
