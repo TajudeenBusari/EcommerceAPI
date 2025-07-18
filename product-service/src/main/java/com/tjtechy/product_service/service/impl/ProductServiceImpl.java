@@ -495,6 +495,7 @@ public class ProductServiceImpl implements ProductService {
             .subscribe();
   }
 
+  //TODO: Change to return Mono<Void> to align with reactive programming practices and handle errors properly:
   @Override
   @CacheEvict(value = "product", key = "#productId") //delete cache with key as id
   public void deleteProductWithInventoryUsingExternalizedService(UUID productId) {

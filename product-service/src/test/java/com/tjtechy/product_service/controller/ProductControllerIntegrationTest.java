@@ -13,11 +13,10 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.tjtechy.product_service.config.InventoryServiceConfig;
 import com.tjtechy.product_service.entity.dto.CreateProductDto;
 import com.tjtechy.product_service.entity.dto.UpdateProductDto;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,7 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
+
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -52,14 +51,9 @@ import java.util.Map;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-
-
-
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Tag("ProductControllerIntegrationTest")
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -72,12 +66,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
         "spring.datasource.username=testuser",
         "spring.datasource.password=testpassword",
         "redis.enabled=false", //disable redis
-        "spring.profiles.active=test",
         "spring.cache.type=none", //disable caching
-        "inventory-service.base-url=http://localhost:9562/api/v1" // Base URL for Inventory Service
+        "spring.jpa.hibernate.ddl-auto=create-drop", // Use create-drop for testing
+        "spring.jpa.show-sql=true", // Show SQL queries in logs
+        "spring.jpa.properties.hibernate.format_sql=true" // Format SQL queries
 })
 @WireMockTest(httpPort = 9562)
 @Import(ProductControllerIntegrationTest.TestInventoryClientConfig.class)
+
+/**
+ * NOTE: This test class is deprecated but will not be removed for reference purposes.
+ * For new integration tests, use the new test class ProductServiceControllerIntegrationTest.
+ */
 public class ProductControllerIntegrationTest {
   /**
    * MockMvc is used to test Spring boot mvc controllers

@@ -31,8 +31,18 @@ public class InventoryServiceClient {
   private final WebClient.Builder clientBuilder;
   private static final Logger logger = LoggerFactory.getLogger(InventoryServiceClient.class);
 
-  @Value("${api.endpoint.base-url}")
+  /**
+   * The base URL for the Inventory Service.
+   * This is typically set in the application.yml of the service calling
+   * the Inventory Service.
+   * It should point to the base URL of the Inventory Service API.
+   * x-service-url is used by external clients to access the x-Service.
+   * api.endpoint.base-url is used by the service itself to access its own endpoints.
+   */
+  //@Value("${api.endpoint.base-url}")
+  @Value("${inventory-service.base-url}")
   private String inventoryServiceUrl;
+
 
   private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -45,7 +55,8 @@ public class InventoryServiceClient {
    */
   public Mono<Void> deductInventory(UUID productId, Integer quantity) {
     var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
-    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/deduct-inventory-reactive";
+    //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/deduct-inventory-reactive";
+    var url = inventoryServiceUrl + "/inventory/internal/deduct-inventory-reactive";
     return clientBuilder.build()
             .patch()
             .uri(url)
@@ -68,7 +79,9 @@ public class InventoryServiceClient {
    */
   public void createInventoryForProductAsync(CreateInventoryDto createInventoryDto) {
 
-    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/create";
+//    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/create";
+    var url = inventoryServiceUrl + "/inventory/internal/create";
+
     var savedProductId = createInventoryDto.productId();
     clientBuilder.build()
             .post()
@@ -88,6 +101,7 @@ public class InventoryServiceClient {
               logger.error("*******Error occurred while creating inventory for product {}: {}*******",
                       savedProductId, error.getMessage());
             });
+    logger.info("Calling inventory Service to create inventory: {}", url);
   }
 
   /**
@@ -105,7 +119,8 @@ public class InventoryServiceClient {
       return Mono.error(new IllegalArgumentException("Invalid product ID or quantity to restore"));
     }
     var restoreInventoryDto = new RestoreInventoryDto(productId, quantityToRestore);
-    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/restore-inventory";
+//    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/restore-inventory";
+    var url = inventoryServiceUrl + "/inventory/internal/restore-inventory";
     return clientBuilder.build()
             .post()
             .uri(url)
@@ -128,7 +143,8 @@ public class InventoryServiceClient {
     if (productId == null) {
       return Mono.error(new IllegalArgumentException("Product ID cannot be null"));
     }
-    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/product/" + productId;
+//    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/product/" + productId;
+    var url = inventoryServiceUrl + "/inventory/internal/product/" + productId;
     return clientBuilder.build()
             .get()
             .uri(url)
@@ -144,11 +160,13 @@ public class InventoryServiceClient {
               }
             });
 
+
   }
 
 
   public Mono<Result> updateInventory(Long inventoryId, UpdateInventoryDto updateInventoryDto) {
-    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/update/" + inventoryId;
+    //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/update/" + inventoryId;
+    var url = inventoryServiceUrl + "/inventory/internal/update/" + inventoryId;
 
     return clientBuilder.build()
             .put()
@@ -164,7 +182,8 @@ public class InventoryServiceClient {
     if (inventoryId == null) {
       return Mono.error(new IllegalArgumentException("Inventory ID cannot be null"));
     }
-    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/" + inventoryId;
+    //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/" + inventoryId;
+    var url = inventoryServiceUrl + "/inventory/" + inventoryId;
     return clientBuilder.build()
             .delete()
             .uri(url)

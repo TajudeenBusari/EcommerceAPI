@@ -175,6 +175,7 @@ public class ProductController {
     productService.deleteProductWithInventory(productId);
     return new Result("Delete One Success", true, null, StatusCode.SUCCESS);
   }
+  //TODO: Change to return Mono<Result> for reactive programming
   @DeleteMapping("/delete/with-inventory/externalized/{productId}")
   public Result deleteProductWithInventoryUsingExternalizedService(@PathVariable UUID productId){
     productService.deleteProductWithInventoryUsingExternalizedService(productId);

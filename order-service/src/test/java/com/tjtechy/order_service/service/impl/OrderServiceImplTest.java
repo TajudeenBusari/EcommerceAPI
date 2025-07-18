@@ -1,6 +1,9 @@
 package com.tjtechy.order_service.service.impl;
 
 import com.tjtechy.*;
+import com.tjtechy.businessException.InsufficientStockQuantityException;
+import com.tjtechy.client.InventoryServiceClient;
+import com.tjtechy.client.ProductServiceClient;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
@@ -16,6 +19,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +30,24 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.springframework.cloud.contract.verifier.assertion.SpringCloudContractAssertions.assertThat;
 
 @ExtendWith(MockitoExtension.class) //Enable Mockito annotations
+/**
+ *  @MockitoSettings(strictness = Strictness.LENIENT)
+ *  Allow lenient stubbing. This is useful when you want to avoid strict stubbing errors
+ * especially when some mocks are not used in every test case.
+ * This is particularly useful in large test classes where some mocks may not be relevant to every test.
+ * This allows for more flexibility in test design, especially when dealing with complex interactions.
+ */
+  @MockitoSettings(strictness = Strictness.LENIENT)
 class OrderServiceImplTest {
 
   @Mock
@@ -46,6 +61,14 @@ class OrderServiceImplTest {
 
   @Mock
   private InventoryServiceConfig inventoryServiceConfig;
+
+  @Mock
+  private ProductServiceClient productServiceClient;
+
+  @Mock
+  private InventoryServiceClient inventoryServiceClient;
+
+
 
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImplTest.class);
 
@@ -141,136 +164,173 @@ class OrderServiceImplTest {
 
 
   @Test
-  void createOrderReactivelySuccess() {
-    //Given
+  void testCreateOrderReactivelySuccess() {
+    // Given
+    UUID productId1 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    UUID productId2 = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
 
-    //Get product logic
-    var productId1 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    var productId2 = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
-
-    var order = new Order();
+    Order order = new Order();
     order.setOrderItems(Arrays.asList(
-            new OrderItem(null, productId1, null, null, 2),
-            new OrderItem(null, productId2, null, null, 3)
+            new OrderItem(1L, productId1, null, null, 2),
+            new OrderItem(2L, productId2, null, null, 3)
     ));
 
-    //1.mock product response
     ProductDto productDto1 = new ProductDto(
-            productId1,
-            "PRODUCT1",
-            "PRODUCT1 CATEGORY",
-            "PRODUCT1 DESCRIPTION",
-            10,
-            5,
-            LocalDate.now().plusYears(1),
-            new BigDecimal(10.0)
+            productId1, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            LocalDate.now().plusYears(1), new BigDecimal("10.00")
     );
     ProductDto productDto2 = new ProductDto(
-            productId2,
-            "PRODUCT2",
-            "PRODUCT2 CATEGORY",
-            "PRODUCT2 DESCRIPTION",
-            10,
-            5,
-            LocalDate.now().plusYears(1),
-            new BigDecimal(20.0)
+            productId2, "PRODUCT2", "CATEGORY", "DESCRIPTION", 10, 5,
+            LocalDate.now().plusYears(1), new BigDecimal("20.00")
     );
 
-    Result productDtoResult1 = new Result("Product retrieved successfully", true, productDto1, StatusCode.SUCCESS);
-    Result productDtoResult2 = new Result("Product retrieved successfully", true, productDto2, StatusCode.SUCCESS);
+    Result productResult1 = new Result("Get One Success", true, productDto1, StatusCode.SUCCESS);
+    Result productResult2 = new Result("Get One Success", true, productDto2, StatusCode.SUCCESS);
 
-    //2.Deduct inventory logic
-    var deductInventoryDto1= new DeductInventoryRequestDto(productId1, 2);
-    var deductInventoryDto2= new DeductInventoryRequestDto(productId2, 3);
-
-    //mock inventory service response
-    InventoryDto inventoryDto1 = new InventoryDto(
-            1L,
-            productId1,
-            2
-    );
-    InventoryDto inventoryDto2 = new InventoryDto(
-            2L,
-            productId2,
-            3
-    );
-    Result inventoryDtoResult1 = new Result("Inventory deducted successfully", true, inventoryDto1, StatusCode.SUCCESS);
-    Result inventoryDtoResult2 = new Result("Inventory deducted successfully", true, inventoryDto2, StatusCode.SUCCESS);
+    Result inventoryResult1 = new Result("Inventory deducted successfully", true,
+            new InventoryDto(1L, productId1, 2), StatusCode.SUCCESS);
+    Result inventoryResult2 = new Result("Inventory deducted successfully", true,
+            new InventoryDto(2L, productId2, 3), StatusCode.SUCCESS);
 
 
-    //mock product service config
     when(productServiceConfig.getBaseUrl()).thenReturn("/api/v1");
-    //mock inventory service config
     when(inventoryServiceConfig.getBaseUrl()).thenReturn("/api/v1");
 
-    //mock web client for first product
-    WebClient webClient1 = mock(WebClient.class);
-    WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec1 = mock(WebClient.RequestHeadersUriSpec.class);
-    WebClient.RequestHeadersSpec<?> requestHeadersSpec1 = mock(WebClient.RequestHeadersSpec.class);
-    WebClient.ResponseSpec responseSpec1 = mock(WebClient.ResponseSpec.class);
+    when(webClientBuilder.build()).thenAnswer(invocation -> {
+      WebClient webClient = mock(WebClient.class);
 
-    //configure first product call
-    doReturn(requestHeadersUriSpec1).when(webClient1).get();
-    doReturn(requestHeadersSpec1).when(requestHeadersUriSpec1).uri("http://product-service/api/v1/product/" + productId1);
-    doReturn(responseSpec1).when(requestHeadersSpec1).retrieve();
-    when(responseSpec1.bodyToMono(Result.class)).thenReturn(Mono.just(productDtoResult1));
+      // Mock GET product call chain
+      WebClient.RequestHeadersUriSpec<?> getUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+      WebClient.RequestHeadersSpec<?> getHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+      WebClient.ResponseSpec getResponseSpec = mock(WebClient.ResponseSpec.class);
 
-    //mock web client for second product
-    WebClient webClient2 = mock(WebClient.class);
-    WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec2 = mock(WebClient.RequestHeadersUriSpec.class);
-    WebClient.RequestHeadersSpec<?> requestHeadersSpec2 = mock(WebClient.RequestHeadersSpec.class);
-    WebClient.ResponseSpec responseSpec2 = mock(WebClient.ResponseSpec.class);
+      doReturn(getUriSpec).when(webClient).get();
+      doReturn(getHeadersSpec).when(getUriSpec).uri(anyString());
+      doReturn(getResponseSpec).when(getHeadersSpec).retrieve();
 
-    //configure second product call
-    doReturn(requestHeadersUriSpec2).when(webClient2).get();
-    doReturn(requestHeadersSpec2).when(requestHeadersUriSpec2).uri("http://product-service/api/v1/product/" + productId2);
-    doReturn(responseSpec2).when(requestHeadersSpec2).retrieve();
-    when(responseSpec2.bodyToMono(Result.class)).thenReturn(Mono.just(productDtoResult2));
+      when(getResponseSpec.bodyToMono(Result.class)).thenAnswer(invocationGet -> {
+        String uri = (String) mockingDetails(getUriSpec).getInvocations().stream()
+                .filter(i -> i.getMethod().getName().equals("uri"))
+                .reduce((first, second) -> second)
+                .map(i -> (String) i.getArguments()[0])
+                .orElse("");
 
-    //configure web builder to different instances
-    when(webClientBuilder.build())
-            .thenReturn(webClient1)
-            .thenReturn(webClient2);
-//TODO
-    //mock web client for deduct inventory for product 1
-    WebClient webClient3 = mock(WebClient.class);
-    WebClient.RequestHeadersUriSpec<?> patchUri1 = mock(WebClient.RequestHeadersUriSpec.class);
-    WebClient.RequestHeadersSpec<?> patchSpec1 = mock(WebClient.RequestHeadersSpec.class);
-    WebClient.RequestBodySpec patchRequestBodySpec1 = mock(WebClient.RequestBodySpec.class);
-    WebClient.ResponseSpec patchResponse1 = mock(WebClient.ResponseSpec.class);
+        if (uri.endsWith(productId1.toString())) return Mono.just(productResult1);
+        if (uri.endsWith(productId2.toString())) return Mono.just(productResult2);
+        return Mono.error(new RuntimeException("Unknown product URI"));
+      });
 
-    //configure deduct inventory call
-    doReturn(patchUri1).when(webClient3).patch();
-    doReturn(patchSpec1).when(patchUri1).uri("http://inventory-service/api/v1/inventory/internal/deduct-reactive");
-    doReturn(patchSpec1).when(patchRequestBodySpec1).accept(MediaType.APPLICATION_JSON);
-    doReturn(patchSpec1).when(patchRequestBodySpec1).bodyValue(deductInventoryDto1);
-    doReturn(patchResponse1).when(patchRequestBodySpec1).retrieve();
-    when(patchResponse1.bodyToMono(Result.class)).thenReturn(Mono.just(inventoryDtoResult1));
+      // Mock PATCH inventory call chain
+      WebClient.RequestBodyUriSpec patchUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+      WebClient.RequestBodySpec patchBodySpec = mock(WebClient.RequestBodySpec.class);
+      WebClient.ResponseSpec patchResponseSpec = mock(WebClient.ResponseSpec.class);
 
+      doReturn(patchUriSpec).when(webClient).patch();
+      doReturn(patchBodySpec).when(patchUriSpec)
+              .uri("http://inventory-service/api/v1/inventory/internal/deduct-inventory-reactive");
+      doReturn(patchBodySpec).when(patchBodySpec).accept(MediaType.APPLICATION_JSON);
+      doReturn(patchBodySpec).when(patchBodySpec).contentType(MediaType.APPLICATION_JSON);
+      doReturn(patchBodySpec).when(patchBodySpec).bodyValue(any(DeductInventoryRequestDto.class));
+      doReturn(patchResponseSpec).when(patchBodySpec).retrieve();
 
+      when(patchResponseSpec.bodyToMono(Result.class)).thenReturn(
+              Mono.just(inventoryResult1), Mono.just(inventoryResult2));
 
+      return webClient;
+    });
 
-
-
-    //mock repository save behaviour
     given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-    //When
-
+    // When
     Mono<Order> result = orderService.processOrderReactively(order);
 
-    //Then
+    // Then
     StepVerifier.create(result)
             .assertNext(savedOrder -> {
               assertNotNull(savedOrder);
               assertEquals(2, savedOrder.getOrderItems().size());
               assertEquals("PRODUCT1", savedOrder.getOrderItems().get(0).getProductName());
               assertEquals("PRODUCT2", savedOrder.getOrderItems().get(1).getProductName());
-              //2 * 10 = 20 AND 3 * 20 = 60 => 20 + 60 = 80
-              assertEquals(new BigDecimal("80"), savedOrder.getTotalAmount());
+              assertEquals(new BigDecimal("80.00"), savedOrder.getTotalAmount());
+              assertEquals("PLACED", savedOrder.getOrderStatus());
             })
             .verifyComplete();
   }
+
+  @Test
+  void testCreateOrderReactivelyByCallingExternalServicesSuccess() {
+    // Given
+    UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Order order = new Order();
+    order.setOrderItems(List.of(
+            new OrderItem(1L, productId, null, null, 2)
+    ));
+
+    ProductDto productDto = new ProductDto(
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+    );
+
+    //not really needed here, but just to show how it can be used
+    Result getProductResult = new Result("Get One Success", true, productDto, StatusCode.SUCCESS);
+
+    //not really needed here, but just to show how it can be used
+    Result inventoryDeductResult = new Result("Inventory deducted successfully", true,
+            new InventoryDto(1L, productId, 1), StatusCode.SUCCESS);
+
+    when(productServiceClient.getProductById(productId)).thenReturn(Mono.just(productDto));
+    when(inventoryServiceClient.deductInventory(productId, 2)).thenReturn(Mono.empty());
+
+
+    when(productServiceConfig.getBaseUrl()).thenReturn("/api/v1");
+    when(inventoryServiceConfig.getBaseUrl()).thenReturn("/api/v1");
+
+    when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // When
+    Mono<Order> result = orderService.processOrderReactivelyByCallingExternalizedServices(order);
+
+    // Then
+    StepVerifier.create(result)
+            .assertNext(savedOrder -> {
+              assertNotNull(savedOrder);
+              assertEquals(1, savedOrder.getOrderItems().size());
+              assertEquals("PRODUCT1", savedOrder.getOrderItems().get(0).getProductName());
+              assertEquals(new BigDecimal("20.00"), savedOrder.getTotalAmount());
+              assertEquals("PLACED", savedOrder.getOrderStatus());
+            })
+            .verifyComplete();
+  }
+
+  @Test
+  void testCreateOrderReactivelyByCallingExternalizedServicesWithInsufficientQuantity() {
+    // Given
+    /**
+     * TODO: I may need to refactor the check for insufficient stock quantity logic
+     * in the OrderServiceImpl class by comparing the amount to be deducted (productQuantity in the orderItem)
+     * with the availableStock in the product DB and not the productQuantity in the product DB.
+     */
+    UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Order order = new Order();
+    order.setOrderItems(List.of(
+            new OrderItem(1L, productId, null, null, 11) // Requesting more than available stock
+    ));
+    ProductDto productDto = new ProductDto(
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+    );
+
+    // Mock the product service to return the product with insufficient stock
+    when(productServiceClient.getProductById(productId)).thenReturn(Mono.just(productDto));
+    //inventory should not be called since the product has insufficient stock
+
+    Mono<Order> result = orderService.processOrderReactivelyByCallingExternalizedServices(order);
+    // When and Then
+    StepVerifier.create(result)
+            .expectError(InsufficientStockQuantityException.class)
+            .verify();
+  }
+
 
   @Test
   void getOrderByIdSuccess() {
@@ -563,18 +623,157 @@ class OrderServiceImplTest {
   }
 
   @Test
-  void deleteOrderSuccess() {
+  void testUpdateOrderByCallingExternalizedServicesSuccess() {
+
+    //given
+    UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Order existingOrder = orderList.get(0);
+    var orderId = existingOrder.getOrderId();
+    /**
+     * Don't use immutable list, that is, ##List.of(
+     *     new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+     * )##
+     * here because we need to clear the existing order items.
+     * Calling clear() on an immutable list will throw UnsupportedOperationException.
+     * However, use a mutable list like ArrayList (as used in the OrderServiceImpl logic) or LinkedList.
+     */
+   existingOrder.setOrderItems(new ArrayList<>(List.of(
+           new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+   )));
+
+    /**
+     * customerName, customerEmail, shippingAddress and OrderItems can be updated
+     */
+   //update order with the same ID
+    Order updateOrder = new Order();
+    updateOrder.setOrderId(orderId);
+    updateOrder.setCustomerName("Updated Customer"); //update customer name
+    updateOrder.setCustomerEmail(existingOrder.getCustomerEmail()); //same customer email
+    updateOrder.setShippingAddress(existingOrder.getShippingAddress()); //same shipping address
+    //same list of order items
+    /**
+     * Don't use immutable list that is ##List.of(
+     *     new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+     * )##
+     * here because we need to clear the existing order items.
+     * Calling clear() on an immutable list will throw UnsupportedOperationException.
+     * However, use a mutable list like ArrayList (as used in the OrderServiceImpl logic) or LinkedList.
+     */
+    updateOrder.setOrderItems(new ArrayList<>(List.of(
+            new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+    )));
+
+
+    ProductDto productDto = new ProductDto(
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+    );
+
+    //mocks
+    when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
+    when(inventoryServiceClient.restoreInventory(productId, 5)).thenReturn(Mono.empty());
+
+    doNothing().when(orderRepository).deleteOrderItemById(anyLong()); //orderItemId = 1L but we don't care about it here
+    when(productServiceClient.getProductById(productId)).thenReturn(Mono.just(productDto));
+    when(inventoryServiceClient.deductInventory(productId, 5)).thenReturn(Mono.empty());
+    /**
+     * This line of code means that the order will be saved with the updated order items.
+     * invocation -> invocation.getArgument(0): gets the first argument passed to the save method,
+     * that is returned as the updated order.
+     */
+    when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+
+    //when
+    Mono<Order> result = orderService.updateOrderByCallingExternalizedServices(orderId, updateOrder);
+
+    //then
+    StepVerifier.create(result)
+            .assertNext(updatedOrder -> {
+              assertNotNull(updatedOrder);
+              assertEquals("Updated Customer", updatedOrder.getCustomerName());
+              assertEquals(existingOrder.getCustomerEmail(), updatedOrder.getCustomerEmail());
+              assertEquals(existingOrder.getShippingAddress(), updatedOrder.getShippingAddress());
+              assertEquals("PLACED", updatedOrder.getOrderStatus());
+
+              // Verify order items remain the same
+              assertEquals(1, updatedOrder.getOrderItems().size());
+              OrderItem orderItem = updatedOrder.getOrderItems().get(0);
+              assertEquals(productId, orderItem.getProductId());
+              assertEquals("PRODUCT1", orderItem.getProductName());
+              assertEquals(new BigDecimal("10.00"), orderItem.getProductPrice());
+              assertEquals(5, orderItem.getProductQuantity());
+
+              // Verify total amount is calculated correctly
+              BigDecimal expectedTotal = new BigDecimal("50.00"); // 10.00 * 5
+              assertEquals(expectedTotal, updatedOrder.getTotalAmount());
+
+            })
+            .verifyComplete();
+
+  }
+
+  @Test
+  void testDeleteOrderByCallingExternalizedServicesSuccess() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    given(orderRepository.findById(orderId)).willReturn(Optional.of(orderList.get(0)));
+    UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Order existingOrder = orderList.get(0);
+    var orderId = existingOrder.getOrderId();
+    existingOrder.setOrderItems(new ArrayList<>(List.of(
+            new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+    )));
+
+    when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
+    when(inventoryServiceClient.restoreInventory(productId, 5)).thenReturn(Mono.empty());
+    doNothing().when(orderRepository).deleteOrderItemById(anyLong());
 
     //When
     orderService.deleteOrder(orderId);
 
     //Then
-    verify(orderRepository, times(1)).delete(orderList.get(0));
     verify(orderRepository, times(1)).findById(orderId);
+    verify(orderRepository, times(1)).delete(existingOrder);
+    verify(inventoryServiceClient, times(1)).restoreInventory(productId, 5);
   }
+
+  @Test
+  void testBulkDeleteOrdersSuccess() {
+    //Given
+    var productId1 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    var order1 = orderList.get(0);
+    var orderId1 = orderList.get(0).getOrderId();
+    order1.setOrderItems(new ArrayList<>(List.of(
+            new OrderItem(1L, productId1, "PRODUCT1", new BigDecimal("10.00"), 3)
+    )));
+    var order2 = orderList.get(1);
+    var orderId2 = orderList.get(1).getOrderId();
+    order2.setOrderItems(new ArrayList<>(List.of(new OrderItem[]{
+            new OrderItem(1L, productId1, "PRODUCT1", new BigDecimal("10.00"), 1)
+    })));
+
+    var existingOrdersIds = Arrays.asList(orderId1, orderId2);
+
+    //mocks
+    when(orderRepository.findAllById(existingOrdersIds)).thenReturn(orderList);
+    /**
+     * It better to use any(UUID.class) and anyInt() here to ensure that the method is
+     * called with any UUID and any integer value. This will avoid issue with
+     * inventoryServiceClient giving error when restoring inventory because we are
+     * deleting multiple orders.
+     */
+
+    when(inventoryServiceClient.restoreInventory(any(UUID.class), anyInt())).thenReturn(Mono.empty());
+
+    //When
+    orderService.bulkDeleteOrders(existingOrdersIds);
+
+    //Then
+    verify(orderRepository, times(1)).findAllById(existingOrdersIds);
+    verify(orderRepository, times(1)).deleteAll(orderList);
+    verify(inventoryServiceClient, times(1)).restoreInventory(productId1, 3);
+    verify(inventoryServiceClient, times(1)).restoreInventory(productId1, 1);
+  }
+
 
   @Test
   void deleteOrderOrderNotFound() {
@@ -598,6 +797,8 @@ class OrderServiceImplTest {
     order.setOrderStatus(newOrderStatus);
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+    //mock restore inventory call
+    given(inventoryServiceClient.restoreInventory(any(UUID.class), anyInt())).willReturn(Mono.empty());
     given(orderRepository.save(order)).willReturn(order);
 
     //When

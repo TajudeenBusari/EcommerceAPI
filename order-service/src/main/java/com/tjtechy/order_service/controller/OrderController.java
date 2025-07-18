@@ -229,9 +229,6 @@ public class OrderController {
 
     var orderDtos = orderService.getOrdersByStatus(orderStatus);
 
-    //map from List<Order> to List<OrderDto>
-    //var orderDtos = OrderMapper.mapFromOrdersToOrderDtos(orders);
-
     return new Result("Orders by status retrieved successfully", true, orderDtos, StatusCode.SUCCESS);
   }
 

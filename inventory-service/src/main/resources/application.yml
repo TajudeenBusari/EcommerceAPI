@@ -3,5 +3,10 @@ server:
 spring:
   application:
     name: inventory-service # This name is used in WebClient URI
+product-service:
+  base-url: http://product-service/api/v1
+inventory-service:
+  base-url: http://inventory-service/api/v1
+    # This is the base URL for the Product Service, which is used in WebClient calls
 
 
