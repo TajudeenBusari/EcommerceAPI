@@ -24,6 +24,7 @@ import org.springframework.cloud.config.client.ConfigServerBootstrapper;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -333,6 +334,26 @@ class OrderControllerTest {
   }
 
   @Test
+  void testBulkDeleteOrdersSuccess() throws Exception {
+    // Given
+    List<Long> orderIds = Arrays.asList(1L, 2L);
+    // Create a JSON array of order IDs
+    String orderIdsJson = objectMapper.writeValueAsString(orderIds);
+
+
+    // Mock the service method
+    doNothing().when(orderService).bulkDeleteOrders(orderIds);
+
+    // Perform the DELETE request
+    mockMvc.perform(delete(baseUrl + "/order/bulk-delete")
+                    .content(orderIdsJson)
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Orders bulk deleted success"))
+            .andExpect(jsonPath("$.flag").value(true));
+  }
+
+  @Test
   void getAllOrdersWithoutCancelledOnesSuccess() throws Exception {
     // Given
     List<OrderDto> orderDtos = new ArrayList<>();
@@ -442,8 +463,6 @@ class OrderControllerTest {
     updatedOrder.setOrderId(orderId);
     updatedOrder.setOrderStatus("SHIPPED");
 
-
-
     // Mock the service method
    when(orderService.updateOrderStatus(orderId, updatedOrder.getOrderStatus())).thenReturn(updatedOrder);
 
@@ -462,7 +481,7 @@ class OrderControllerTest {
     //create an update request dto
     var updateOrderDto = new UpdateOrderDto(
             "updated customer name",
-            "updated customer email",
+            "test@test.com",
             "updated shipping address",
             new ArrayList<>(){
               {
@@ -491,6 +510,41 @@ class OrderControllerTest {
             .expectStatus().isOk()
             .expectBody()
             .jsonPath("$.message").isEqualTo("Order updated successfully")
+            .jsonPath("$.flag").isEqualTo(true);
+  }
+
+  @Test
+  void testUpdateOrderByCallingExternalizedServices() throws Exception {
+    //Given
+    //create an update request dto
+    var updateOrderDto = new UpdateOrderDto(
+            "updated customer name",
+            "test@test.com",
+            "updated shipping address",
+            new ArrayList<>(){
+              {
+                add(new OrderItemDto(UUID.randomUUID(), "PRODUCT1", 10));
+                add(new OrderItemDto(UUID.randomUUID(), "PRODUCT2", 20));
+              }
+            }
+    );
+
+    var json = objectMapper.writeValueAsString(updateOrderDto);
+
+    var order = orders.get(0);
+    var orderId = order.getOrderId();
+    //mock service method
+    when(orderService.updateOrderByCallingExternalizedServices(eq(orderId), any(Order.class))).thenReturn(Mono.just(order));
+
+    //When and Then
+    webTestClient.put()
+            .uri(baseUrl + "/order/externalized/{orderId}", orderId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(json)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$.message").isEqualTo("Order updated successfully by calling required external services")
             .jsonPath("$.flag").isEqualTo(true);
   }
 

@@ -1,9 +1,13 @@
 server:
   port: 8083
-
 spring:
   application:
     name: product-service # This name is used in WebClient URI
+inventory-service:
+    base-url: http://inventory-service/api/v1 # This is the base URL for the Inventory Service, which is used in WebClient calls
+product-service:
+  base-url: http://product-service/api/v1
+
 
 
 

@@ -22,6 +22,12 @@ import org.springframework.test.context.TestPropertySource;
 				"api.endpoint.base-url=/api/v1",
 				"spring.cloud.config.enabled=false",//disable spring cloud config
 				"eureka.client.enabled=false",//disable eureka client
+				"spring.datasource.url=jdbc:tc:postgresql:15.0:///productdb",
+				"spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
+				"spring.datasource.username=testuser",
+				"spring.datasource.password=testpassword",
+				"redis.enabled=false", //disable redis
+				"spring.profiles.active=test"
 })
 class ProductServiceApplicationTests {
 

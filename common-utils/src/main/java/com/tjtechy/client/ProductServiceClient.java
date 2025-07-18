@@ -27,7 +27,9 @@ public class ProductServiceClient {
 
   private final WebClient.Builder clientBuilder;
 
-  @Value("${api.endpoint.base-url}")
+  //@Value("${api.endpoint.base-url}")
+  @Value("${product-service.base-url}")
+
   private String productServiceBaseUrl;
 
   private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -37,7 +39,8 @@ public class ProductServiceClient {
   }
 
   public Mono<ProductDto> getProductById(UUID productId) {
-    var url = "http://product-service" + productServiceBaseUrl + "/product/" + productId;
+//    var url = "http://product-service" + productServiceBaseUrl + "/product/" + productId;
+    var url = productServiceBaseUrl + "/product/" + productId;
     return clientBuilder.build()
             .get()
             .uri(url)

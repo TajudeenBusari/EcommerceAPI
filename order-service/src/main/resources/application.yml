@@ -3,7 +3,10 @@ server:
 spring:
   application:
     name: order-service # This name is used in WebClient URI
-
+product-service:
+  base-url: http://product-service/api/v1
+inventory-service:
+  base-url: http://inventory-service/api/v1
 
 
 

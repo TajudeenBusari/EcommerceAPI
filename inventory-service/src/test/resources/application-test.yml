@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc.tc:postgresql:15.0://inventorydb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  cache:
+    type: none
+  eureka:
+    client:
+      enabled: false
+    instance:
+      hostname: localhost
+  redis:
+    enabled: false
+api:
+  endpoint:
+    base-url: /api/v1
+#suppress the memory leak warning
+logging:
+  level:
+    org.apache.catalina.loader.WebappClassLoaderBase: ERROR

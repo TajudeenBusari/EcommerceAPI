@@ -28,10 +28,10 @@ import com.tjtechy.Result;
 import com.tjtechy.ProductDto;
 import jakarta.transaction.Transactional;
 import com.tjtechy.modelNotFoundException.ProductNotFoundException;
-import org.hibernate.Hibernate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -43,7 +43,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
-import java.util.AbstractMap;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -219,8 +219,6 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
 
-//                       TODO. Call inventory service to deduct stock
-                        //DONE: Call inventory service to deduct stock
                         var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
                         return webClientBuilder.build()
                                 .patch()
@@ -286,6 +284,7 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new ProductNotFoundException(productId));
                         }
                         //b. check if product quantity is available
+                        //Todo: should this be availableQuantity? or productQuantity?
                         if (productDto.productQuantity() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
@@ -550,7 +549,7 @@ public class OrderServiceImpl implements OrderService {
             .flatMap(existingOrder -> {
               System.out.println("Updating Order: " + existingOrder);
 
-              //Restore inventory for old items
+              //Note: Restore inventory for old items by calling inventory service
               return Flux.fromIterable(existingOrder.getOrderItems())
                       .flatMap(oldItem -> inventoryServiceClient.restoreInventory(
                               oldItem.getProductId(),
@@ -576,7 +575,7 @@ public class OrderServiceImpl implements OrderService {
                                           var productId = orderItem.getProductId();
                                           var quantity = orderItem.getProductQuantity();
 
-                                          //a. call product service to get product details
+                                          //Note: a. call product service to get product details
                                           return productServiceClient.getProductById(productId)
                                                   .flatMap(productDto -> {
                                                     if(productDto == null){
@@ -587,7 +586,7 @@ public class OrderServiceImpl implements OrderService {
                                                       return Mono.error(new InsufficientStockQuantityException(productId));
                                                     }
 
-                                                    //DONE: Call inventory service to deduct stock
+                                                    //Call inventory service to deduct stock
                                                     return inventoryServiceClient.deductInventory(productId, quantity)
                                                             .then(Mono.fromCallable(() -> {
                                                               // Enrich order item only after deduction
