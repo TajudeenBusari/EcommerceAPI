@@ -48,6 +48,9 @@
 			<artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
 		</dependency>
 
+
+		<!-- this is for reactive based gateway
+		for spring boot 3.5, it uses this: <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>-->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-gateway</artifactId>
