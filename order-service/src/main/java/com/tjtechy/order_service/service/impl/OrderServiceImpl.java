@@ -404,6 +404,7 @@ public class OrderServiceImpl implements OrderService {
     //TODO: Implement pagination and filtering
   }
 
+  //TODO: Update this logic so that when status is changed to "CANCELLED", inventory is restored
   @Override
   @CachePut(value = "order", key = "#orderId")
   public Order updateOrderStatus(Long orderId, String orderStatus) {
@@ -414,6 +415,7 @@ public class OrderServiceImpl implements OrderService {
       throw new IllegalArgumentException("Order status is required");
     }
 
+    //TODO: IT seems when status is updated with mixed case, it gives invalid order status error
     //Validate order status against allowed statuses
     if(!foundOrder.isOrderStatusValid(orderStatus.trim().toUpperCase())){
       throw new IllegalArgumentException("Invalid order status: " + orderStatus);
@@ -720,6 +722,7 @@ public class OrderServiceImpl implements OrderService {
    * This method will soft-delete the order by setting its status to "CANCELLED"
    * @param orderId
    */
+
   @Override
   public void cancelOrder(Long orderId) {
     var foundOrder = orderRepository.findById(orderId)

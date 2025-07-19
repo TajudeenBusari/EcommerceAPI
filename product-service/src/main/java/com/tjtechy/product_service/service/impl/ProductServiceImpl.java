@@ -604,6 +604,7 @@ public class ProductServiceImpl implements ProductService {
    * @param productIds
    */
   @Override
+  //TODO: Delete from cache immediately after deleting products
   public void bulkDeleteProductsWithInventoriesUsingExternalizedService(List<UUID> productIds) {
     var products = productRepository.findAllById(productIds);
     //1. extract all found product ids and collect them into a list

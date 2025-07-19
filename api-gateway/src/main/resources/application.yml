@@ -8,6 +8,8 @@ spring:
       discovery:
         locator:
           enabled: true
+#      default_filters:
+#        - DeduplicateResponseHeader=Access-Control-Allow-Credentials, Access-Control-Allow-Origin
       routes:
         - id: product-service
           uri: lb://product-service
@@ -21,4 +23,7 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/api/v1/orders/**
+
+              #i will create custom filters later and will be added here
+            #check https://www.geeksforgeeks.org/advance-java/spring-cloud-gateway-with-spring-webflux/
 

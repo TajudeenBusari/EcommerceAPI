@@ -21,10 +21,10 @@ public class ApiRoutes {
   public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
     return builder.routes()
             //PRODUCT SERVICE
-            .route("product-service", r -> r.path("/api/v1/products/**")
+            .route("product-service", r -> r.path("/api/v1/product/**")
                     .uri("lb://PRODUCT-SERVICE")) //Service is registered with Eureka
             //ORDER SERVICE
-            .route("order-service", r -> r.path("/api/v1/orders/**")
+            .route("order-service", r -> r.path("/api/v1/order/**")
                     .uri("lb://ORDER-SERVICE"))
             //INVENTORY SERVICE
             .route("inventory-service", r -> r.path("/api/v1/inventory/**")
