@@ -17,7 +17,8 @@ import java.util.UUID;
 public record InventoryDto(
         Long inventoryId,
         UUID productId,
-        Integer reservedQuantity
+        Integer reservedQuantity,
+        Integer availableStock
 
 ) {
 

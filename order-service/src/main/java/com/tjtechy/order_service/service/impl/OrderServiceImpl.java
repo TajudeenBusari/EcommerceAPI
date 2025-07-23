@@ -12,6 +12,7 @@ import com.tjtechy.DeductInventoryRequestDto;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.tjtechy.businessException.OrderAlreadyCancelledException;
 import com.tjtechy.client.InventoryServiceClient;
 import com.tjtechy.client.ProductServiceClient;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
@@ -46,6 +47,8 @@ import java.math.BigDecimal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -215,7 +218,12 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new ProductNotFoundException(productId));
                         }
                         //b. check if product quantity is available
-                        if (productDto.productQuantity() < quantity) {
+                        //Todo: should this be productDto.availableStock? or productDto.productQuantity?
+//                        if (productDto.productQuantity() < quantity) {
+//                          return Mono.error(new InsufficientStockQuantityException(productId));
+//                        }
+                        ///changed to availableStock
+                        if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
 
@@ -285,12 +293,19 @@ public class OrderServiceImpl implements OrderService {
                         }
                         //b. check if product quantity is available
                         //Todo: should this be availableQuantity? or productQuantity?
-                        if (productDto.productQuantity() < quantity) {
+//                        if (productDto.productQuantity() < quantity) {
+//                          return Mono.error(new InsufficientStockQuantityException(productId));
+//                        }
+                        ///changed to availableStock
+                        if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
                         //Call inventory service to deduct stock
-                        return inventoryServiceClient.deductInventory(productId, quantity) //Using InventoryServiceClient to call inventory service
+                        //first check if inventory is not available for this product
+                        return inventoryServiceClient.deductInventory(productId, quantity)
+
                                 .then(Mono.defer(() -> {
+
                                   //c update order item with validated product details
                                   orderItem.setProductName(productDto.productName());
                                   orderItem.setProductPrice(productDto.productPrice());
@@ -404,21 +419,73 @@ public class OrderServiceImpl implements OrderService {
     //TODO: Implement pagination and filtering
   }
 
-  //TODO: Update this logic so that when status is changed to "CANCELLED", inventory is restored
+
+  /**
+   * //Order status can only be updated if it is not CANCELLED, SHIPPED or DELIVERED, in
+   *  //other words, the order status can only be updated if it is PLACED
+   *  //normal user can cancel an order(handle by cancel order endpoint), but cannot update the status to SHIPPED or DELIVERED
+   *  //only admin can update the status to SHIPPED or DELIVERED
+   *  //if order status is updated from placed to shipped or delivered, it will not restore inventory
+   * @param orderId
+   * @param orderStatus
+   * @return
+   */
   @Override
   @CachePut(value = "order", key = "#orderId")
   public Order updateOrderStatus(Long orderId, String orderStatus) {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
 
+    var orderStatusToBeUpdated = foundOrder.getOrderStatus(); //current order status
+
     if (orderStatus == null || orderStatus.isBlank()) {
       throw new IllegalArgumentException("Order status is required");
     }
 
     //TODO: IT seems when status is updated with mixed case, it gives invalid order status error
+    //TODO: Dont show a successful status
     //Validate order status against allowed statuses
     if(!foundOrder.isOrderStatusValid(orderStatus.trim().toUpperCase())){
       throw new IllegalArgumentException("Invalid order status: " + orderStatus);
+    }
+
+    //Define valid transition states
+    /**
+     * This map means that:
+     * - From "PLACED" status, you can transition to "SHIPPED" or "CANCELLED"
+     * - From "SHIPPED" status, you can transition to "DELIVERED"
+     */
+    Map<String, List<String>> validTransitions = Map.of(
+            "PLACED", List.of("SHIPPED", "CANCELLED"),
+            "SHIPPED", List.of("DELIVERED")
+    );
+
+    //check if current status allows the transition to the new status
+    if (!validTransitions.containsKey(orderStatusToBeUpdated) ||
+            !validTransitions.get(orderStatusToBeUpdated).contains(orderStatus.trim().toUpperCase())) {
+      throw new IllegalArgumentException("Invalid order status transition from " + orderStatusToBeUpdated + " to " + orderStatus);
+    }
+
+    //if order status is set to be updated to "CANCELLED" only, restore inventory for all order items
+    if (orderStatus.trim().equalsIgnoreCase("CANCELLED")) {
+      foundOrder
+              .getOrderItems()
+              .forEach(orderItem -> {
+                var productId = orderItem.getProductId();
+                var quantity = orderItem.getProductQuantity();
+                //Call inventory service to restore stock
+                try{
+                  //First check if any other operation has restored the inventory for this product:
+                  // 1. check if status is already CANCELLED
+
+                  inventoryServiceClient.restoreInventory(productId, quantity)
+                          .doOnError(ex ->
+                                  logger.error("Fail to restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
+                          .subscribe();//fire and forget approach to keep the operation non-blocking
+                }catch (Exception e){
+                  logger.error("Inventory restoration fail for product {}: {}", productId, e.getMessage());
+                }
+              });
     }
     foundOrder.setOrderStatus(orderStatus.trim().toUpperCase());
     return orderRepository.save(foundOrder);
@@ -483,7 +550,11 @@ public class OrderServiceImpl implements OrderService {
                                     return Mono.error(new ProductNotFoundException(productId));
                                   }
                                   //b. check if product quantity is available
-                                  if (productDto.productQuantity() < quantity) {
+//                                  if (productDto.productQuantity() < quantity) {
+//                                    return Mono.error(new InsufficientStockQuantityException(productId));
+//                                  }
+                                  ///changed to availableStock
+                                  if (productDto.availableStock() < quantity) {
                                     return Mono.error(new InsufficientStockQuantityException(productId));
                                   }
                                   // Deduct from Inventory
@@ -551,14 +622,34 @@ public class OrderServiceImpl implements OrderService {
             .flatMap(existingOrder -> {
               System.out.println("Updating Order: " + existingOrder);
 
-              //Note: Restore inventory for old items by calling inventory service
-              return Flux.fromIterable(existingOrder.getOrderItems())
-                      .flatMap(oldItem -> inventoryServiceClient.restoreInventory(
-                              oldItem.getProductId(),
-                              oldItem.getProductQuantity())
-                      )
+              /**
+               * //skip inventory restoration for order if //existingOrder Status is CANCELLED, SHIPPED or DELIVERED
+               * //“Restore inventory only if the current order status is not CANCELLED, SHIPPED, or DELIVERED.”
+               */
+
+              boolean shouldRestoreInventory = Stream.of("CANCELLED", "SHIPPED", "DELIVERED")
+                      .noneMatch(status -> status.equalsIgnoreCase(existingOrder.getOrderStatus()));
+
+              Mono<Void> inventoryRestorationMono;
+              if (shouldRestoreInventory) {
+                //Note: Restore inventory for old items by calling inventory service
+                inventoryRestorationMono = Flux.fromIterable(existingOrder.getOrderItems())
+                        .flatMap(oldItem ->
+                                inventoryServiceClient.restoreInventory(
+                                        oldItem.getProductId(),
+                                        oldItem.getProductQuantity()
+                                        )
+                                        .doOnError(ex ->
+                                                logger.error("Could not to restore inventory for product ID: {} with quantity: {}", oldItem.getProductId(), ex.getMessage())))
+                        .then();
+              } else {
+                //No restoration needed, just an empty Mono
+                logger.info("Skipping inventory restoration for order ID: {} with status: {}", existingOrder.getOrderId(), existingOrder.getOrderStatus());
+                inventoryRestorationMono = Mono.empty();
+              }
+              return inventoryRestorationMono
                       .then(Mono.defer(()-> {
-                                //update logic here, update basic details
+                                //update logic here, update basic detail
                                 existingOrder.setCustomerName(updateOrder.getCustomerName());
                                 existingOrder.setCustomerEmail(updateOrder.getCustomerEmail());
                                 existingOrder.setShippingAddress(updateOrder.getShippingAddress());
@@ -584,7 +675,11 @@ public class OrderServiceImpl implements OrderService {
                                                       return Mono.error(new ProductNotFoundException(productId));
                                                     }
                                                     //b. check if product quantity is available
-                                                    if (productDto.productQuantity() < quantity) {
+//                                                    if (productDto.productQuantity() < quantity) {
+//                                                      return Mono.error(new InsufficientStockQuantityException(productId));
+//                                                    }
+                                                    ///changed to availableStock
+                                                    if (productDto.availableStock() < quantity) {
                                                       return Mono.error(new InsufficientStockQuantityException(productId));
                                                     }
 
@@ -648,23 +743,41 @@ public class OrderServiceImpl implements OrderService {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-    //Restore inventory for order items before deleting the order
-    foundOrder
-            .getOrderItems()
-            .forEach(orderItem -> {
-      var productId = orderItem.getProductId();
-      var quantity = orderItem.getProductQuantity();
-      //Call inventory service to restore stock
-              try{
-                inventoryServiceClient.restoreInventory(productId, quantity)
-                        .doOnError(ex ->
-                                logger.error("Failed to restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
-                        .subscribe();//fire and forget approach to keep the operation non-blocking
-              }catch (Exception e){
-                logger.error("Inventory restoration failed for product {}: {}", productId, e.getMessage());
 
-              }
-    });
+    List<String> excludedStatuses = List.of("CANCELLED", "SHIPPED", "DELIVERED");
+    boolean shouldRestoreInventory = foundOrder.getOrderStatus() != null &&
+            excludedStatuses.stream().noneMatch(status -> status.equalsIgnoreCase(foundOrder.getOrderStatus()));
+
+    if (shouldRestoreInventory){
+      //Restore inventory for order items before deleting the order
+      foundOrder
+              .getOrderItems()
+              .forEach(orderItem -> {
+                var productId = orderItem.getProductId();
+                var quantity = orderItem.getProductQuantity();
+                //Call inventory service to restore stock
+                try{
+                  // has restored the inventory for this product
+                  inventoryServiceClient.restoreInventory(productId, quantity)
+                          .doOnError(ex ->
+                                  logger.error("Failed to restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
+                          .subscribe();//fire and forget approach to keep the operation non-blocking
+                }catch (Exception e){
+                  logger.error("Inventory restoration failed for product {}: {}", productId, e.getMessage());
+
+                }
+              });
+    } else {
+      logger.info("Skipping inventory restoration for cancelled order ID: {}", orderId);
+    }
+
+    //Check if: //it should not be possible to delete order that is already shipped or delivered
+    if (foundOrder.getOrderStatus() != null &&
+            (foundOrder.getOrderStatus().equalsIgnoreCase("SHIPPED") ||
+                    foundOrder.getOrderStatus().equalsIgnoreCase("DELIVERED"))) {
+      //should return a bad request response, ALREADY HANDLED by ExceptionHandlingAdvice
+      throw new IllegalArgumentException("Cannot delete order that is already SHIPPED or DELIVERED");
+    }
 
     //Delete the order(OrderItems will be deleted automatically due to CascadeType.ALL in Order class)
     orderRepository.delete(foundOrder);
@@ -690,25 +803,43 @@ public class OrderServiceImpl implements OrderService {
     var missingOrderIds = orderIds
             .stream()
             .filter(id -> !foundOrders.contains(id)).toList();
+    //first check if foundOrders status is CANCELLED, SHIPPED or DELIVERED
+    List<String> excludedStatuses = List.of("CANCELLED", "SHIPPED", "DELIVERED");
+
 
     //Restore inventory for all found orders before deleting the orders
-    orders.forEach(order -> {
-      order.getOrderItems().forEach(orderItem -> {
-        var productId = orderItem.getProductId();
-        var quantity = orderItem.getProductQuantity();
-        //Call inventory service to restore stock
-        try{
-          inventoryServiceClient.restoreInventory(productId, quantity)
-                  .doOnError(ex ->
-                          logger.error("Could not restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
-                  .subscribe();//fire and forget approach to keep the operation non-blocking
-        }catch (Exception e){
-          logger.error("Inventory failed to restore for product {}: {}", productId, e.getMessage());
+      orders.forEach(order -> {
+        boolean shouldRestoreInventory = order.getOrderStatus() != null &&
+                excludedStatuses.stream().noneMatch(status -> status.equalsIgnoreCase(order.getOrderStatus()));
+        if (shouldRestoreInventory){
+          order.getOrderItems().forEach(orderItem -> {
+            var productId = orderItem.getProductId();
+            var quantity = orderItem.getProductQuantity();
+            //Call inventory service to restore stock
+            try{
+              inventoryServiceClient.restoreInventory(productId, quantity)
+                      .doOnError(ex ->
+                              logger.error("Could not restore inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
+                      .subscribe();//fire and forget approach to keep the operation non-blocking
+            }catch (Exception e){
+              logger.error("Inventory failed to restore for product {}: {}", productId, e.getMessage());
+            }
+          });
+        } else {
+          logger.info("Skipping inventory restoration for cancelled order ID: {} and status: {}", order.getOrderId(), order.getOrderStatus());
         }
+
       });
-    });
+
+
     //delete the found orders
     if (!orders.isEmpty()) {
+      //Check if any of the found orders are in SHIPPED or DELIVERED status
+      if (orders.stream().anyMatch(order -> order.getOrderStatus() != null &&
+              (order.getOrderStatus().equalsIgnoreCase("SHIPPED") ||
+                      order.getOrderStatus().equalsIgnoreCase("DELIVERED")))) {
+        throw new IllegalArgumentException("Cannot delete orders that are already SHIPPED or DELIVERED");
+      }
       orderRepository.deleteAll(orders);
       logger.info("*******Deleted {} orders successfully*******", orders.size());
       } else if (!missingOrderIds.isEmpty()) {
@@ -722,11 +853,21 @@ public class OrderServiceImpl implements OrderService {
    * This method will soft-delete the order by setting its status to "CANCELLED"
    * @param orderId
    */
-
   @Override
   public void cancelOrder(Long orderId) {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+    String currentStatus = foundOrder.getOrderStatus();
+    if ("CANCELLED".equals(currentStatus)) {
+      throw new OrderAlreadyCancelledException(orderId);
+    }
+    if (!"PLACED".equalsIgnoreCase(currentStatus)) {
+
+      //Already handled by ExceptionHandlingAdvice as BadRequestException
+      throw new IllegalArgumentException("Order cannot be cancelled unless it is in PLACED status");
+    }
+
     //Restore inventory for order items before cancelling the order
     foundOrder
             .getOrderItems()
@@ -735,6 +876,7 @@ public class OrderServiceImpl implements OrderService {
       var quantity = orderItem.getProductQuantity();
       //Call inventory service to restore stock
       try{
+
         inventoryServiceClient.restoreInventory(productId, quantity)
                 .doOnError(ex ->
                         logger.error("Fail in restoring inventory for product ID: {} with quantity: {}", productId, ex.getMessage()))
@@ -746,7 +888,6 @@ public class OrderServiceImpl implements OrderService {
     //soft delete the order
     foundOrder.setOrderStatus("CANCELLED");
     orderRepository.save(foundOrder);
-
   }
 
   @Override
@@ -769,6 +910,26 @@ public class OrderServiceImpl implements OrderService {
     var orderDto = OrderMapper.mapFromOrderToOrderDto(foundOrder);
 
     return orderDto;
+  }
+
+  /**
+   * @param orderId
+   */
+  @Override
+  public void forcedDeleteOrder(Long orderId) {
+    /**
+     * //This method is strictly for Admin use only
+     * //It will delete the order without restoring inventory
+     * //This method should be used with caution
+     */
+
+    var foundOrder = orderRepository.findById(orderId)
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+    //order can be deleted regardless of its status
+    //Delete the order(OrderItems will be deleted automatically due to CascadeType.ALL in Order class)
+    orderRepository.delete(foundOrder);
+
   }
 
 

@@ -4,6 +4,7 @@ package com.tjtechy.order_service.exception;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
+import com.tjtechy.businessException.OrderAlreadyCancelledException;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.modelNotFoundException.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -113,6 +114,16 @@ public class ExceptionHandlingAdvice {
   }
 
   /**
+   * Handle already cancelled order exception.
+   */
+  @ExceptionHandler(OrderAlreadyCancelledException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public Result handleOrderAlreadyCancelledException(OrderAlreadyCancelledException e) {
+    return new Result(e.getMessage(), false, StatusCode.CONFLICT);
+  }
+
+
+  /**
    * Handles all other exceptions that are not explicitly handled by other methods.
    * This method is a fallback for any unhandled exceptions in the application.
    * It returns a standardized error response with an HTTP 500 (Internal Server Error) status.
@@ -124,5 +135,9 @@ public class ExceptionHandlingAdvice {
   public Result handleException(Exception e) {
     return new Result("A server internal error occurs" + e.getMessage(), false, StatusCode.INTERNAL_SERVER_ERROR);
   }
+
+
+
+
 
 }

@@ -36,6 +36,19 @@ public class ExceptionHandlingAdvice {
     return new Result(exception.getMessage(), false, StatusCode.NOT_FOUND);
   }
 
+  /**
+   * Handles exceptions of type {@link IllegalArgumentException}.
+   * This is a general runtime exception that occurs when a method receives an invalid argument
+   * that it cannot handle. It is part of Java core exception and extends {@link RuntimeException}.
+   * @param exception
+   * @return Result {@link Result}
+   */
+  @ExceptionHandler(IllegalArgumentException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public Result handleIllegalArgumentException(IllegalArgumentException exception) {
+    return new Result(exception.getMessage(), false, StatusCode.BAD_REQUEST);
+  }
+
 
 
 

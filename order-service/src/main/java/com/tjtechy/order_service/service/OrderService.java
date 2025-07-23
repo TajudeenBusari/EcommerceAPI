@@ -54,4 +54,9 @@ public interface OrderService {
 
   OrderDto getOrderDtoById(Long orderId);
 
+  //strictly for Admin use only
+  void forcedDeleteOrder(Long orderId);
+
+
+
 }

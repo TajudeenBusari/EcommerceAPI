@@ -301,7 +301,7 @@ public class ProductControllerIntegrationTest {
             .andExpect(jsonPath("$.data.productDescription").value("Updated Product Description"))
             .andExpect(jsonPath("$.data.productCategory").value("Updated Product Category"))
             .andExpect(jsonPath("$.data.productQuantity").value(20))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(20)) //available stock is now same as product quantity
             .andExpect(jsonPath("$.data.productPrice").value(1000.00))
             .andExpect(jsonPath("$.data.expiryDate").isNotEmpty())
             .andReturn();
@@ -375,7 +375,7 @@ public class ProductControllerIntegrationTest {
             .andExpect(jsonPath("$.data.productDescription").value("Updated1 Product Description"))
             .andExpect(jsonPath("$.data.productCategory").value("Updated1 Product Category"))
             .andExpect(jsonPath("$.data.productQuantity").value(20))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(20)) //available stock is now same as product quantity
             .andExpect(jsonPath("$.data.productPrice").value(1000.00))
             .andExpect(jsonPath("$.data.expiryDate").isNotEmpty())
             .andReturn();

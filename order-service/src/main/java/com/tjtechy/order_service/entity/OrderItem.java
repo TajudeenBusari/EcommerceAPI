@@ -101,6 +101,7 @@ public class OrderItem implements Serializable {
   }
 
   public void setProductQuantity(Integer productQuantity) {
+
     this.productQuantity = productQuantity;
   }
 

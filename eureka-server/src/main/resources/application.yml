@@ -7,10 +7,19 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
+
 eureka:
   client:
     register-with-eureka: false #DISABLING THE REGISTRATION OF THE EUREKA-SERVER WITH ITSELF
     fetch-registry: false #DISABLING THE FETCHING OF REGISTRY FROM ITSELF
+    service-url:
+      defaultZone: "http://localhost:8762/eureka" #URL FOR THE EUREKA SERVER
+
+logging:
+  level:
+    com.netflix.eureka: INFO #SET THE LOG LEVEL FOR EUREKA TO INFO
+    com.netflix.discovery: INFO #SET THE LOG LEVEL FOR DISCOVERY TO INFO
+    com.netflix.eureka.cluster.peerEurekaNodes: INFO #SET THE LOG LEVEL FOR EUREKA CLUSTER TO DEBUG
 
 
 

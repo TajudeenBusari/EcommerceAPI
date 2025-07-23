@@ -206,7 +206,6 @@ class OrderControllerTest {
             .andExpect(jsonPath("$.data.customerName").value(orderDto.getCustomerName()))
             .andExpect(jsonPath("$.data.customerEmail").value(orderDto.getCustomerEmail()))
             .andExpect(jsonPath("$.data.shippingAddress").value(orderDto.getShippingAddress()));
-
   }
 
 
@@ -392,6 +391,7 @@ class OrderControllerTest {
             .andExpect(jsonPath("$.data[0].orderId").value(orderDto1.getOrderId()))
             .andExpect(jsonPath("$.data[0].customerName").value(orderDto1.getCustomerName()))
             .andExpect(jsonPath("$.data[0].customerEmail").value(orderDto1.getCustomerEmail()))
+            .andExpect(jsonPath("$.data[0].orderStatus").value(orderDto1.getOrderStatus()))
             .andExpect(jsonPath("$.data[0].shippingAddress").value(orderDto1.getShippingAddress()));
   }
 

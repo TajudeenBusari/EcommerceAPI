@@ -99,7 +99,8 @@ class InventoryControllerTest {
       var inventoryDto = new InventoryDto(
               faker.number().numberBetween(1L, 100L),
               UUID.randomUUID(),
-              faker.number().randomDigit()
+              faker.number().randomDigit(),
+              1// reserved quantity
       );
       inventoryDtoList.add(inventoryDto);
     }
@@ -158,7 +159,8 @@ class InventoryControllerTest {
     var inventoryDto = new InventoryDto(
             inventory.getInventoryId(),
             inventory.getProductId(),
-            inventory.getReservedQuantity()
+            inventory.getReservedQuantity(),
+            inventory.getAvailableStock()
     );
 
     //mock the inventoryService.getInventoryByInventoryId method
@@ -201,7 +203,8 @@ class InventoryControllerTest {
     inventoryDtoList.set(0, new InventoryDto(
             inventoryList.get(0).getInventoryId(),
             inventoryList.get(0).getProductId(),
-            inventoryList.get(0).getReservedQuantity()
+            inventoryList.get(0).getReservedQuantity(),
+            inventoryList.get(0).getAvailableStock()
             ));
 
     //mock the inventoryService.getAllInventory method
@@ -226,7 +229,8 @@ class InventoryControllerTest {
     var inventoryDto = new InventoryDto(
             inventory.getInventoryId(),
             inventory.getProductId(),
-            inventory.getReservedQuantity()
+            inventory.getReservedQuantity(),
+            inventory.getAvailableStock()
     );
 
     when(inventoryService.getInventoryByProductId(productId)).thenReturn(inventory);
@@ -271,7 +275,8 @@ class InventoryControllerTest {
     var inventoryDto = new InventoryDto(
             updatedInventory.getInventoryId(),
             updatedInventory.getProductId(),
-            updatedInventory.getReservedQuantity()
+            updatedInventory.getReservedQuantity(),
+            updatedInventory.getAvailableStock()
     );
     when(inventoryService.updateInventory(eq(inventoryId), any(Inventory.class)))
             .thenReturn(updatedInventory);
@@ -283,7 +288,6 @@ class InventoryControllerTest {
             .andExpect(jsonPath("$.data.inventoryId").value(inventoryDto.inventoryId()))
             .andExpect(jsonPath("$.data.productId").value(inventoryDto.productId().toString()))
             .andExpect(jsonPath("$.data.reservedQuantity").value(inventoryDto.reservedQuantity()));
-
   }
 
   @Test

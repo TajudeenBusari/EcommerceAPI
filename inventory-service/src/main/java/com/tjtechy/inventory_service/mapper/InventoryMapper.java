@@ -12,7 +12,8 @@ public class InventoryMapper {
     var inventoryDto = new InventoryDto(
             inventory.getInventoryId(),
             inventory.getProductId(),
-            inventory.getReservedQuantity()
+            inventory.getReservedQuantity(),
+            inventory.getAvailableStock()
     );
     return inventoryDto;
   }
@@ -26,7 +27,8 @@ public class InventoryMapper {
     var inventoryDto = new InventoryDto(
             null,
             createInventoryDto.productId(),
-            createInventoryDto.reservedQuantity()
+            createInventoryDto.reservedQuantity(),
+            createInventoryDto.availableStock()
     );
     return inventoryDto;
   }

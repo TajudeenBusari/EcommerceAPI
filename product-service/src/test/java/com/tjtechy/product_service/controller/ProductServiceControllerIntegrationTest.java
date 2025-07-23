@@ -254,7 +254,8 @@ public class ProductServiceControllerIntegrationTest {
     var inventoryDto = new InventoryDto(
             inventoryId,
             tempProductId, // temporary placeholder
-            1);
+            1,
+            10);
 
     var createInventoryResponse = new Result("Inventory created successfully", true, inventoryDto, 200);
 
@@ -345,8 +346,7 @@ public class ProductServiceControllerIntegrationTest {
     listAppender.start();
     logger.addAppender(listAppender);
 
-    // Stop the WireMock server to simulate the inventory service being down
-    //wireMockServer.stop();
+
     // Attempt to create a product with inventory
     var savedProduct = createProductWithInventory();
 
@@ -376,7 +376,7 @@ public class ProductServiceControllerIntegrationTest {
   @DisplayName("Test to update product with inventory externalized- successful update")
   public void testUpdateProductWithInventoryExternalized() throws Exception {
 
-    //create a product without inventory first
+    //create a product with inventory first
     var savedProduct = createProductAndInventoryWithInventoryExternalized();
     var productId = UUID.fromString((String) savedProduct.get("productId"));
     var updatedProductName = "Updated Product Name";
@@ -399,6 +399,7 @@ public class ProductServiceControllerIntegrationTest {
     var inventoryDto = new InventoryDto(
             inventoryId,
             tempProductId, // temporary placeholder
+            1,
             10); //available stock
 
     var getInventoryResponse = new Result("Inventory with productId: " + inventoryDto.productId() + " retrieved successfully", true, inventoryDto, 200);
@@ -521,7 +522,7 @@ public class ProductServiceControllerIntegrationTest {
     var productId = UUID.fromString((String) savedProduct.get("productId"));
     var inventoryId = 100L; // Assuming the inventory ID is 1 for this test
 
-    var getInventoryByProductIdResponse = new Result("Inventory with productId: " + productId + " retrieved successfully", true, new InventoryDto(inventoryId, productId, 10), 200);
+    var getInventoryByProductIdResponse = new Result("Inventory with productId: " + productId + " retrieved successfully", true, new InventoryDto(inventoryId, productId,1, 10), 200);
     // Stub the inventory service to return the inventory for the product
     WireMock.stubFor(WireMock.get(GET_INVENTORY_BY_PRODUCT_URL + "/" + productId)
             .willReturn(WireMock.okJson(objectMapper.writeValueAsString(getInventoryByProductIdResponse))));
@@ -569,8 +570,8 @@ public class ProductServiceControllerIntegrationTest {
     var inventoryId1 = 100L; // Assuming the inventory ID is 1 for this test
     var inventoryId2 = 101L; // Assuming the inventory ID is 2 for this test
 
-    var getInventoryByProductIdResponse1 = new Result("Inventory with productId: " + productId1 + " retrieved successfully", true, new InventoryDto(inventoryId1, productId1, 10), 200);
-    var getInventoryByProductIdResponse2 = new Result("Inventory with productId: " + productId2 + " retrieved successfully", true, new InventoryDto(inventoryId2, productId2, 10), 200);
+    var getInventoryByProductIdResponse1 = new Result("Inventory with productId: " + productId1 + " retrieved successfully", true, new InventoryDto(inventoryId1, productId1, 1,  10), 200);
+    var getInventoryByProductIdResponse2 = new Result("Inventory with productId: " + productId2 + " retrieved successfully", true, new InventoryDto(inventoryId2, productId2, 1,10), 200);
 
     // Stub the inventory service to return the inventories for the products
     WireMock.stubFor(WireMock.get(GET_INVENTORY_BY_PRODUCT_URL + "/" + productId1)

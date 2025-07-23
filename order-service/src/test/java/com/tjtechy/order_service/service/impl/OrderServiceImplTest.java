@@ -2,6 +2,7 @@ package com.tjtechy.order_service.service.impl;
 
 import com.tjtechy.*;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
+import com.tjtechy.businessException.OrderAlreadyCancelledException;
 import com.tjtechy.client.InventoryServiceClient;
 import com.tjtechy.client.ProductServiceClient;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
@@ -188,9 +189,9 @@ class OrderServiceImplTest {
     Result productResult2 = new Result("Get One Success", true, productDto2, StatusCode.SUCCESS);
 
     Result inventoryResult1 = new Result("Inventory deducted successfully", true,
-            new InventoryDto(1L, productId1, 2), StatusCode.SUCCESS);
+            new InventoryDto(1L, productId1, 1,2), StatusCode.SUCCESS);
     Result inventoryResult2 = new Result("Inventory deducted successfully", true,
-            new InventoryDto(2L, productId2, 3), StatusCode.SUCCESS);
+            new InventoryDto(2L, productId2,1,  3), StatusCode.SUCCESS);
 
 
     when(productServiceConfig.getBaseUrl()).thenReturn("/api/v1");
@@ -267,7 +268,7 @@ class OrderServiceImplTest {
     ));
 
     ProductDto productDto = new ProductDto(
-            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
             LocalDate.now().plusYears(1), new BigDecimal("10.00")
     );
 
@@ -276,7 +277,7 @@ class OrderServiceImplTest {
 
     //not really needed here, but just to show how it can be used
     Result inventoryDeductResult = new Result("Inventory deducted successfully", true,
-            new InventoryDto(1L, productId, 1), StatusCode.SUCCESS);
+            new InventoryDto(1L, productId, 1,10), StatusCode.SUCCESS);
 
     when(productServiceClient.getProductById(productId)).thenReturn(Mono.just(productDto));
     when(inventoryServiceClient.deductInventory(productId, 2)).thenReturn(Mono.empty());
@@ -309,6 +310,7 @@ class OrderServiceImplTest {
      * TODO: I may need to refactor the check for insufficient stock quantity logic
      * in the OrderServiceImpl class by comparing the amount to be deducted (productQuantity in the orderItem)
      * with the availableStock in the product DB and not the productQuantity in the product DB.
+     * DONE
      */
     UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
     Order order = new Order();
@@ -316,7 +318,7 @@ class OrderServiceImplTest {
             new OrderItem(1L, productId, null, null, 11) // Requesting more than available stock
     ));
     ProductDto productDto = new ProductDto(
-            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
             LocalDate.now().plusYears(1), new BigDecimal("10.00")
     );
 
@@ -456,7 +458,7 @@ class OrderServiceImplTest {
     //Given
     var orderId = orderList.get(0).getOrderId();
     var order = orderList.get(0);
-    var newOrderStatus = "SHIPPED"; //Formally PLACED
+    var newOrderStatus = "sHIPPED"; //Formally PLACED
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
     given(orderRepository.save(order)).willReturn(order);
 
@@ -554,7 +556,7 @@ class OrderServiceImplTest {
             "PRODUCT1 CATEGORY",
             "PRODUCT1 DESCRIPTION",
             10,
-            5,
+            10,
             LocalDate.now().plusYears(1),
             new BigDecimal(10.0)
     );
@@ -665,7 +667,7 @@ class OrderServiceImplTest {
 
 
     ProductDto productDto = new ProductDto(
-            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
             LocalDate.now().plusYears(1), new BigDecimal("10.00")
     );
 
@@ -714,6 +716,65 @@ class OrderServiceImplTest {
   }
 
   @Test
+  void testUpdateOrderByCallingExternalizedServicesWhenOrderStatusDoesNotAllowRestore() {
+    //given
+    UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Order existingOrder = orderList.get(0);
+    var orderId = existingOrder.getOrderId();
+    existingOrder.setOrderStatus("SHIPPED"); // Order status is SHIPPED, so restore should not be allowed
+
+    existingOrder.setOrderItems(new ArrayList<>(List.of(
+            new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+    )));
+
+    //update order with the same Id
+    Order updateOrder = new Order();
+    updateOrder.setOrderId(orderId);
+    updateOrder.setCustomerName("Updated Customer"); //update customer name
+    updateOrder.setCustomerEmail(existingOrder.getCustomerEmail()); //same customer email
+    updateOrder.setShippingAddress(existingOrder.getShippingAddress()); //same shipping address
+    //same list of order items
+    /**
+     * Don't use immutable list that is ##List.of(
+     *     new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+     * )##
+     * here because we need to clear the existing order items.
+     * Calling clear() on an immutable list will throw UnsupportedOperationException.
+     * However, use a mutable list like ArrayList (as used in the OrderServiceImpl logic) or LinkedList.
+     */
+    updateOrder.setOrderItems(new ArrayList<>(List.of(
+            new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+    )));
+
+
+    ProductDto productDto = new ProductDto(
+            productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
+            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+    );
+
+    //mocks
+    when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
+    when(productServiceClient.getProductById(productId)).thenReturn(Mono.just(productDto));
+    when(inventoryServiceClient.deductInventory(productId, 5)).thenReturn(Mono.empty());
+    doNothing().when(orderRepository).deleteOrderItemById(anyLong());
+    when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    //when
+    Mono<Order> result = orderService.updateOrderByCallingExternalizedServices(orderId, updateOrder);
+
+    //then
+    StepVerifier.create(result)
+            .assertNext(updatedOrder -> {
+              assertNotNull(updatedOrder);
+              assertEquals("Updated Customer", updatedOrder.getCustomerName());
+            }).verifyComplete();
+    // Verify that restoreInventory is not called since order status is SHIPPED
+    verify(inventoryServiceClient, never()).restoreInventory(any(UUID.class), anyInt());
+    // Verify that deductInventory is called
+    verify(inventoryServiceClient,times(1)).deductInventory(any(UUID.class), anyInt());
+  }
+
+  @Test
   void testDeleteOrderByCallingExternalizedServicesSuccess() {
     //Given
     UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
@@ -737,24 +798,55 @@ class OrderServiceImplTest {
   }
 
   @Test
+  void testDeleteOrderByCallingExternalizedServicesWhenOrderStatusDoesNotAllowDelete(){
+    //Given
+    UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Order existingOrder = orderList.get(0);
+    var orderId = existingOrder.getOrderId();
+    existingOrder.setOrderStatus("SHIPPED"); // Order status is SHIPPED, so restore should not be allowed
+    existingOrder.setOrderItems(new ArrayList<>(List.of(
+            new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
+    )));
+
+    //mocks
+    when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
+    //restore is not called because order status is SHIPPED
+    //delete order should not be called
+
+    //When
+    var exception = assertThrows(IllegalArgumentException.class, () -> orderService.deleteOrder(orderId));
+    assertEquals("Cannot delete order that is already SHIPPED or DELIVERED", exception.getMessage());
+
+    //Then
+    verify(orderRepository, times(1)).findById(orderId);
+    verify(orderRepository, times(0)).delete(existingOrder);
+    verify(inventoryServiceClient, never()).restoreInventory(productId, 5);
+
+  }
+
+  @Test
   void testBulkDeleteOrdersSuccess() {
     //Given
     var productId1 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
     var order1 = orderList.get(0);
+    order1.setOrderStatus("cANCelleD"); //
     var orderId1 = orderList.get(0).getOrderId();
+
     order1.setOrderItems(new ArrayList<>(List.of(
             new OrderItem(1L, productId1, "PRODUCT1", new BigDecimal("10.00"), 3)
     )));
     var order2 = orderList.get(1);
+    order2.setOrderStatus("Cancelled");
     var orderId2 = orderList.get(1).getOrderId();
     order2.setOrderItems(new ArrayList<>(List.of(new OrderItem[]{
             new OrderItem(1L, productId1, "PRODUCT1", new BigDecimal("10.00"), 1)
     })));
 
-    var existingOrdersIds = Arrays.asList(orderId1, orderId2);
+    var existingOrdersIds = List.of(orderId1, orderId2);
 
     //mocks
-    when(orderRepository.findAllById(existingOrdersIds)).thenReturn(orderList);
+    when(orderRepository.findAllById(existingOrdersIds)).thenReturn(List.of(order1, order2));
+    doNothing().when(orderRepository).deleteAll(List.of(order1, order2));
     /**
      * It better to use any(UUID.class) and anyInt() here to ensure that the method is
      * called with any UUID and any integer value. This will avoid issue with
@@ -769,9 +861,11 @@ class OrderServiceImplTest {
 
     //Then
     verify(orderRepository, times(1)).findAllById(existingOrdersIds);
-    verify(orderRepository, times(1)).deleteAll(orderList);
-    verify(inventoryServiceClient, times(1)).restoreInventory(productId1, 3);
-    verify(inventoryServiceClient, times(1)).restoreInventory(productId1, 1);
+    verify(orderRepository, times(1)).deleteAll(List.of(order1, order2));
+    // No restoreInventory call since orders are cancelled
+    verify(inventoryServiceClient, times(0)).restoreInventory(productId1, 3);
+    //no restoreInventory call for productId1 since orders are cancelled
+    verify(inventoryServiceClient, times(0)).restoreInventory(productId1, 1);
   }
 
 
@@ -793,11 +887,10 @@ class OrderServiceImplTest {
     //Given
     var orderId = orderList.get(0).getOrderId();
     var order = orderList.get(0);
-    var newOrderStatus = "CANCELLED"; //Formally PLACED
-    order.setOrderStatus(newOrderStatus);
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
     //mock restore inventory call
+
     given(inventoryServiceClient.restoreInventory(any(UUID.class), anyInt())).willReturn(Mono.empty());
     given(orderRepository.save(order)).willReturn(order);
 
@@ -807,6 +900,60 @@ class OrderServiceImplTest {
     //Then
     assertNotNull(order);
     assertEquals("CANCELLED", order.getOrderStatus());
+    verify(orderRepository, times(1)).findById(orderId);
+    //NOTE: called 3 times because of the 3 order items in the order
+    verify(inventoryServiceClient, times(3)).restoreInventory(any(UUID.class), anyInt());
+    verify(orderRepository, times(1)).save(order);
+  }
+
+  @Test
+  void cancelOrderWhenStatusIsAlreadyCancelled() {
+    //Given
+    var orderId = orderList.get(0).getOrderId();
+    var order = orderList.get(0);
+    order.setOrderStatus("CANCELLED");
+
+    given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+    //When and then
+    var exception = assertThrows(RuntimeException.class, () -> orderService.cancelOrder(orderId));
+
+    assertNotNull(exception);
+    assertEquals(OrderAlreadyCancelledException.class, exception.getClass());
+    assertEquals("Order with ID 1 has already been cancelled.", exception.getMessage());
+  }
+
+  @Test
+  void cancelOrderWhenStatusIsAlreadyShipped() {
+    //Given
+    var orderId = orderList.get(0).getOrderId();
+    var order = orderList.get(0);
+    order.setOrderStatus("SHIPPED");
+
+    given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+    //When and then
+    var exception = assertThrows(IllegalArgumentException.class, () -> orderService.cancelOrder(orderId));
+
+    assertNotNull(exception);
+
+    assertEquals("Order cannot be cancelled unless it is in PLACED status", exception.getMessage());
+  }
+
+  @Test
+  void cancelOrderWhenOrderIsAlreadyDelivered() {
+    //Given
+    var orderId = orderList.get(0).getOrderId();
+    var order = orderList.get(0);
+    order.setOrderStatus("DELIVERED");
+
+    given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+    //When and then
+    var exception = assertThrows(IllegalArgumentException.class, () -> orderService.cancelOrder(orderId));
+
+    assertNotNull(exception);
+    assertEquals("Order cannot be cancelled unless it is in PLACED status", exception.getMessage());
   }
 
   @Test
