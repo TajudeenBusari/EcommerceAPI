@@ -229,7 +229,7 @@ class ProductServiceImplTest {
     assertEquals(new BigDecimal("300.0"), savedProduct.getProductPrice());
     assertEquals(300, savedProduct.getProductQuantity());
     assertEquals("Category 3", savedProduct.getProductCategory());
-    assertEquals(30, savedProduct.getAvailableStock());
+    assertEquals(300, savedProduct.getAvailableStock()); //should now be same as product quantity
     assertEquals(LocalDate.of(2026, 10, 10), savedProduct.getExpiryDate());
     assertEquals(LocalDate.of(2021, 9, 5), savedProduct.getManufacturedDate());
     assertEquals(LocalDate.of(2021, 9, 5), savedProduct.getUpdatedAt());
@@ -282,6 +282,7 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             null,
             product.getProductId(),
+            1,
             product.getAvailableStock()
     );
     given(productRepository.save(any(Product.class))).willReturn(product);
@@ -444,6 +445,7 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             null,
             product.getProductId(),
+            1, // default reserved quantity
             product.getAvailableStock()
     );
     given(productRepository.save(any(Product.class))).willReturn(product);
@@ -565,10 +567,11 @@ class ProductServiceImplTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            10,
+            10, // available stock, should be same as product quantity in the response, no matter the value set here.
             LocalDate.of(2026, 10, 10),
             LocalDate.of(2021, 9, 5),
             LocalDate.of(2021, 9, 5));
+
 
     given(productRepository.findById(productId)).willReturn(Optional.of(productList.get(0)));
     given(productRepository.save(productList.get(0))).willReturn(productList.get(0));
@@ -583,7 +586,7 @@ class ProductServiceImplTest {
     assertEquals(new BigDecimal("100.0"), updated.getProductPrice());
     assertEquals(100, updated.getProductQuantity());
     assertEquals("Category 1", updated.getProductCategory());
-    assertEquals(10, updated.getAvailableStock());
+    assertEquals(100, updated.getAvailableStock()); //now 100, same as product quantity
     assertEquals(LocalDate.of(2026, 10, 10), updated.getExpiryDate());
     assertEquals(LocalDate.of(2021, 9, 5), updated.getManufacturedDate());
     assertEquals(LocalDate.of(2021, 9, 5), updated.getUpdatedAt());
@@ -628,6 +631,9 @@ class ProductServiceImplTest {
   @Test
   @DisplayName("Test for updateProductWithInventory method Success")
   void testProductUpdateWithInventorySuccess(){
+    /**
+     * Note: some of these stubs are not necessary, but they are included to demonstrate
+     */
     //Given
     var productId = productList.get(0).getProductId();
     var updatedProduct = new Product( UUID.randomUUID(),
@@ -644,6 +650,7 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             null,
             productId,
+            1, // default reserved quantity
             10
     );
     Result getInventoryResult = new Result("Inventory retrieved successfully", true, inventoryDto, StatusCode.SUCCESS);
@@ -692,6 +699,7 @@ class ProductServiceImplTest {
     //Then
     assertNotNull(result);
     assertEquals("Product 1 updated", result.getProductName());
+    assertEquals(100, result.getAvailableStock());
     verify(productRepository, times(1)).findById(productId);
     verify(productRepository, times(1)).save(productList.get(0));
     verify(webClientBuilder, times(2)).build(); //GET and PUT
@@ -730,7 +738,8 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             100L,
             productId,
-            1
+            1, // default reserved quantity
+            10
     );
     when(inventoryServiceClient.getInventoryByProductId(productId)).thenReturn(Mono.just(inventoryDto));
 
@@ -744,6 +753,7 @@ class ProductServiceImplTest {
     //Then
     assertNotNull(result);
     assertEquals("Product 1 updated", result.getProductName());
+    assertEquals(100, result.getAvailableStock()); //available stock should be same as product quantity
   }
 
   /**
@@ -790,7 +800,8 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             100L,
             productId,
-            1
+            1, // default reserved quantity
+            10
     );
 
     //1. mock the inventory service getInventoryByProductId method to throw an error
@@ -857,6 +868,7 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             null,
             productId,
+            1, // default reserved quantity
             10
     );
 
@@ -1036,6 +1048,7 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             null,
             productId,
+            1, // default reserved quantity
             10
     );
     Result getInventoryResult = new Result("Inventory retrieved successfully", true, inventoryDto, StatusCode.SUCCESS);
@@ -1101,6 +1114,7 @@ class ProductServiceImplTest {
     InventoryDto inventoryDto = new InventoryDto(
             null,
             productId,
+            1, // default reserved quantity
             10
     );
     //mock the product repository to return an existing product
@@ -1141,7 +1155,7 @@ class ProductServiceImplTest {
 
     // Mock the inventory service client to delete the inventory for each product
     for (Product product : productList) {
-      InventoryDto inventoryDto = new InventoryDto(null, product.getProductId(), 10);
+      InventoryDto inventoryDto = new InventoryDto(null, product.getProductId(), 1,10);
       when(inventoryServiceClient.getInventoryByProductId(product.getProductId())).thenReturn(Mono.just(inventoryDto));
       when(inventoryServiceClient.deleteInventory(inventoryDto.inventoryId()))
               .thenReturn(Mono.just(new Result("Inventory deleted successfully", true, null, StatusCode.SUCCESS)));

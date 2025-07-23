@@ -159,7 +159,8 @@ public class InventoryController {
 
   /**
    * This method is used to deduct inventory reactively by product id and quantity
-   * and non-blocking. It will be used in the order service to deduct inventory
+   * and non-blocking. It will be used in the order service to deduct inventory when
+   * an order is placed/created.
    * @param deductInventoryRequestDto
    * @return Result {@link Result}
    */
@@ -189,21 +190,6 @@ public class InventoryController {
     return new Result("Inventory restored successfully", true, null, StatusCode.SUCCESS);
   }
 
-
-  /**
-   * This method is used to delete inventory by product id.
-   * @param productId
-   * @return Result {@link Result}
-   * Currently not used, but can be used in the future.
-   */
-//  @DeleteMapping("/internal/product/{productId}")
-//  public Result deleteInventoryByProductId(@PathVariable UUID productId) {
-//
-//    //call the service to delete inventory
-//    inventoryService.deleteInventoryByProductId(productId);
-//
-//    return new Result("Inventory deleted successfully", true, null, StatusCode.SUCCESS);
-//  }
 
 }
 

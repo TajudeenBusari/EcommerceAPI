@@ -124,7 +124,8 @@ public class ProductServiceImpl implements ProductService {
     @CachePut(value = "product", key = "#product.productId") //store in "products" cache with key as id
     @Override
     public Product saveProduct(Product product) {
-        return productRepository.save(product);
+      ensureProductQuantityAndAvailableStockAreInSync(product);
+      return productRepository.save(product);
     }
 
 
@@ -145,10 +146,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Deprecated
     public Product saveProductWithInventory(Product product) {
-      //1.save the product to the database
+
+      //first check if the productQuantity is equal to the availableStock, else set availableStock to productQuantity
+      ensureProductQuantityAndAvailableStockAreInSync(product);
+      //2.save the product to the database
       var savedProduct = productRepository.save(product);
 
-      //2.Trigger async call to inventory service to create inventory
+      //3.Trigger async call to inventory service to create inventory
       String inventoryServiceUrl = "http://inventory-service" + inventoryServiceConfig.getBaseUrl() + "/inventory";
       //String inventoryServiceUrl = inventoryServiceConfig.getBaseUrl();
 
@@ -199,11 +203,23 @@ public class ProductServiceImpl implements ProductService {
   @Override
   public Product saveProductWithInventoryUsingExternalizedService(Product product) {
 
+
+    //first check if the productQuantity is equal to the availableStock, else set availableStock to productQuantity
+//    if (product.getProductQuantity() != null && product.getAvailableStock() == null) {
+//      product.setAvailableStock(product.getProductQuantity());
+//    } else if (product.getAvailableStock() != null && product.getProductQuantity() == null) {
+//      product.setProductQuantity(product.getAvailableStock());
+//    } else if (product.getProductQuantity() != null && product.getAvailableStock() != null
+//            && !product.getProductQuantity().equals(product.getAvailableStock())) {
+//      product.setAvailableStock(product.getProductQuantity());
+//    }
+    ensureProductQuantityAndAvailableStockAreInSync(product);
+
     //1.save the product to the database
     var savedProduct = productRepository.save(product);
 
     //2.Trigger async call to inventory service to create inventory using the externalized inventory service
-    //By default, when the product is created, the available stock is set to 1.
+    //By default, when the product is created, the reserved quantity is set to 1.
     /*TODO: The CreateInventoryDto should be externalized from the product-service
      *To ensure that the separation of concerns is maintained
      *Product-Service should not have too much knowledge of the Inventory-service.
@@ -250,6 +266,8 @@ public class ProductServiceImpl implements ProductService {
         foundProduct.setProductCategory(product.getProductCategory());
         foundProduct.setProductDescription(product.getProductDescription());
         foundProduct.setProductPrice(product.getProductPrice());
+        // If productQuantity is set, use it to update availableStock
+        ensureProductQuantityAndAvailableStockAreInSync(product);
         foundProduct.setProductQuantity(product.getProductQuantity());
         foundProduct.setAvailableStock(product.getAvailableStock());
         logger.info("*******product {} updated successfully *******", productId);
@@ -275,6 +293,10 @@ public class ProductServiceImpl implements ProductService {
       foundProduct.setProductCategory(product.getProductCategory());
       foundProduct.setProductDescription(product.getProductDescription());
       foundProduct.setProductPrice(product.getProductPrice());
+
+      // If productQuantity is set, use it to update availableStock
+      ensureProductQuantityAndAvailableStockAreInSync(product);
+
       foundProduct.setProductQuantity(product.getProductQuantity());
       foundProduct.setAvailableStock(product.getAvailableStock());
       var updatedProduct = productRepository.save(foundProduct);
@@ -339,6 +361,8 @@ public class ProductServiceImpl implements ProductService {
     foundProduct.setProductCategory(product.getProductCategory());
     foundProduct.setProductDescription(product.getProductDescription());
     foundProduct.setProductPrice(product.getProductPrice());
+    // If productQuantity is set, use it to update availableStock
+    ensureProductQuantityAndAvailableStockAreInSync(product);
     foundProduct.setProductQuantity(product.getProductQuantity());
     foundProduct.setAvailableStock(product.getAvailableStock());
     var updatedProduct = productRepository.save(foundProduct);
@@ -645,6 +669,18 @@ public class ProductServiceImpl implements ProductService {
               }).subscribe();
     }
 
+  }
+
+  ///method to ensure productQuantity and availableStock are in sync
+  private void ensureProductQuantityAndAvailableStockAreInSync(Product product) {
+    if (product.getProductQuantity() != null && product.getAvailableStock() == null) {
+      product.setAvailableStock(product.getProductQuantity());
+    } else if (product.getAvailableStock() != null && product.getProductQuantity() == null) {
+      product.setProductQuantity(product.getAvailableStock());
+    } else if (product.getProductQuantity() != null && product.getAvailableStock() != null
+            && !product.getProductQuantity().equals(product.getAvailableStock())) {
+      product.setAvailableStock(product.getProductQuantity());
+    }
   }
 
 

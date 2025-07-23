@@ -302,5 +302,23 @@ public class OrderController {
     return new Result("Cache cleared successfully", true, null, StatusCode.SUCCESS);
   }
 
+  /**
+   * This is the method to force delete order
+   * This method is strictly for Admin use only
+   * for database cleanup or emergency situations
+   * ToDo: In the future, it will be secured, only accessible by Admin users and
+   * the name and timestamp of the user who performed the action will be logged
+   * Bulk delete will not be implemented for this method to discourage misuse
+   *
+   * @param orderId
+   * @return
+   */
+  @DeleteMapping
+  ("/forced-delete/{orderId}")
+  public Result forcedDeleteOrder(@PathVariable Long orderId) {
+    orderService.forcedDeleteOrder(orderId);
+    return new Result("Order forced deleted successfully", true, null, StatusCode.SUCCESS);
+  }
+
 
 }

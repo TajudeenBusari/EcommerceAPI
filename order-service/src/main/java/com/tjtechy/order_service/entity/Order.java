@@ -165,7 +165,8 @@ public class Order implements Serializable {
      * @return
      */
     public boolean isOrderStatusValid(String orderStatus) {
-        return List.of("PLACED", "SHIPPED", "DELIVERED", "CANCELLED").contains(orderStatus);
+        if(orderStatus == null) return false;
+        return List.of("PLACED", "SHIPPED", "DELIVERED", "CANCELLED").contains(orderStatus.trim().toUpperCase());
     }
 
 

@@ -84,7 +84,7 @@ class ProductControllerTest {
                     new BigDecimal("100.0"),
                     100,
                     "Category 1",
-                    10,
+                    100,
                     LocalDate.of(2026, 10, 10),
                     LocalDate.of(2021, 9, 5),
                     LocalDate.of(2021, 9, 5)),
@@ -129,7 +129,7 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.data[0].productCategory").value("Category 1"))
             .andExpect(jsonPath("$.data[0].productDescription").value("product 1 description"))
             .andExpect(jsonPath("$.data[0].productQuantity").value(100))
-            .andExpect(jsonPath("$.data[0].availableStock").value(10))
+            .andExpect(jsonPath("$.data[0].availableStock").value(100))
             .andExpect(jsonPath("$.data[0].expiryDate").value("2026-10-10"));
   }
 
@@ -155,7 +155,7 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
             .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
             .andExpect(jsonPath("$.data.productQuantity").value(100))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(100))
             .andExpect(jsonPath("$.data.expiryDate").value("2026-10-10"));
   }
 
@@ -187,7 +187,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            10,
+            100, //available stock, should now be same as product quantity
             LocalDate.of(2026, 9, 5),//expiry date
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date
@@ -204,7 +204,7 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
             .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
             .andExpect(jsonPath("$.data.productQuantity").value(100))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(100))
             .andExpect(jsonPath("$.data.expiryDate").value("2026-09-05"));
   }
 
@@ -235,7 +235,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            10,
+            100, //available stock, should now be same as product quantity
             LocalDate.of(2026, 9, 5),//expiry date
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date
@@ -252,7 +252,7 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
             .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
             .andExpect(jsonPath("$.data.productQuantity").value(100))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(100))
             .andExpect(jsonPath("$.data.expiryDate").value("2026-09-05"));
   }
 
@@ -279,7 +279,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            10,
+            100, //available stock, should now be same as product quantity
             LocalDate.of(2026, 9, 5),//expiry date
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date
@@ -296,7 +296,7 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
             .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
             .andExpect(jsonPath("$.data.productQuantity").value(100))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(100))
             .andExpect(jsonPath("$.data.expiryDate").value("2026-09-05"));
   }
 
@@ -420,7 +420,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            10,
+            100, //available stock, should now be same as product quantity
             LocalDate.of(2026, 9, 5),//expiry date
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date
@@ -437,7 +437,7 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.data.productCategory").value("Category 1"))
             .andExpect(jsonPath("$.data.productDescription").value("product 1 description"))
             .andExpect(jsonPath("$.data.productQuantity").value(100))
-            .andExpect(jsonPath("$.data.availableStock").value(10))
+            .andExpect(jsonPath("$.data.availableStock").value(100))
             .andExpect(jsonPath("$.data.expiryDate").value("2026-09-05"));
   }
 
@@ -574,8 +574,7 @@ class ProductControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(productIds))
             .accept(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.message").value("Bulk Delete With Inventories Success"))
-            .andExpect(jsonPath("$.flag").value(true));
+            .andExpect(jsonPath("$.message").value("Bulk Delete With Inventories Success")).andExpect(jsonPath("$.flag").value(true));
   }
 
 }

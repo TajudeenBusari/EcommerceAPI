@@ -121,8 +121,9 @@ public class InventoryControllerIntegrationTest {
     for (int i = 0; i < count; i++) {
       CreateInventoryDto createInventoryDto = new CreateInventoryDto(
           UUID.randomUUID(), // Randomly generate a productId
-          faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-          faker.number().numberBetween(1, 100) // Randomly generate a product name
+          faker.number().numberBetween(1, 100), // Randomly generate a reserve quantity between 1 and 100
+          faker.number().numberBetween(1, 100)// Randomly generate available stock
+
       );
       inventoryDtoList.add(createInventoryDto);
     }
@@ -161,10 +162,13 @@ public class InventoryControllerIntegrationTest {
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
     assertThat(savedInventory).isNotNull();
     assertThat(savedInventory.get("inventoryId")).isNotNull();
+
     System.out.println(savedInventory); //The return data is the inventoryDto (inventoryId, productId, reservedQuantity)
     assertThat(UUID.fromString((String) savedInventory.get("productId"))).isEqualTo(createInventoryDto.productId());
     System.out.println(savedInventory.get("reservedQuantity"));
     System.out.println(savedInventory.get("inventoryId"));
+    System.out.println(savedInventory.get("availableStock"));
+
   }
 
   @Test
@@ -356,7 +360,13 @@ public class InventoryControllerIntegrationTest {
     // Prepare the deduction request
     var deductInventoryRequestDto = new DeductInventoryRequestDto(
         UUID.fromString((String) savedInventory.get("productId")), // Use the same productId
-        faker.number().numberBetween(1, 10) // Randomly generate a quantity to deduct
+            /**
+             * // Randomly generate a quantity to deduct may generate a number greater than the available stock
+             * //it is good to give it a small value like 1 to avoid the error
+             *
+             */
+//        faker.number().numberBetween(1, 10) // Randomly generate a quantity to deduct
+            1
     );
 
     // Now deduct the inventory

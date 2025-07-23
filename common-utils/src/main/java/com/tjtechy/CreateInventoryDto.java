@@ -17,9 +17,9 @@ public record CreateInventoryDto(
         @Positive(message = "Product available must be greater than 0")
         @NotNull(message = "Product available is required")
         Integer availableStock,
-        @Positive(message = "Product available must be greater than 0")
-        @NotNull(message = "Product available is required")
-        Integer reservedQuantity
+        @Positive(message = "Product reserve available must be greater than 0")
+        @NotNull(message = "Product reserve available is required")
+        Integer reservedQuantity //by default, it is 1
 ) {
 
 
