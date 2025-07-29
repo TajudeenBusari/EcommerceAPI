@@ -442,8 +442,6 @@ public class OrderServiceImpl implements OrderService {
       throw new IllegalArgumentException("Order status is required");
     }
 
-    //TODO: IT seems when status is updated with mixed case, it gives invalid order status error
-    //TODO: Dont show a successful status
     //Validate order status against allowed statuses
     if(!foundOrder.isOrderStatusValid(orderStatus.trim().toUpperCase())){
       throw new IllegalArgumentException("Invalid order status: " + orderStatus);
@@ -931,6 +929,5 @@ public class OrderServiceImpl implements OrderService {
     orderRepository.delete(foundOrder);
 
   }
-
 
 }

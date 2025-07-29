@@ -8,5 +8,13 @@ product-service:
 inventory-service:
   base-url: http://inventory-service/api/v1
     # This is the base URL for the Product Service, which is used in WebClient calls
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html #will be access at http://localhost:8084/swagger-ui.html
+  api-docs:
+    path: /v3/api-docs #will be access at http://localhost:8084/v3/api-docs
+  default-produces-media-type: application/json #default produces media type for API responses
+  default-consumes-media-type: application/json #default consumes media type for API requests
+  override-with-gateway-url: true #override the default URL with the gateway URL
 
 

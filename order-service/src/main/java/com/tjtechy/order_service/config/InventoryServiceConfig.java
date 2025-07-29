@@ -5,10 +5,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-//@ConfigurationProperties(prefix = "inventory.service")
+
 public class InventoryServiceConfig {
  @Value("${api.endpoint.base-url}")
-  //@Value("${inventory.service.base-url}")
+
   private String baseUrl;
   public String getBaseUrl() {
     return baseUrl;
