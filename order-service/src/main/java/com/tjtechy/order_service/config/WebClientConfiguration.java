@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * The Product service will be called using this web client.
+ * Not sure if I am using this class, but I will leave it here for now
  */
 @Configuration
 public class WebClientConfiguration {

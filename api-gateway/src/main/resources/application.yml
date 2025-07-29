@@ -3,27 +3,69 @@ server:
 spring:
   application:
     name: api-gateway
+springdoc: #access at http://localhost:8080/swagger-ui.html
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+    - name: Product Service
+      url: /aggregate/product-service/v3/api-docs
+    - name: Inventory Service
+      url: /aggregate/inventory-service/v3/api-docs
+    - name: Order Service
+      url: /aggregate/order-service/v3/api-docs
+
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
-#      default_filters:
-#        - DeduplicateResponseHeader=Access-Control-Allow-Credentials, Access-Control-Allow-Origin
       routes:
+        #product api route
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/v1/products/**
+            - Path=/api/v1/product/**
+          #product swagger route
+        - id: product-docs
+          uri: lb://product-service
+          predicates:
+            - Path=/aggregate/product-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/product-service/v3/api-docs, /v3/api-docs
+
+        #inventory api route
         - id: inventory-service
           uri: lb://inventory-service
           predicates:
             - Path=/api/v1/inventory/**
+        #inventory swagger route
+        - id: inventory-docs
+          uri: lb://inventory-service
+          predicates:
+            - Path=/aggregate/inventory-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/inventory-service/v3/api-docs, /v3/api-docs
+
+        #order api route
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/api/v1/orders/**
+            - Path=/api/v1/order/**
+        #order swagger route
+        - id: order-docs
+          uri: lb://order-service
+          predicates:
+            - Path=/aggregate/order-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/order-service/v3/api-docs, /v3/api-docs
+logging:
+    level:
+        org.springframework.cloud.gateway: INFO
+        com.tjtechy: DEBUG
 
-              #i will create custom filters later and will be added here
+
+              #I will create custom filters later and will be added here
             #check https://www.geeksforgeeks.org/advance-java/spring-cloud-gateway-with-spring-webflux/
 

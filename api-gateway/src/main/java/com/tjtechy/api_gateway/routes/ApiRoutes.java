@@ -23,14 +23,27 @@ public class ApiRoutes {
             //PRODUCT SERVICE
             .route("product-service", r -> r.path("/api/v1/product/**")
                     .uri("lb://PRODUCT-SERVICE")) //Service is registered with Eureka
+            .route("product-service-docs", r -> r.path("/aggregate/product-service/v3/api-docs")
+                    .filters(f -> f.rewritePath("/aggregate/product-service/v3/api-docs", "/v3/api-docs"))
+                    .uri("lb://PRODUCT-SERVICE"))
+
             //ORDER SERVICE
             .route("order-service", r -> r.path("/api/v1/order/**")
                     .uri("lb://ORDER-SERVICE"))
+            .route("order-service-docs", r -> r.path("/aggregate/order-service/v3/api-docs")
+                    .filters(f -> f.rewritePath("/aggregate/order-service/v3/api-docs", "/v3/api-docs"))
+                    .uri("lb://ORDER-SERVICE"))
+
             //INVENTORY SERVICE
             .route("inventory-service", r -> r.path("/api/v1/inventory/**")
                     .uri("lb://INVENTORY-SERVICE"))
+            .route("inventory-service-docs", r -> r.path("/aggregate/inventory-service/v3/api-docs")
+                    .filters(f -> f.rewritePath("/aggregate/inventory-service/v3/api-docs", "/v3/api-docs"))
+                    .uri("lb://INVENTORY-SERVICE"))
+
             //USER SERVICE/Authentication service
             //PAYMENT SERVICE
+
             .build();
   }
 }

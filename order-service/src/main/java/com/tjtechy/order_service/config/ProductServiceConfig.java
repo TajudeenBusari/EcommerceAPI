@@ -11,10 +11,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-//@ConfigurationProperties(prefix = "product.service")
 public class  ProductServiceConfig {
+
   @Value("${api.endpoint.base-url}")
-  //@Value("${product.service.base-url}")
   private String baseUrl;
 
   public String getBaseUrl() {

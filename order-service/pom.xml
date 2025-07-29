@@ -194,27 +194,23 @@
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 
-		<!--MockWbServer dependency is designed only for testing, keep it under scope
-		It spins up local HTTP Server, you can queue response on and
-		verify requests made to it-perfect for integration test service to service communication -->
-<!--		<dependency>-->
-<!--			<groupId>com.squareup.okhttp3</groupId>-->
-<!--			<artifactId>mockwebserver</artifactId>-->
-<!--			<version>5.0.0-alpha.14</version>-->
-<!--			<scope>test</scope>-->
-<!--		</dependency>-->
-
-<!--		&lt;!&ndash; JavaTime dependency to deserialize LocalDate &ndash;&gt;-->
-<!--		<dependency>-->
-<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
-<!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
-<!--			<version>2.18.2</version>-->
-<!--		</dependency>-->
-		<!-- WireMock Dependency -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- api documentation HTML FORMAT AND JSON FORMAT-->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.8.9</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+			<version>2.8.9</version>
 		</dependency>
 
 	</dependencies>

@@ -9,6 +9,8 @@ package com.tjtechy.inventory_service.controller;
 import com.tjtechy.*;
 import com.tjtechy.inventory_service.mapper.InventoryMapper;
 import com.tjtechy.inventory_service.service.InventoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -34,18 +36,17 @@ public class InventoryController {
    * @param createInventoryDto
    * @return Result {@link Result}
    */
+  @Operation(summary = "Create Inventory",
+          description = "This endpoint is used to create inventory for a product. It is used internally by the product service when a product is created.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Inventory created successfully")
+  })
   @PostMapping("/internal/create")
   public Result addInventory(@Valid @RequestBody CreateInventoryDto createInventoryDto) {
 
-    //map from createInventoryDto to inventory
     var inventory = InventoryMapper.mapFromCreateInventoryDtoToInventory(createInventoryDto);
-
-    //call the service to add inventory
     var savedInventory = inventoryService.createInventory(inventory);
-
-    //map from inventory to inventoryDto
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(savedInventory);
-
     return new Result("Inventory created successfully", true, inventoryDto, 200);
   }
 
@@ -54,19 +55,25 @@ public class InventoryController {
    * @param inventoryId
    * @return Result {@link Result}
    */
+  @Operation(summary = "Get Inventory by ID",
+          description = "This endpoint is used to get inventory by ID.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory retrieved successfully")
+          })
   @GetMapping("/{inventoryId}")
   public Result getInventoryById(@PathVariable Long inventoryId) {
 
-    //call the service to get inventory by id
     var inventory = inventoryService.getInventoryByInventoryId(inventoryId);
-
-    //map from inventory to inventoryDto
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(inventory);
-
     return new Result("Inventory retrieved successfully", true, inventoryDto, StatusCode.SUCCESS);
   }
 
   @GetMapping
+  @Operation(summary = "Get All Inventories",
+          description = "This endpoint is used to get all inventories.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "All inventories retrieved successfully")
+          })
   public Result getAllInventory() {
     var inventories = inventoryService.getAllInventory();
     var inventoryDtos = InventoryMapper.mapFromInventoryListToInventoryDtoList(inventories);
@@ -79,15 +86,16 @@ public class InventoryController {
    * @param productId
    * @return Result {@link Result}
    */
+  @Operation(summary = "Get Inventory by Product ID",
+          description = "This endpoint is used to get inventory by product ID. It is used internally by the product service.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory retrieved successfully")
+          })
   @GetMapping("/internal/product/{productId}")
   public Result getInventoryByProductId(@PathVariable UUID productId) {
 
-    //call the service to get inventory by product id
     var inventory = inventoryService.getInventoryByProductId(productId);
-
-    //map from inventory to inventoryDto
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(inventory);
-
     return new Result("Inventory with productId: " + inventoryDto.productId() + " retrieved successfully", true, inventoryDto, StatusCode.SUCCESS);
 
   }
@@ -99,6 +107,11 @@ public class InventoryController {
    * @param updateInventoryDto
    * @return Result {@link Result}
    */
+  @Operation(summary = "Update Inventory",
+          description = "This endpoint is used to update inventory. It is used internally by the product service when a product is updated.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory updated successfully")
+          })
   @PutMapping("/internal/update/{inventoryId}")
   public Result updateInventory(@PathVariable Long inventoryId, @Valid @RequestBody UpdateInventoryDto updateInventoryDto) {
 
@@ -119,6 +132,11 @@ public class InventoryController {
    * @param inventoryId
    * @return Result {@link Result}
    */
+  @Operation(summary = "Delete Inventory",
+          description = "This endpoint is used to delete inventory by ID.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory deleted successfully")
+          })
   @DeleteMapping("/{inventoryId}")
   public Result deleteInventory(@PathVariable Long inventoryId) {
 
@@ -133,6 +151,11 @@ public class InventoryController {
    * @param inventoryIds
    * @return Result {@link Result}
    */
+  @Operation(summary = "Bulk Delete Inventories",
+          description = "This endpoint is used to bulk delete inventories by inventory IDs.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventories deleted successfully")
+          })
   @DeleteMapping("/bulk-delete")
   public Result bulkDeleteInventories(@RequestBody List<Long> inventoryIds) {
 
@@ -149,10 +172,14 @@ public class InventoryController {
    * @param deductInventoryRequestDto
    * @return Result {@link Result}
    */
+  @Operation(summary = "Deduct Inventory",
+          description = "This endpoint is used to deduct inventory by product ID and quantity. It is used internally by the order service when an order is placed.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory deducted successfully")
+          })
   @PatchMapping("/internal/deduct-inventory")
   public Result deductInventory(@RequestBody DeductInventoryRequestDto deductInventoryRequestDto) {
 
-    //call the service to deduct inventory
     inventoryService.deductInventory(deductInventoryRequestDto.productId(), deductInventoryRequestDto.quantity());
     return new Result("Inventory deducted successfully", true, null, StatusCode.SUCCESS);
   }
@@ -164,6 +191,11 @@ public class InventoryController {
    * @param deductInventoryRequestDto
    * @return Result {@link Result}
    */
+  @Operation(summary = "Deduct Inventory Reactively",
+          description = "This endpoint is used to deduct inventory reactively by product ID and quantity. It is used internally by the order service when an order is placed.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory deducted successfully")
+          })
   @PatchMapping("/internal/deduct-inventory-reactive")
   public Mono<Result> deductInventoryReactive(@RequestBody DeductInventoryRequestDto deductInventoryRequestDto) {
 
@@ -171,7 +203,6 @@ public class InventoryController {
     return inventoryService
             .deductInventoryReactive(deductInventoryRequestDto.productId(), deductInventoryRequestDto.quantity())
             .thenReturn(new Result("Inventory deducted successfully", true, null, StatusCode.SUCCESS));
-
   }
 
   /**
@@ -181,6 +212,12 @@ public class InventoryController {
    * @param restoreInventoryDto
    * @return Result {@link Result}
    */
+  @Operation(summary = "Restore Inventory",
+          description = "This endpoint is used to restore inventory by product ID and quantity. It is typically used internally by the Order-Service " +
+                  "when an order is deleted, cancelled, returned or updated and the inventory needs to be restored.",
+          responses = {
+                  @ApiResponse(responseCode = "200", description = "Inventory restored successfully")
+          })
   @PostMapping("/internal/restore-inventory")
   public Result restoreInventory(@Valid @RequestBody RestoreInventoryDto restoreInventoryDto) {
 

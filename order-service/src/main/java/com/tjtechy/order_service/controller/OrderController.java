@@ -13,6 +13,8 @@ import com.tjtechy.order_service.mapper.OrderMapper;
 import com.tjtechy.order_service.service.OrderService;
 import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.service.annotation.GetExchange;
@@ -39,6 +41,14 @@ public class OrderController {
    * @param createOrderDto
    * @return
    */
+  @Operation(summary = "Create a new order",
+  description = "This endpoint creates a new order based on the provided CreateOrderDto. " +
+          "Endpoint is deprecated and will be removed in the next version. Use any of the /reactive instead.",
+          responses = {@ApiResponse(responseCode = "200", description = "Order created successfully"),
+
+          }
+
+  )
   @PostMapping
   @Deprecated(since = "1.1", forRemoval = true)
   public Result createOrder(@Valid @RequestBody CreateOrderDto createOrderDto) {
@@ -64,6 +74,12 @@ public class OrderController {
    * @param createOrderDto
    * @return
    */
+  @Operation(summary = "Create a new order reactively",
+          description = "This endpoint creates a new order reactively based on the provided CreateOrderDto. " +
+                  "It is non-blocking and asynchronous, " +
+                  "improving performance when calling external services or APIs.",
+  responses = {@ApiResponse(responseCode = "200", description = "Order created successfully")
+  })
   @PostMapping("/reactive")
   public Mono<Result> processOrderReactively(@Valid @RequestBody CreateOrderDto createOrderDto) {
     //map from createOrderDto to Order
@@ -89,6 +105,12 @@ public class OrderController {
    * @param createOrderDto
    * @return
    */
+  @Operation(summary = "Create a new order reactively by calling externalized services",
+          description = "This endpoint creates a new order reactively by calling externalized services" +
+                  ". It is non-blocking and asynchronous",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Order created successfully by calling required external services")
+  })
   @PostMapping("/reactive/externalized")
   public Mono<Result> processOrderReactivelyByCallingExternalizedServices(@Valid @RequestBody CreateOrderDto createOrderDto) {
     //map from createOrderDto to Order
@@ -112,6 +134,9 @@ public class OrderController {
    * @param orderId
    * @return
    */
+  @Operation(summary = "Get order by ID",
+          description = "This endpoint retrieves an order by its ID. " +
+                  "It is deprecated and will be removed in the next version. Use /orderDto/{orderId} instead.")
   @Deprecated(since = "1.1", forRemoval = true)
   @GetMapping("/{orderId}")
   public Result getOrderById(@PathVariable Long orderId) {
@@ -129,6 +154,11 @@ public class OrderController {
    * @param orderId
    * @return
    */
+  @Operation(summary = "Get order by ID",
+          description = "This endpoint retrieves an order by its ID. " +
+                  "It is the preferred method to use instead of the deprecated /{orderId} endpoint.",
+  responses = {@ApiResponse(responseCode = "200", description = "OrderDto retrieved successfully")
+  })
   @GetMapping("orderDto/{orderId}")
   public Result getOrderDtoById(@PathVariable Long orderId) {
 
@@ -141,6 +171,11 @@ public class OrderController {
    * This is the method to get all orders
    * @return
    */
+  @Operation(summary = "Get all orders",
+          description = "This endpoint retrieves all orders in the system.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
+  })
   @GetMapping
   public Result getAllOrders() {
 
@@ -154,13 +189,16 @@ public class OrderController {
    * @param customerEmail
    * @return
    */
+  @Operation(summary = "Get orders by customer email",
+          description = "This endpoint retrieves all orders associated with a specific customer email.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Orders by email retrieved successfully")
+  })
   @GetMapping("/customer")
   public Result getOrdersByCustomerEmail(@RequestParam String customerEmail) {
 
     var orderDtos = orderService.getOrdersByCustomerEmail(customerEmail);
 
-    //map from List<Order> to List<OrderDto>
-    //var orderDtos = OrderMapper.mapFromOrdersToOrderDtos(orders);
 
     return new Result("Orders by email retrieved successfully", true, orderDtos, StatusCode.SUCCESS);
   }
@@ -170,6 +208,11 @@ public class OrderController {
    * @param orderId
    * @return
    */
+  @Operation(summary = "Delete an order by ID",
+          description = "This endpoint deletes an order by its ID.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Order deleted successfully")
+  })
   @DeleteMapping("/{orderId}")
   public Result deleteOrder(@PathVariable Long orderId) {
     //call orderService.deleteOrder
@@ -182,13 +225,15 @@ public class OrderController {
    * This is the method to get all orders without cancelled ones
    * @return
    */
+  @Operation(summary = "Get all orders without cancelled ones",
+          description = "This endpoint retrieves all orders excluding those that are cancelled.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Orders retrieved successfully without cancelled ones")
+  })
   @GetMapping("/without-cancelled")
   public Result getAllOrdersWithoutCancelledOnes() {
 
     var orderDtos = orderService.getAllOrdersWithoutCancelledOnes();
-
-    //map from List<Order> to List<OrderDto>
-    //var orderDtos = OrderMapper.mapFromOrdersToOrderDtos(orders);
 
     return new Result("Orders retrieved successfully", true, orderDtos, StatusCode.SUCCESS);
   }
@@ -198,6 +243,11 @@ public class OrderController {
    * @param orderId
    * @return
    */
+  @Operation(summary = "Cancel an order by ID",
+          description = "This endpoint cancels an order by its ID.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Order cancelled successfully")
+  })
   @DeleteMapping("/cancel/{orderId}")
   public Result cancelOrder(@PathVariable Long orderId) {
 
@@ -211,6 +261,11 @@ public class OrderController {
    * @param orderIds
    * @return
    */
+  @Operation(summary = "Bulk delete orders",
+          description = "This endpoint allows bulk deletion of orders based on a list of order IDs.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Orders bulk deleted successfully")
+  })
   @DeleteMapping("/bulk-delete")
   public Result bulkDeleteOrders(@RequestBody List<Long> orderIds) {
 
@@ -224,6 +279,11 @@ public class OrderController {
    * @param orderStatus
    * @return
    */
+  @Operation(summary = "Get orders by status",
+          description = "This endpoint retrieves all orders with a specific status.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Orders by status retrieved successfully")
+  })
   @GetMapping("/status")
   public Result getOrdersByStatus(@RequestParam String orderStatus) {
 
@@ -238,6 +298,11 @@ public class OrderController {
    * @param orderStatus
    * @return
    */
+  @Operation(summary = "Update order status",
+          description = "This endpoint updates the status of an order by its ID.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Order status updated successfully")
+  })
   @PutMapping("/{orderId}/update-status")
   public Result updateOrderStatus(@PathVariable Long orderId, @RequestParam String orderStatus) {
 
@@ -260,6 +325,11 @@ public class OrderController {
    * @param updateOrderDto
    * @return
    */
+  @Operation(summary = "Update an order",
+          description = "This endpoint updates an existing order based on the provided UpdateOrderDto.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Order updated successfully")
+  })
   @PutMapping("/{orderId}")
   public Mono<Result> updateOrder(@PathVariable Long orderId, @Valid @RequestBody UpdateOrderDto updateOrderDto) {
 
@@ -276,6 +346,11 @@ public class OrderController {
             });
   }
 
+  @Operation(summary = "Update an order by calling externalized services",
+          description = "This endpoint updates an existing order by calling externalized services based on the provided UpdateOrderDto.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Order updated successfully by calling required external services")
+  })
   @PutMapping("/externalized/{orderId}")
   public Mono<Result> updateOrderByCallingExternalizedServices(@PathVariable Long orderId, @Valid @RequestBody UpdateOrderDto updateOrderDto) {
 
@@ -291,11 +366,15 @@ public class OrderController {
             });
   }
 
-
   /**
    * This is the method to clear all cache
    * @return
    */
+  @Operation(summary = "Clear all cache",
+          description = "This endpoint clears all cached data related to orders.",
+  responses = {
+          @ApiResponse(responseCode = "200", description = "Cache cleared successfully")
+  })
   @DeleteMapping("/clear-cache")
   public Result clearCache() {
     orderService.clearAllCache();
