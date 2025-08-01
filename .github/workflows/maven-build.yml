@@ -1,0 +1,31 @@
+name: Ecommerce Microservices CI with Maven
+
+on:
+  pull_request:
+    branches:
+      - master
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [product-service,
+                  order-service,
+                  inventory-service,
+                  api-gateway,
+                config-server,
+                eureka-server]
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build and test ${matrix.service}
+        working-directory: ./${{ matrix.service }}
+        run: |
+          ./mvnw clean install

@@ -1,5 +1,5 @@
 server:
-  port: 8762
+  port: 8763
 spring:
   application:
     name: eureka-server
@@ -13,7 +13,11 @@ eureka:
     register-with-eureka: false #DISABLING THE REGISTRATION OF THE EUREKA-SERVER WITH ITSELF
     fetch-registry: false #DISABLING THE FETCHING OF REGISTRY FROM ITSELF
     service-url:
-      defaultZone: "http://localhost:8762/eureka" #URL FOR THE EUREKA SERVER
+      #defaultZone: "http://localhost:8762/eureka" #URL FOR THE EUREKA SERVER
+      defaultZone: "http://localhost:${server.port}/eureka"
+  server:
+    wait-time-in-ms-when-sync-empty: 0 #TIME TO WAIT WHEN SYNC IS EMPTY
+    enable-self-preservation: false #DISABLE SELF PRESERVATION MODE
 
 logging:
   level:

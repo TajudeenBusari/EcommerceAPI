@@ -1,7 +1,84 @@
+
 services:
   redis:
     image: redis
     ports:
       - "6379:6379"
-       #- "6000:6000"
+    networks:
+      - microservices-network
+
+  #THE EUREKA SERVER
+  eureka-server:
+    build: ../eureka-server
+    ports:
+      - "8763:8763"
+    environment:
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_SERVER_WAIT_TIME_IN_MS_WHEN_SYNC_EMPTY=0
+      - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=false
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8763/eureka/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+  #THE CONFIG SERVER
+  config-server:
+    build: ../config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      - eureka-server
+    volumes:
+      - ../applicationsConfiguration:/config
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/config
+  product-service:
+    build: ../product-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - config-server
+      - redis
+  inventory-service:
+    build: ../inventory-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - config-server
+      - redis
+  order-service:
+    build: ../order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - config-server
+      - redis
+  api-gateway:
+    build: ../api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - config-server
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8763/eureka
+      - SPRING_CLOUD_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+    networks:
+      - microservices-network
+networks:
+  microservices-network:
+    driver: bridge
+
+
+
+
 
