@@ -1,26 +1,41 @@
 server:
   port: 8080
 spring:
+  main:
+    web-application-type: reactive #use reactive web application type
   application:
     name: api-gateway
-springdoc: #access at http://localhost:8080/swagger-ui.html
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    urls:
-    - name: Product Service
-      url: /aggregate/product-service/v3/api-docs
-    - name: Inventory Service
-      url: /aggregate/inventory-service/v3/api-docs
-    - name: Order Service
-      url: /aggregate/order-service/v3/api-docs
-
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
+          #new
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: #allow all origins
+              - "http://localhost:[*]"
+              - "http://127.0.0.1:[*]"
+              - "http://host.docker.internal:[*]"# Docker host
+              - "http://api-gateway:[*]" # Docker Compose service name
+              - "http://inventory-service:[*]"
+              - "http://product-service:[*]"
+              - "http://order-service:[*]"
+              - "https://docs.swagger.io"
+
+            allowedMethods: #allow all methods
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: #allow all headers
+              - '*'
+            allowCredentials: true #allow credentials
+            maxAge: 3600 #cache preflight response for 1 hour
+        # new
       routes:
         #product api route
         - id: product-service
@@ -60,10 +75,32 @@ springdoc: #access at http://localhost:8080/swagger-ui.html
             - Path=/aggregate/order-service/v3/api-docs
           filters:
             - RewritePath=/aggregate/order-service/v3/api-docs, /v3/api-docs
+springdoc: #access at http://localhost:8080/swagger-ui.html
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+    - name: Product Service
+      url: /aggregate/product-service/v3/api-docs
+    - name: Inventory Service
+      url: /aggregate/inventory-service/v3/api-docs
+    - name: Order Service
+      url: /aggregate/order-service/v3/api-docs
+
+
 logging:
     level:
         org.springframework.cloud.gateway: INFO
         com.tjtechy: DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always #show details in the health endpoint
 
 
               #I will create custom filters later and will be added here

@@ -23,9 +23,30 @@ public class CorsGlobalConfig {
   public CorsWebFilter corsWebFilter() {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
-    config.addAllowedOriginPattern("*"); // Allow all origins
-    config.setAllowedHeaders(Arrays.asList("*"));
-    config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:[*]",
+            "http://127.0.0.1:[*]",
+            "http://host.docker.internal:[*]",
+            "http://172.*.*.*:[*]",
+            "http://192.168.*.*:[*]",
+            "http://10.*.*.*:[*]",
+            "https://docs.swagger.io"
+    ));
+    config.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Origin",
+            "Accept",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"));
+    config.setAllowedMethods(Arrays.asList(
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS"));
+
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
     return new CorsWebFilter(source);

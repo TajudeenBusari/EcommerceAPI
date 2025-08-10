@@ -6,6 +6,34 @@ services:
       - "6379:6379"
     networks:
       - microservices-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:latest
+    container_name: ecommerce-postgres
+    env_file:
+      - .env
+    environment:
+
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 
   #THE EUREKA SERVER
   eureka-server:
@@ -20,11 +48,10 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8763/eureka/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8763/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
 
   #THE CONFIG SERVER
   config-server:
@@ -32,51 +59,157 @@ services:
     ports:
       - "8888:8888"
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
     volumes:
       - ../applicationsConfiguration:/config
     environment:
       - SPRING_PROFILES_ACTIVE=native
       - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/config
-  product-service:
-    build: ../product-service
-    ports:
-      - "8083:8083"
-    depends_on:
-      - eureka-server
-      - config-server
-      - redis
-  inventory-service:
-    build: ../inventory-service
-    ports:
-      - "8084:8084"
-    depends_on:
-      - eureka-server
-      - config-server
-      - redis
-  order-service:
-    build: ../order-service
-    ports:
-      - "8082:8082"
-    depends_on:
-      - eureka-server
-      - config-server
-      - redis
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE API GATEWAY
   api-gateway:
     build: ../api-gateway
     ports:
       - "8080:8080"
     depends_on:
-      - eureka-server
-      - config-server
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8763/eureka
-      - SPRING_CLOUD_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_APPLICATION_NAME=api-gateway
+      - SPRING_PROFILES_ACTIVE=default
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
     networks:
       - microservices-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE PRODUCT SERVICE
+  product-service:
+    build: ../product-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=product-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE INVENTORY SERVICE
+  inventory-service:
+    build: ../inventory-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=inventory-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE  ORDER SERVICE
+  order-service:
+    build: ../order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=order-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+
 networks:
   microservices-network:
     driver: bridge
+volumes:
+  postgres-data:
+
 
 
 

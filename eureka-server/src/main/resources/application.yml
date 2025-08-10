@@ -24,6 +24,14 @@ logging:
     com.netflix.eureka: INFO #SET THE LOG LEVEL FOR EUREKA TO INFO
     com.netflix.discovery: INFO #SET THE LOG LEVEL FOR DISCOVERY TO INFO
     com.netflix.eureka.cluster.peerEurekaNodes: INFO #SET THE LOG LEVEL FOR EUREKA CLUSTER TO DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always #show details in the health endpoint
 
 
 

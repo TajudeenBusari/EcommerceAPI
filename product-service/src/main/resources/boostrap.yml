@@ -3,6 +3,10 @@ spring:
     name: product-service
   config:
     import: optional:configserver:http://localhost:8888
+  profiles:
+    active: local
+
+
 #When service starts, spring boot uses spring.application.name from this file to:
 #1.Tell the config server: I am product-service, please give me product-service.yml from the
 #applicationsConfiguration submodule. Check the config server's application.yml file
