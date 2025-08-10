@@ -7,7 +7,7 @@ spring:
         config:
             server:
                 git:
-                    #uri: https://github.com/TajudeenBusari/EcommerceAPI #not used anymore
+
                     uri: https://github.com/TajudeenBusari/ecommerce-configurations.git #submodule of ecommerce-microservices
                     search-paths: applicationsConfiguration
                     clone-on-start: true
@@ -21,9 +21,19 @@ security:
 eureka:
     client:
         service-url:
-            defaultZone: http://localhost:8762/eureka/
+            #defaultZone: http://localhost:8763/eureka/
+            defaultZone: ${EUREKA_SERVER_URL:http://localhost:8763/eureka/}
+
     instance:
         prefer-ip-address: true
         instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 #the config server has been updated to use the configuration from ecommerce-configurations repository which
 #is a submodule of the ecommerce-microservices repository
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info
+    endpoint:
+        health:
+            show-details: always #show details in the health endpoint

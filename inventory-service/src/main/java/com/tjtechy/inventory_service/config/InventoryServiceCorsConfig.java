@@ -18,8 +18,14 @@ public class InventoryServiceCorsConfig implements WebMvcConfigurer {
   @Override
   public void addCorsMappings(CorsRegistry registry) {
     registry.addMapping("/**")
-            .allowedOriginPatterns("*") // Allow all origins
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allow specific methods
+            //.allowedOriginPatterns("*") // Allow all origins
+            .allowedOriginPatterns(
+                    "http://localhost:[*]",
+                    "http://127.0.0.1:[*]",
+                    "http://host.docker.internal:[*]",
+                    "http://api-gateway:[*]"
+            )
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Allow specific methods
             .allowedHeaders("*") // Allow all headers
             .allowCredentials(true); // Allow credentials
   }

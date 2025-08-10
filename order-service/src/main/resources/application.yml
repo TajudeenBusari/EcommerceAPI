@@ -15,6 +15,14 @@ springdoc:
   default-produces-media-type: application/json #default produces media type for API responses
   default-consumes-media-type: application/json #default consumes media type for API requests
   override-with-gateway-url: true #override the default URL with the gateway URL
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always #show details in the health endpoint
 
 
 
