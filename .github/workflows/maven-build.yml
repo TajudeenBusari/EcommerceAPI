@@ -25,11 +25,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Make mvnw executable
-        working-directory: ./${{ matrix.service }}
-        run: chmod +x mvnw
+
 
       - name: Build and test ${matrix.service}
         working-directory: ./${{ matrix.service }}
         run: |
-          ./mvnw clean install
+          ./mvn clean install
