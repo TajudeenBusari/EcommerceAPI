@@ -29,5 +29,4 @@ jobs:
 
       - name: Build and test ${matrix.service}
         working-directory: ./${{ matrix.service }}
-        run: |
-          ./mvn clean install
+        run: mvn --batch-mode package
