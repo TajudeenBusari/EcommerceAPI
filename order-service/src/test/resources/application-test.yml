@@ -41,3 +41,4 @@ inventory-service:
 logging:
   level:
     org.apache.catalina.loader.WebappClassLoaderBase: ERROR
+    com.zaxxer.hikari: ERROR #only show errors from Hikari

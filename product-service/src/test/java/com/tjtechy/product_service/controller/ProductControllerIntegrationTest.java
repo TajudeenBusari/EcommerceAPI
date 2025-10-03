@@ -29,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 
 
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -56,6 +57,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @AutoConfigureMockMvc
 @Tag("ProductControllerIntegrationTest")
 @Testcontainers
+@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @TestPropertySource(properties = {
         "api.endpoint.base-url=/api/v1",
@@ -69,7 +71,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
         "spring.cache.type=none", //disable caching
         "spring.jpa.hibernate.ddl-auto=create-drop", // Use create-drop for testing
         "spring.jpa.show-sql=true", // Show SQL queries in logs
-        "spring.jpa.properties.hibernate.format_sql=true" // Format SQL queries
+        "spring.jpa.properties.hibernate.format_sql=true", // Format SQL queries
+        "spring.hikari.max-lifetime=300000", // 30 minutes
+        "spring.hikari.connection-timeout=30000", // 30 seconds
 })
 @WireMockTest(httpPort = 9562)
 @Import(ProductControllerIntegrationTest.TestInventoryClientConfig.class)
@@ -136,19 +140,20 @@ public class ProductControllerIntegrationTest {
     postgreSQLContainer.start();
 
     //wait for PostgreSQL to be ready
-    while (!postgreSQLContainer.isRunning()){
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
+//    while (!postgreSQLContainer.isRunning()){
+//      try {
+//        Thread.sleep(1000);
+//      } catch (InterruptedException e) {
+//        e.printStackTrace();
+//      }
+//    }
   }
 
   @AfterAll
   static void stopContainers(){
+    if (postgreSQLContainer != null && postgreSQLContainer.isRunning()){
     postgreSQLContainer.stop();
-
+    }
   }
 
   /**
