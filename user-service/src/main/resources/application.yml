@@ -1,0 +1,9 @@
+server:
+  port: 8086
+spring:
+  application:
+    name: user-service # This name is used in WebClient URI
+  cloud:
+    config:
+      enable: false #Enable Spring Cloud Config Client
+    import-check: false #Enable import check to ensure config server is reachable
