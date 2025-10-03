@@ -22,6 +22,9 @@ import org.springframework.test.context.ActiveProfiles;
 
 class UserServiceApplicationTests {
 
+	/**
+	 * Just to check if the context loads
+	 */
 	@Test
 	void contextLoads() {
 	}
