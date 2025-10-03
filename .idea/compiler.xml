@@ -20,6 +20,8 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="common-exception" target="17" />
+      <module name="notification-service" target="17" />
+      <module name="user-service" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
