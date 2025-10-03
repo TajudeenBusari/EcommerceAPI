@@ -6,8 +6,6 @@
  */
 package com.tjtechy.order_service.service.impl;
 
-
-import com.netflix.discovery.converters.Auto;
 import com.tjtechy.DeductInventoryRequestDto;
 import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +17,11 @@ import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
 import com.tjtechy.order_service.entity.Order;
-
+import com.tjtechy.events.orderEvent.OrderPlacedEvent;
+import com.tjtechy.events.orderEvent.OrderCancelledEvent;
 import com.tjtechy.order_service.entity.dto.OrderDto;
+
+import com.tjtechy.order_service.kafka.OrderEventProducer;
 import com.tjtechy.order_service.mapper.OrderMapper;
 import com.tjtechy.order_service.repository.OrderRepository;
 import com.tjtechy.order_service.service.OrderService;
@@ -61,17 +62,26 @@ public class OrderServiceImpl implements OrderService {
 
   private final InventoryServiceConfig inventoryServiceConfig;
 
+  private final OrderEventProducer orderEventProducer; //newly added for Kafka event publishing
+
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
   private final ProductServiceClient productServiceClient; //newly added for externalized service calls
   private final InventoryServiceClient inventoryServiceClient; //newly added for externalized service calls
 
 
-  public OrderServiceImpl(OrderRepository orderRepository, WebClient.Builder webClientBuilder, ProductServiceConfig productServiceConfig, InventoryServiceConfig inventoryServiceConfig, ProductServiceClient productServiceClient, InventoryServiceClient inventoryServiceClient) {
+  public OrderServiceImpl(OrderRepository orderRepository,
+                          WebClient.Builder webClientBuilder,
+                          ProductServiceConfig productServiceConfig,
+                          InventoryServiceConfig inventoryServiceConfig,
+                          OrderEventProducer orderEventProducer,
+                          ProductServiceClient productServiceClient,
+                          InventoryServiceClient inventoryServiceClient) {
     this.orderRepository = orderRepository;
     this.webClientBuilder = webClientBuilder;
     this.productServiceConfig = productServiceConfig;
     this.inventoryServiceConfig = inventoryServiceConfig;
+    this.orderEventProducer = orderEventProducer;
     this.productServiceClient = productServiceClient;
     this.inventoryServiceClient = inventoryServiceClient;
   }
@@ -92,7 +102,7 @@ public class OrderServiceImpl implements OrderService {
 
     //ToDo: Implement Mono or Flux for reactive programming for better performance
     //1. Validate order
-    /**Throw the IllegalArgumentException if the order is invalid
+    /**Throw the IllegalArgumentException if the order is invalid,
      * The MethodArgumentNotValidException does not need to be
      * stated here because it is handled by the controller with
      * @Valid annotation
@@ -177,7 +187,6 @@ public class OrderServiceImpl implements OrderService {
 
     //5. return Saved order
     return orderRepository.save(order);
-
   }
 
   /**
@@ -218,10 +227,7 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new ProductNotFoundException(productId));
                         }
                         //b. check if product quantity is available
-                        //Todo: should this be productDto.availableStock? or productDto.productQuantity?
-//                        if (productDto.productQuantity() < quantity) {
-//                          return Mono.error(new InsufficientStockQuantityException(productId));
-//                        }
+
                         ///changed to availableStock
                         if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
@@ -263,7 +269,6 @@ public class OrderServiceImpl implements OrderService {
               order.setOrderStatus("PLACED");
               return Mono.fromCallable(() -> orderRepository.save(order));
             }));
-
   }
 
   /**
@@ -292,10 +297,7 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new ProductNotFoundException(productId));
                         }
                         //b. check if product quantity is available
-                        //Todo: should this be availableQuantity? or productQuantity?
-//                        if (productDto.productQuantity() < quantity) {
-//                          return Mono.error(new InsufficientStockQuantityException(productId));
-//                        }
+
                         ///changed to availableStock
                         if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
@@ -319,11 +321,24 @@ public class OrderServiceImpl implements OrderService {
                                 }));
                       });
 
-            }).reduce(BigDecimal.ZERO, BigDecimal::add)
+            })
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
             .doOnNext(order::setTotalAmount)
             .then(Mono.defer(() -> {
               order.setOrderStatus("PLACED");
-              return Mono.fromCallable(() -> orderRepository.save(order));
+
+              return Mono.fromCallable(() -> orderRepository.save(order))
+                      .flatMap(savedOrder -> {
+                        // Publish order placed event to Kafka topic
+                        OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getOrderId(), savedOrder.getCustomerEmail(), "dummyToken", savedOrder.getCustomerPhone());
+                        try {
+                          orderEventProducer.sendOrderPlacedEvent(event);
+                        } catch (Exception e){
+                          //log kafka error but still return the saved order
+                          logger.error("Failed to send order placed event for orderId: {} to Kafka", savedOrder.getOrderId(), e);
+                        }
+                        return Mono.just(savedOrder);
+                      });
             }));
   }
 
@@ -390,6 +405,8 @@ public class OrderServiceImpl implements OrderService {
 
     //TODO: Implement pagination and filtering
   }
+
+  //TODO: IMPLEMENT GET CUSTOMER BY PHONE NUMBER
 
   @Override
   @Cacheable(value = "orders", key = "#orderStatus")
@@ -474,7 +491,7 @@ public class OrderServiceImpl implements OrderService {
                 //Call inventory service to restore stock
                 try{
                   //First check if any other operation has restored the inventory for this product:
-                  // 1. check if status is already CANCELLED
+                  // 1. check if the status is already CANCELLED
 
                   inventoryServiceClient.restoreInventory(productId, quantity)
                           .doOnError(ex ->
@@ -852,6 +869,7 @@ public class OrderServiceImpl implements OrderService {
    * @param orderId
    */
   @Override
+  @Transactional
   public void cancelOrder(Long orderId) {
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -885,7 +903,15 @@ public class OrderServiceImpl implements OrderService {
     });
     //soft delete the order
     foundOrder.setOrderStatus("CANCELLED");
+    //publish order canceled event to Kafka topic
+    OrderCancelledEvent event = new OrderCancelledEvent(foundOrder.getOrderId(), foundOrder.getCustomerEmail(), "dummyToken", foundOrder.getCustomerPhone());
+    try {
+      orderEventProducer.sendOrderCancelledEvent(event);
+    } catch (Exception e){
+      logger.error("Order cancellation event sending failed for orderId: {} to Kafka", foundOrder.getOrderId(), e);
+    }
     orderRepository.save(foundOrder);
+
   }
 
   @Override

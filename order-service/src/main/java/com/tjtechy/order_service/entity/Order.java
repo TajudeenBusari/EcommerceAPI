@@ -9,6 +9,8 @@ package com.tjtechy.order_service.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -37,6 +39,28 @@ public class Order implements Serializable {
 
     @Column(nullable = false)
     private String customerEmail;
+
+    /**
+     * Value must not be {@code null} or empty.
+     * The user phone number validation pattern:
+     * ^: start String
+     * (\\+\\d{1,3}[- ]?)?: Optional country code part
+     * \\+\\d{1,3}: '+' followed by 1 to 3 digits (country code e.g +1, +44, +234)
+     * [- ]?: Optional separator (either a hyphen or space)
+     * \\d{7,15}: Main phone number part (7 to 15 digits)
+     * $: end String
+     * All these will be invalid:
+     * 12345 (too short)
+     * 1234567890123456 (too long)
+     * +1-234-567-8901-2345 (because of multiple separators)
+     */
+    @Column
+    @Size(min = 7, max = 15, message = "Customer phone must be between 1 and 15 characters")
+    @Pattern(
+            regexp = "^(\\+\\d{1,3}[- ]?)?\\d{7,15}$",
+            message = "Invalid phone number format"
+    )
+    private String customerPhone; // Optional field for phone number
 
     @Column(nullable = false)
     private String shippingAddress;
@@ -68,10 +92,11 @@ public class Order implements Serializable {
         this.orderDate = LocalDate.now();
     }
 
-    public Order(Long orderId, String customerName, String customerEmail, String shippingAddress, BigDecimal totalAmount, LocalDate orderDate, String orderStatus, List<OrderItem> orderItems) {
+    public Order(Long orderId, String customerName, String customerEmail, String customerPhone, String shippingAddress, BigDecimal totalAmount, LocalDate orderDate, String orderStatus, List<OrderItem> orderItems) {
         this.orderId = orderId;
         this.customerName = customerName;
         this.customerEmail = customerEmail;
+        this.customerPhone = customerPhone;
         this.shippingAddress = shippingAddress;
         this.totalAmount = totalAmount;
         this.orderDate = orderDate;
@@ -102,6 +127,13 @@ public class Order implements Serializable {
 
     public String getCustomerEmail() {
         return customerEmail;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
     }
 
     public void setCustomerEmail(String customerEmail) {
@@ -176,6 +208,7 @@ public class Order implements Serializable {
                 "orderId=" + orderId +
                 ", customerName='" + customerName + '\'' +
                 ", customerEmail='" + customerEmail + '\'' +
+                ", customerPhone='" + customerPhone + '\'' +
                 ", shippingAddress='" + shippingAddress + '\'' +
                 ", totalAmount=" + totalAmount +
                 ", orderDate=" + orderDate +
@@ -183,6 +216,4 @@ public class Order implements Serializable {
                 ", orderItems=" + orderItems +
                 '}';
     }
-
-
 }

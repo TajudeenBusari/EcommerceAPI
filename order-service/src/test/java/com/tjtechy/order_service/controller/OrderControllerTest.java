@@ -57,7 +57,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         }
 )
 @ImportAutoConfiguration(exclude = {
-        // Exclude any auto-configuration classes that are not needed for the test
+        // Exclude any autoconfiguration classes that are not needed for the test
         RedisCacheConfig.class,
         EurekaClientAutoConfiguration.class,
         ConfigServerBootstrapper.class
@@ -106,6 +106,7 @@ class OrderControllerTest {
                     1L,
                     "order 1 customer",
                     "order1@email.com",
+                    "+1234567890",
                     "order 1 address",
                     new BigDecimal(100.0),
                     LocalDate.of(2025, 10, 10),
@@ -115,6 +116,7 @@ class OrderControllerTest {
                     2L,
                     "order 2 customer",
                     "order2@email.com",
+                    "+1987654321",
                     "order 2 address",
                     new BigDecimal(200.0),
                     LocalDate.of(2025, 10, 11),
@@ -176,7 +178,6 @@ class OrderControllerTest {
             .jsonPath("$.data.customerEmail").isEqualTo(orderDto.getCustomerEmail())
             .jsonPath("$.data.shippingAddress").isEqualTo(orderDto.getShippingAddress());
 
-
     //Then: Verify Interactions
     verify(orderService).processOrderReactively(any(Order.class));
 
@@ -199,7 +200,6 @@ class OrderControllerTest {
     //then
     mockMvc.perform(get(baseUrl + "/order/orderDto/{orderId}", 1L)
                     .contentType(MediaType.APPLICATION_JSON))
-
             .andExpect(jsonPath("$.message").value("OrderDto retrieved successfully"))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.data.orderId").value(orderDto.getOrderId()))
@@ -482,6 +482,7 @@ class OrderControllerTest {
     var updateOrderDto = new UpdateOrderDto(
             "updated customer name",
             "test@test.com",
+            "+1234567890",
             "updated shipping address",
             new ArrayList<>(){
               {
@@ -520,6 +521,7 @@ class OrderControllerTest {
     var updateOrderDto = new UpdateOrderDto(
             "updated customer name",
             "test@test.com",
+            "+1234567890",
             "updated shipping address",
             new ArrayList<>(){
               {

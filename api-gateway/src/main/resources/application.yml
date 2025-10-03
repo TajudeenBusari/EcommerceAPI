@@ -22,6 +22,7 @@ spring:
               - "http://inventory-service:[*]"
               - "http://product-service:[*]"
               - "http://order-service:[*]"
+              - "http://notification-service:[*]"
               - "https://docs.swagger.io"
 
             allowedMethods: #allow all methods
@@ -75,6 +76,20 @@ spring:
             - Path=/aggregate/order-service/v3/api-docs
           filters:
             - RewritePath=/aggregate/order-service/v3/api-docs, /v3/api-docs
+
+        #notification api route
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notification/**
+        #notification swagger route
+        - id: notification-docs
+          uri: lb://notification-service
+          predicates:
+            - Path=/aggregate/notification-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/notification-service/v3/api-docs, /v3/api-docs
+
 springdoc: #access at http://localhost:8080/swagger-ui.html
   api-docs:
     path: /api-docs
@@ -87,6 +102,8 @@ springdoc: #access at http://localhost:8080/swagger-ui.html
       url: /aggregate/inventory-service/v3/api-docs
     - name: Order Service
       url: /aggregate/order-service/v3/api-docs
+    - name: Notification Service
+      url: /aggregate/notification-service/v3/api-docs
 
 
 logging:

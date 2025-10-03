@@ -22,7 +22,10 @@ import org.springframework.test.context.TestPropertySource;
 				"spring.datasource.username=testuser",
 				"spring.datasource.password=testpassword",
 				"redis.enabled=false", //disable redis
-				"spring.profiles.active=test"
+				"spring.profiles.active=test",
+				"spring.kafka.bootstrap-servers=localhost:0", // Use an invalid port to prevent actual connections
+				"spring.kafka.admin.auto-create=false", // Prevent auto-creation of topics
+				"spring.kafka.consumer.auto-offset-reset=none", // Prevent consumer from auto-starting
 })
 class OrderServiceApplicationTests {
 

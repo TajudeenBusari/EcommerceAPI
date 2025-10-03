@@ -27,6 +27,8 @@
         <module>exception</module>
         <module>common-utils</module>
         <module>inventory-service</module>
+        <module>notification-service</module>
+        <module>user-service</module>
     </modules>
 
     <properties>

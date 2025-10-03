@@ -1,0 +1,26 @@
+#ignore the environment variable file
+.env
+#firebase service account file
+firebase-service-account.json
+
+#ignore .idea folder
+.idea/
+.idea/dataSources/a90f2404-9e15-4dfd-89f6-19837ec25e53.xml
+.idea/dataSources/dbb0ccd9-06dd-407f-b700-8142fac9bbbd.xml
+#ignore node modules
+node_modules/
+#ignore build folder
+build/
+#ignore logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+#ignore Mac system files
+.DS_Store
+#ignore coverage folder
+coverage/
+#ignore .next folder
+.next/
+cls

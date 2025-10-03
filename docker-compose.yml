@@ -1,0 +1,484 @@
+
+services:
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+#NOTE:
+#To view the table structure and initial data,
+#you can connect to the Postgres container and run SQL commands (root directory where docker-compose.yml is located):
+#docker exec -it ecommerce-postgres psql -U postgres (-U postgres= connects as user 'postgres')
+#once in the psql prompt, you can run the following PostgreSQL commands lines in the psql shell:
+#\l  (to list tables)
+#\c ECommerce-Order-Service (to connect to a specific database)
+#\dt (list tables in the connected database)
+#exit (to exit psql shell)
+#Another option is to use the pgAdmin GUI tool to connect to the
+#Postgres database using the same connection details in the .env file
+  postgres:
+    image: postgres:latest
+    container_name: ecommerce-postgres
+    env_file:
+        - .env #current directory
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #PgAdmin (optional, for managing Postgres via a web interface)
+  #The volume mount ./servers.json:/pgadmin4/servers.json in your docker-compose.yml is telling Docker:
+  #"Take the file servers.json from the current directory on my
+  #host machine and map it to the path /pgadmin4/servers.json inside the pgAdmin container."
+  #As long as the pgadmin interface is opened in the browser, connection updates will keep coming into the log
+
+  pgadmin:
+    image: elestio/pgadmin:latest #dpage/pgadmin4
+    container_name: pgadmin
+#    env_file: #since email and password are provided below, no need for .env file here but if we move them to .env, then uncomment this.
+#      - .env #current directory
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050" #Host port 5050 -> Container port 5050
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - microservices-network
+#this is optional
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:5050"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+
+  #Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.8.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_INIT_LIMIT: 10
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #Kafka broker
+  kafka:
+    image: confluentinc/cp-kafka:7.8.0
+    container_name: kafka
+    ports:
+      - "9092:9092" #for container to container communication
+      - "9093:9093" #Optional: for external access, e.g. services on local machine
+    depends_on:
+#      - zookeeper
+        zookeeper:
+            condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093 #new
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      #Advertise:
+      #internal services (Docker containers) will use kafka:9092
+      #external services (e.g. local machine) will use localhost:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT #new
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_MESSAGE_MAX_BYTES: 200000000 #200mb
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 200000000 #200mb
+      KAFKA_METRICS_REPORTER_TELEMETRY_API_ENABLED: "false" #Disable Kafka broker telemetry to reduce logging noise
+      #This WARN from kafka server log can be ignored for now: WARN [Controller id=1, targetBrokerId=1] Connection to
+      #node 1 (kafka/172.24.0.3:9092) could not be established. Broker may not be available. (org.apache.kafka.clients.NetworkClient)
+
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "kafka", "9092"]
+#      test: ["CMD", "kafka-ready", "1", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #schema registry for Kafka
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.8.0
+    container_name: schema-registry
+    ports:
+      - "8081:8081"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: "GET, POST, PUT, DELETE, OPTIONS"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s #wait for 60 seconds before starting health check
+
+  # KAFKA UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8090:8080" #Host port 8090 -> Container port 8080
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      #SERVER_PORT: 8090
+      KAFKA_CLUSTERS_0_NAME: local #kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 #kafka:9093
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY_URL: "http://schema-registry:8081"
+      DYNAMIC_CONFIGURATION_ENABLED: "true"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "*"
+      MANAGEMENT_ENDPOINT_HEALTH_SHOWDETAILS: always
+      MANAGEMENT_HEALTH_KAFKA_ENABLED: "true"
+      MANAGEMENT_HEALTH_KAFKA_TIMEOUT: "30000"  # 10s timeout
+      KAFKA_CLUSTERS_0_PROPERTIES_REQUEST_TIMEOUT_MS: 30000 # 10s timeout for Kafka requests
+      KAFKA_CLUSTERS_0_PROPERTIES_RETRY_BACKOFF_MS: 1000 # 0
+      KAFKA_CLUSTERS_0_READONLY: "false"
+
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+
+  #THE EUREKA SERVER
+  eureka-server:
+    build: eureka-server
+    container_name: eureka-server
+    ports:
+      - "8763:8763"
+    environment:
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_SERVER_WAIT_TIME_IN_MS_WHEN_SYNC_EMPTY=0
+      - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=false
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8763/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE CONFIG SERVER
+  config-server:
+    build: config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    volumes:
+      - ./applicationsConfiguration:/config
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/config
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE API GATEWAY
+  api-gateway:
+    build: api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      - SPRING_APPLICATION_NAME=api-gateway
+      - SPRING_PROFILES_ACTIVE=default
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+    networks:
+      - microservices-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE PRODUCT SERVICE
+  product-service:
+    build: product-service
+    container_name: product-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=product-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE INVENTORY SERVICE
+  inventory-service:
+    build: inventory-service
+    container_name: inventory-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=inventory-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+#      - DEBUG=true
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE  ORDER SERVICE
+  order-service:
+    build: order-service
+    container_name: order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=order-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - LOGGING_LEVEL_ORG_APACHE_KAFKA=DEBUG
+      - spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+      - spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+      - spring.kafka.properties.spring.json.trusted.packages=*
+      - LOGGING_LEVEL_ORG_APACHE_KAFKA_CLIENTS_TELEMETRY=DEBUG
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_KAFKA=DEBUG
+      - LOGGING_LEVEL_ORG_APACHE_KAFKA_CLIENTS_ADMIN=WARN
+#      - kafka.topics.order-placed=order-placed-topic
+#      - kafka.topics.order-cancelled=order-cancelled-topic
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #THE NOTIFICATION SERVICE
+  notification-service:
+    build: notification-service
+    container_name: notification-service
+    env_file:
+      - .env #one level up, docker-compose explicitly loads the .env file and injects those values as container env variables. Spring boot inside container then resolves them the same way
+
+    ports:
+      - "8085:8085"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=notification-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+      - spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
+      - spring.kafka.consumer.properties.spring.json.trusted.packages=*
+      - FIREBASE_CONFIG_PATH=/app/firebase/firebase-service-account.json
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
+    volumes:
+      - ./firebase-service-account.json:/app/firebase/firebase-service-account.json:ro #ro=read only
+
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  microservices-network:
+    driver: bridge
+volumes:
+  postgres-data:
+
+
+#schema Registry: http://localhost:8081
+#
+#Kafka UI: http://localhost:8085
+
+#Kafka Broker inside Docker: kafka:9092 (used in application.yml)
+
+#Kafka Broker outside Docker: localhost:9093 (if you run producer/consumer from your host machine)
+#https://www.slingacademy.com/article/how-to-use-kafka-with-docker-and-docker-compose/
+#https://github.com/AishaAli-a/kafka-docker-setup
+#https://docs.confluent.io/platform/current/installation/docker/config-reference.html#kafka-broker
+#NOTE:Kafka connect will be added later if we need to connect to external systems like databases
+#If later you want to stream DB changes or push events into external sinks, then yes, add it
+#sample kafka-connect configuration:
+#  kafka-connect:
+#    image: confluentinc/cp-kafka-connect:7.5.0
+#    container_name: kafka-connect
+#    depends_on:
+#      - kafka
+#      - schema-registry
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+#      CONNECT_REST_PORT: 8083
+#      CONNECT_GROUP_ID: "connect-cluster"
+#      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+#      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+#      CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+#      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+#      CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
+#On kafka-ui: 025-08-27 19:06:55,717 INFO  [parallel-2] o.a.k.c.u.AppInfoParser: Kafka version: 3.5.0
+#On order-service log: 2025-08-27T22:10:03.083+03:00  INFO 9248 --- [order-service] [  restartedMain] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.8.1
+
+
+
+
