@@ -16,6 +16,10 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
+//TODO: FIX: Request cannot be made directly to the services from the gateway may be because of CORS policy
+//when i make a get all notification request on the browser with: http://192.168.56.1:8085/api/v1/notification,
+// it returns the response in xml format
+
 @Configuration
 public class CorsGlobalConfig {
   //allow cors for all endpoints
@@ -29,8 +33,10 @@ public class CorsGlobalConfig {
             "http://host.docker.internal:[*]",
             "http://172.*.*.*:[*]",
             "http://192.168.*.*:[*]",
+            "http://192.168.56.1",
             "http://10.*.*.*:[*]",
-            "https://docs.swagger.io"
+            "https://docs.swagger.io",
+            "http://notification-service:[*]"
     ));
     config.setAllowedHeaders(Arrays.asList(
             "Authorization",

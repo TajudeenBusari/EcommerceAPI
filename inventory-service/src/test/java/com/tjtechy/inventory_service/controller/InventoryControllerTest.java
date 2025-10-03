@@ -30,6 +30,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -129,7 +130,8 @@ class InventoryControllerTest {
     var createInventoryDto = new CreateInventoryDto(
             UUID.randomUUID(),
             10,
-            5
+            5,
+            LocalDate.now().plusYears(1)
     );
     var json = objectMapper.writeValueAsString(createInventoryDto);
 

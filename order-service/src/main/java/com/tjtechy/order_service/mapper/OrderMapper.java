@@ -23,6 +23,7 @@ public class OrderMapper {
     orderDto.setOrderStatus(order.getOrderStatus());
     orderDto.setCustomerName(order.getCustomerName());
     orderDto.setCustomerEmail(order.getCustomerEmail());
+    orderDto.setCustomerPhone(order.getCustomerPhone());
     orderDto.setShippingAddress(order.getShippingAddress());
     orderDto.setTotalAmount(order.getTotalAmount());
     orderDto.setCustomerEmail(order.getCustomerEmail());
@@ -40,6 +41,7 @@ public class OrderMapper {
 
     order.setCustomerName(createOrderDto.getCustomerName());
     order.setCustomerEmail(createOrderDto.getCustomerEmail());
+    order.setCustomerPhone(createOrderDto.getCustomerPhone());
     order.setShippingAddress(createOrderDto.getShippingAddress());
     order.setOrderItems(OrderItemMapper.mapFromOrderItemDtosToOrderItems(createOrderDto.getOrderItems())); //from OrderItemMapper
 
@@ -51,6 +53,7 @@ public class OrderMapper {
 
     order.setCustomerName(updateOrderDto.customerName());
     order.setCustomerEmail(updateOrderDto.customerEmail());
+    order.setCustomerPhone(updateOrderDto.customerPhone());
     order.setShippingAddress(updateOrderDto.shippingAddress());
     order.setOrderItems(OrderItemMapper.mapFromOrderItemDtosToOrderItems(updateOrderDto.orderItems())); //from OrderItemMapper
 

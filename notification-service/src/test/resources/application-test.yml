@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc.tc:postgresql:15.0://notificationdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  cache:
+    type: none
+  eureka:
+    client:
+      enabled: false
+    instance:
+      hostname: localhost
+  redis:
+    enabled: false
+    #jackson serialization
+    jackson:
+      serialization:
+      write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
+api:
+  endpoint:
+    base-url: /api/v1
+
+# suppress the memory leak warning
+logging:
+  level:
+    org.apache.catalina.loader.WebappClassLoaderBase: ERROR

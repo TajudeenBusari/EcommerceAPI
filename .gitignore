@@ -1,0 +1,4 @@
+#ignore the environment variable file
+.env
+#firebase service account file
+firebase-service-account.json

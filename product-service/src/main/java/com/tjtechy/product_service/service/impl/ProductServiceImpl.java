@@ -161,7 +161,8 @@ public class ProductServiceImpl implements ProductService {
       var createInventoryDto = new CreateInventoryDto(
               savedProduct.getProductId(),
               savedProduct.getAvailableStock(),
-              1
+              1,
+              savedProduct.getExpiryDate()
       );
 
       webClientBuilder.build()
@@ -233,7 +234,8 @@ public class ProductServiceImpl implements ProductService {
     var createInventoryDto = new CreateInventoryDto(
             savedProduct.getProductId(),
             savedProduct.getAvailableStock(),
-            1
+            1,
+            savedProduct.getExpiryDate()
     );
     inventoryServiceClient.createInventoryForProductAsync(createInventoryDto);
 

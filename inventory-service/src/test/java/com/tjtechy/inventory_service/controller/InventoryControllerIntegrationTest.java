@@ -7,6 +7,8 @@
 package com.tjtechy.inventory_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.javafaker.Faker;
 import com.tjtechy.*;
 import org.junit.jupiter.api.*;
@@ -32,6 +34,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,12 +79,29 @@ public class InventoryControllerIntegrationTest {
   @LocalServerPort
   private int port;
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  /**
+   * ObjectMapper instance to handle JSON serialization and deserialization.
+   * By default, Jackson does not handle Java 8+ time classes(LocalDate, LocalDateTime, Instant etc.),
+   * JavaTimeModule comes fromjackson-datatype-jsr310 dependency and adds support for these types,
+   * so the .registerModule(new JavaTimeModule()) line registers this module with the ObjectMapper instance.
+   * The .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) ensures that
+   * dates are serialized in a readable format(<"expiryDate": "2025-09-03">) instead of as
+   * numeric timestamps (<"expiryDate":"1725408000000">).
+   * .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) prevents errors(InvalidDefinitionException)
+   * during serialization of object with no properties. Disabling ensure Jackson output to be {}
+   *
+   */
+  private final ObjectMapper objectMapper = new ObjectMapper()
+          .registerModule(new JavaTimeModule())
+          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+          .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
 
   private final Faker faker = new Faker(); //initialize Faker to generate random data
+
+
 
   @Container
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
@@ -117,7 +137,8 @@ public class InventoryControllerIntegrationTest {
       CreateInventoryDto createInventoryDto = new CreateInventoryDto(
           UUID.randomUUID(), // Randomly generate a productId
           faker.number().numberBetween(1, 100), // Randomly generate a reserve quantity between 1 and 100
-          faker.number().numberBetween(1, 100)// Randomly generate available stock
+          faker.number().numberBetween(1, 100),// Randomly generate available stock
+              LocalDate.now().plusDays(30)
 
       );
       inventoryDtoList.add(createInventoryDto);
@@ -152,7 +173,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100),// Randomly generate a reserved quantity
+        LocalDate.now().plusDays(30) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
     assertThat(savedInventory).isNotNull();
@@ -174,7 +196,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
+        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -224,7 +247,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
+        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -265,7 +289,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
+        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto); //inventoryDto
 
@@ -301,7 +326,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100),// Randomly generate a reserved quantity
+        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -348,7 +374,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
+        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -387,7 +414,8 @@ public class InventoryControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
-        faker.number().numberBetween(1, 100) // Randomly generate a reserved quantity
+        faker.number().numberBetween(1, 100),// Randomly generate a reserved quantity
+        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 

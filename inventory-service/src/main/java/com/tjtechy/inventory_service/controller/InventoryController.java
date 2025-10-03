@@ -166,7 +166,6 @@ public class InventoryController {
   }
 
 
-
   /**
    * This method is used to deduct inventory by product id and quantity non-reactively and blocking.
    * @param deductInventoryRequestDto

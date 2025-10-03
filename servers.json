@@ -1,0 +1,17 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "ECommerce-PostgreSQL",
+      "Group": "Servers",
+      "Host": "ecommerce-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "/pgadmin4/.pgpass",
+      "SSLMode": "prefer",
+      "Comment": "PostgreSQL database for E-Commerce application"
+    }
+
+  }
+
+}

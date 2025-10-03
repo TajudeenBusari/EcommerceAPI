@@ -67,7 +67,7 @@ public class OrderController {
   /**
    * This is the method to create order reactively
    * The Mono means that the result will be returned asynchronously
-   * Reactive is non-blocking and asynchronous which improves performance.
+   * Reactive is non-blocking and asynchronous, which improves performance.
    * Efficient when calling external services or APIs, E.g., product service etc.
    * Returns a reactive stream, freeing up the thread to handle other requests.
    * The createOrder is processed inside the map method.
@@ -98,7 +98,7 @@ public class OrderController {
   /**
    * This is the method to create order reactively by calling externalized services
    * The Mono means that the result will be returned asynchronously
-   * Reactive is non-blocking and asynchronous which improves performance.
+   * Reactive is non-blocking and asynchronous, which improves performance.
    * Efficient when calling external services or APIs, E.g., product service etc.
    * Returns a reactive stream, freeing up the thread to handle other requests.
    * The createOrder is processed inside the map method.
