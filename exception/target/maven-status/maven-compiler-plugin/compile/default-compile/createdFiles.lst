@@ -2,4 +2,5 @@ com\tjtechy\businessException\InsufficientStockQuantityException.class
 com\tjtechy\businessException\OrderAlreadyCancelledException.class
 com\tjtechy\modelNotFoundException\InventoryNotFoundException.class
 com\tjtechy\modelNotFoundException\ProductNotFoundException.class
+com\tjtechy\modelNotFoundException\NotificationNotFoundException.class
 com\tjtechy\modelNotFoundException\OrderNotFoundException.class

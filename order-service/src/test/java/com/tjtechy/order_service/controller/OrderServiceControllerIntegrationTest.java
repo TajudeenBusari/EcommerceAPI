@@ -49,6 +49,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -97,11 +99,28 @@ public class OrderServiceControllerIntegrationTest {
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
 
+  //spin up postgres container
   @Container
   private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
           .withDatabaseName("order_service_test")
           .withUsername("test")
           .withPassword("test");
+
+  //spin up kafka container
+  /**
+   * This already bundles Zookeeper, no need to start a separate Zookeeper container
+   * The Confluent image (confluentinc/cp-kafka:latest) is failing immediately because Testcontainers’ KafkaContainer
+   * expects the Apache Kafka image layout, but Confluent has a different startup script structure.
+   * kAFKA from TestContainers does not work with confluence/cp-kafka image(directly), Confluence
+   * container does not have /etc/confluent/docker/run directory where the startup script is located,
+   * so TestContainers cannot launch it properly. Hence, we are using the apache/kafka image which is compatible.
+   * If you must use Confluent, you will need to create a custom container class that extends GenericContainer:
+   * E.G; Check readme file
+   */
+  @Container
+  private static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName
+          .parse("apache/kafka:latest"));
+
 
   private static final WireMockServer wireMockServer;
   static {
@@ -110,12 +129,15 @@ public class OrderServiceControllerIntegrationTest {
     WireMock.configureFor("localhost", wireMockServer.port());
   }
 
+  //Register dynamic properties for Postgres, Wiremock, and Kafka
   @DynamicPropertySource
   static void registerPostgresProperties(DynamicPropertyRegistry registry) {
+    //POSTGRES
     registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
     registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
     registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
     registry.add("spring.datasource.driver-class-name", postgreSQLContainer::getDriverClassName);
+    //WIREMOCK
     registry.add("product-service.base-url", () -> {
       checkState(wireMockServer.isRunning(), "WireMock server is not running");
       return "http://localhost:" + wireMockServer.port() + "/api/v1";
@@ -125,11 +147,14 @@ public class OrderServiceControllerIntegrationTest {
       return "http://localhost:" + wireMockServer.port() + "/api/v1";
     });
     registry.add("api.endpoint.base-url", () -> "/api/v1");
+    //KAFKA
+    registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
   }
 
   @BeforeAll
   static void startContainers() {
     postgreSQLContainer.start();
+    kafkaContainer.start();
   }
 
   @AfterAll
@@ -139,6 +164,9 @@ public class OrderServiceControllerIntegrationTest {
     }
     if (postgreSQLContainer != null && postgreSQLContainer.isRunning()) {
       postgreSQLContainer.stop();
+    }
+    if (kafkaContainer != null && kafkaContainer.isRunning()) {
+      kafkaContainer.stop();
     }
   }
 
@@ -594,6 +622,7 @@ public class OrderServiceControllerIntegrationTest {
     var updateOrderDto = new UpdateOrderDto(
             "Updated Customer Name",
             "testupdated@test.com",
+            "+2348812345678",
             "456 Updated Street, Updated City, UC 67890",
             List.of(new OrderItemDto(
                     productDto.productId(),

@@ -79,8 +79,9 @@ public class InventoryServiceClient {
    */
   public void createInventoryForProductAsync(CreateInventoryDto createInventoryDto) {
 
-//    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/create";
     var url = inventoryServiceUrl + "/inventory/internal/create";
+    //validate the expiry date in the product entity is in the future
+
 
     var savedProductId = createInventoryDto.productId();
     clientBuilder.build()

@@ -29,6 +29,8 @@
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2024.0.0</spring-cloud.version>
+<!--		<spring-kafka.version>3.0.11</spring-kafka.version>-->
+<!--		<kafka-clients.version>3.5.0</kafka-clients.version>-->
 	</properties>
 
 	<dependencies>
@@ -70,14 +72,7 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- I don't need this anymore because the ProductDto class has been moved
-		 to the common-utils module-->
-<!--        <dependency>-->
-<!--            <groupId>com.tjtechy</groupId>-->
-<!--            <artifactId>product-service</artifactId>-->
-<!--            <version>0.0.1</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
+
 		<dependency>
 			<groupId>com.tjtechy</groupId>
 			<artifactId>system</artifactId>
@@ -94,7 +89,6 @@
 			<groupId>com.tjtechy</groupId>
 			<artifactId>common-utils</artifactId>
 			<version>0.0.1</version>
-<!--			<scope>test</scope>-->
 		</dependency>
 
 		<!--dev tools-->
@@ -122,8 +116,9 @@
 			<artifactId>spring-cloud-starter-config</artifactId>
 		</dependency>
 
-		<!--Add spring cloud bootstrap dependency so application can use the
-		config server config file-->
+		<!--Creates an early application context (before the main Spring context loads)
+		to fetch external configuration (e.g., from Spring Cloud Config Server)
+		before beans are initialized.-->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-bootstrap</artifactId>
@@ -145,6 +140,26 @@
 			<groupId>org.testcontainers</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>1.20.4</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Add apache kafka dependency -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+<!--			<version>${spring-kafka.version}</version>-->
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+<!--			<version>${spring-kafka.version}</version>-->
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>kafka</artifactId>
 			<scope>test</scope>
 		</dependency>
 

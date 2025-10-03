@@ -1,0 +1,70 @@
+server:
+  port: 8085 #Optional: can be overridden by Config Server
+spring:
+  application:
+    name: notification-service
+
+  #mail properties with mailtrap.io for testing emails in dev and local environments
+  mail:
+    host: ${MAIL_HOST:sandbox.smtp.mailtrap.io}
+    port: ${MAIL_PORT:2525} #Default port for Mailtrap
+    username: ${MAILTRAP_USERNAME}
+    password: ${MAILTRAP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    from: ${MAIL_FROM:no-reply@tjtechy.com} #fallback if not set in .env
+
+  #twilio properties for sending SMS
+  # it is loaded by default from environment variables (.env)
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID} #Twilio Account SID
+    auth-token: ${TWILIO_AUTH_TOKEN} #Twilio Auth Token
+    from-number: ${TWILIO_FROM_NUMBER} #Twilio phone number in E.164 format
+
+  #kafka consumer configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    consumer:
+      group-id: notification-service-group #Consumer group ID, ensure load balancing across multiple instances, all consumers should hava a group id when reading from a topic
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer #Deserializer for the key
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer #Deserializer for the value
+    properties:
+      spring.json.trusted.packages: '*' #Trust all packages for JSON serialization/deserialization
+      spring.json.value.default.type: com.tjtechy.events.orderEvent.OrderPlacedEvent #Default type for deserialization, if needed
+      metrics.reporters: ""
+      client.telemetry.reporter.enabled: false #Disable client telemetry to reduce overhead
+    topics:
+      order-placed: order-placed-topic
+      order-cancelled: order-cancelled-topic
+      payment-received: payment-received-topic
+      payment-failed: payment-failed-topic
+#management/Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info #Expose all actuator endpoints, can be restricted in production
+  endpoint:
+    health:
+      show-details: always #show details in the health endpoint, can be restricted in production
+
+
+#custome application properties
+app:
+  scheduling:
+    timezone: Africa/Lagos #Set the timezone for scheduled tasks
+    retention-days: 30 #Retention period for logs or data cleanup tasks
+
+#Swagger/OpenAPI configuration
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html #will be access at http://localhost:8085/swagger-ui.html in browser
+  api-docs:
+    path: /v3/api-docs #will be access at http://localhost:8085/v3/api-docs in JSON format
+  default-produces-media-type: application/json #default produces media type for API responses
+  default-consumes-media-type: application/json #default consumes media type for API requests
+  override-with-gateway-url: true #override the default URL with the gateway URL

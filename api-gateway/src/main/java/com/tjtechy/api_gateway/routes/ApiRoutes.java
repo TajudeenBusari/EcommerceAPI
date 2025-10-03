@@ -41,8 +41,16 @@ public class ApiRoutes {
                     .filters(f -> f.rewritePath("/aggregate/inventory-service/v3/api-docs", "/v3/api-docs"))
                     .uri("lb://INVENTORY-SERVICE"))
 
+            //NOTIFICATION SERVICE
+            .route("notification-service", r -> r.path("/api/v1/notification/**")
+                    .uri("lb://NOTIFICATION-SERVICE"))
+            .route("notification-service-docs", r -> r.path("/aggregate/notification-service/v3/api-docs")
+                    .filters(f -> f.rewritePath("/aggregate/notification-service/v3/api-docs", "/v3/api-docs"))
+                    .uri("lb://NOTIFICATION-SERVICE"))
+
             //USER SERVICE/Authentication service
             //PAYMENT SERVICE
+
 
             .build();
   }

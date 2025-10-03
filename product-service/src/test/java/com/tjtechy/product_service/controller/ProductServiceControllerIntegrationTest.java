@@ -44,6 +44,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -249,7 +250,9 @@ public class ProductServiceControllerIntegrationTest {
     var createInventoryDto = new CreateInventoryDto(
             tempProductId,
             10, //available stock
-            1 //reserved quantity
+            1, //reserved quantity
+            //expiry date must be in the future
+            LocalDate.now().plusDays(30)
     );
     var inventoryDto = new InventoryDto(
             inventoryId,

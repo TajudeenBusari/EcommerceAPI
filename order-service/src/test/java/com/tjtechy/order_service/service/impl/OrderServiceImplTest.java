@@ -5,11 +5,13 @@ import com.tjtechy.businessException.InsufficientStockQuantityException;
 import com.tjtechy.businessException.OrderAlreadyCancelledException;
 import com.tjtechy.client.InventoryServiceClient;
 import com.tjtechy.client.ProductServiceClient;
+import com.tjtechy.events.orderEvent.OrderCancelledEvent;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.OrderItem;
+import com.tjtechy.order_service.kafka.OrderEventProducer;
 import com.tjtechy.order_service.mapper.OrderMapper;
 import com.tjtechy.order_service.repository.OrderRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -69,6 +71,9 @@ class OrderServiceImplTest {
   @Mock
   private InventoryServiceClient inventoryServiceClient;
 
+  @Mock
+  private OrderEventProducer orderEventProducer;
+
 
 
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImplTest.class);
@@ -107,6 +112,7 @@ class OrderServiceImplTest {
                 1L,
                 "order 1 customer",
                 "order1@email.com",
+                "+1234567890",
                 "order 1 address",
                 new BigDecimal(100.0),
                 LocalDate.of(2025, 10, 10),
@@ -117,6 +123,7 @@ class OrderServiceImplTest {
                 2L,
                 "order 2 customer",
                 "order2@email.com",
+                "+1987654321",
                 "order 2 address",
                 new BigDecimal(200.0),
                 LocalDate.of(2025, 10, 10),
@@ -126,7 +133,8 @@ class OrderServiceImplTest {
             new Order(
                 3L,
                 "order 3 customer",
-                "",
+                "order3@email.com",
+                "+1122334455",
                 "order 3 address",
                 new BigDecimal(300.0),
                 LocalDate.of(2025, 10, 10),
@@ -136,7 +144,8 @@ class OrderServiceImplTest {
             new Order(
                     4L,
                     "order 4 customer",
-                    "",
+                    "order4@email.com",
+                    "+1222333444",
                     "order 3 address",
                     new BigDecimal(400.0),
                     LocalDate.of(2025, 11, 10),
@@ -147,15 +156,14 @@ class OrderServiceImplTest {
                     5L,
                     "order 5 customer",
                     "order1@email.com",
+                    "+1555666777",
                     "order 5 address",
                     new BigDecimal(500.0),
                     LocalDate.of(2025, 12, 10),
                     "PLACED",
                     orderItem3
             )
-
         );
-
   }
 
   @AfterEach
@@ -286,7 +294,12 @@ class OrderServiceImplTest {
     when(productServiceConfig.getBaseUrl()).thenReturn("/api/v1");
     when(inventoryServiceConfig.getBaseUrl()).thenReturn("/api/v1");
 
-    when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+              Order savedOrder = invocation.getArgument(0);
+              savedOrder.setOrderId(1L);// Simulate setting the ID after saving
+              savedOrder.setCustomerEmail("some email");// Simulate setting the email after saving
+              return savedOrder;
+            });
 
     // When
     Mono<Order> result = orderService.processOrderReactivelyByCallingExternalizedServices(order);
@@ -299,6 +312,13 @@ class OrderServiceImplTest {
               assertEquals("PRODUCT1", savedOrder.getOrderItems().get(0).getProductName());
               assertEquals(new BigDecimal("20.00"), savedOrder.getTotalAmount());
               assertEquals("PLACED", savedOrder.getOrderStatus());
+
+              //verify kafka event was sent with correct values
+              verify(orderEventProducer, times(1))
+                      .sendOrderPlacedEvent(argThat(event ->
+                              event.orderId().equals(savedOrder.getOrderId()) &&
+                      event.customerEmail().equals(savedOrder.getCustomerEmail())
+                      ));
             })
             .verifyComplete();
   }
@@ -523,6 +543,7 @@ class OrderServiceImplTest {
             orderId,
             "Original Customer",
             "original@email.com",
+            "+1234567890",
             "Original Address",
             BigDecimal.ZERO,
             LocalDate.now(),
@@ -564,7 +585,7 @@ class OrderServiceImplTest {
     Result productDtoResult = new Result("Product retrieved successfully", true, productDto, StatusCode.SUCCESS);
 
 
-    //mock repository behaviour
+    //mock repository behavior
     when(orderRepository.findById(orderId)).thenReturn(Optional.of(exist));
     given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
     doNothing().when(orderRepository).deleteOrderItemById(anyLong());
@@ -598,7 +619,7 @@ class OrderServiceImplTest {
                       .stream()
                       .noneMatch(orderItem -> orderItem.getProductName().equals("Old Product")));
 
-              //VERIFY NEW ORDER ITEM IS ADDED
+              //VERIFY NEW ORDER ITEM IS ADDED,
               // Verify new order item is added
               assertEquals(1, updatedOrder.getOrderItems().size());
               OrderItem newItem = updatedOrder.getOrderItems().get(0);
@@ -862,9 +883,9 @@ class OrderServiceImplTest {
     //Then
     verify(orderRepository, times(1)).findAllById(existingOrdersIds);
     verify(orderRepository, times(1)).deleteAll(List.of(order1, order2));
-    // No restoreInventory call since orders are cancelled
+    // No restoreInventory call since orders are canceled
     verify(inventoryServiceClient, times(0)).restoreInventory(productId1, 3);
-    //no restoreInventory call for productId1 since orders are cancelled
+    //no restoreInventory call for productId1 since orders are canceled
     verify(inventoryServiceClient, times(0)).restoreInventory(productId1, 1);
   }
 
@@ -904,6 +925,7 @@ class OrderServiceImplTest {
     //NOTE: called 3 times because of the 3 order items in the order
     verify(inventoryServiceClient, times(3)).restoreInventory(any(UUID.class), anyInt());
     verify(orderRepository, times(1)).save(order);
+    verify(orderEventProducer, times(1)).sendOrderCancelledEvent(any(OrderCancelledEvent.class));
   }
 
   @Test

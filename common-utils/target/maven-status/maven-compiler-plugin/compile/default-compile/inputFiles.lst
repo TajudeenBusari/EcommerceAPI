@@ -4,6 +4,8 @@ C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\config\ProductServiceConfig.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\CreateInventoryDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\DeductInventoryRequestDto.java
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\events\orderEvent\OrderCancelledEvent.java
+C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\events\orderEvent\OrderPlacedEvent.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\Inventory.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\InventoryDto.java
 C:\Users\tajud\javaProject\EcommerceMicroservices\common-utils\src\main\java\com\tjtechy\ProductDto.java

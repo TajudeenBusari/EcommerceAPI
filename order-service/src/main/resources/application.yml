@@ -3,6 +3,36 @@ server:
 spring:
   application:
     name: order-service # This name is used in WebClient URI
+
+    #kafka configuration
+    #the producer key and value configures how the producer serializes message before sending to kafka
+    #key converts message keys (e.g order ID) to a string
+    #value converts message values (e.g order details-JSON PAYLOAD) to a string
+    # the consumer key and value configures how the consumer deserializes message after receiving from kafka
+    #key converts message keys (e.g order ID) from a string
+    #value converts message values (e.g order details-JSON PAYLOAD) from a string
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer #Serializer for the key
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer #Serializer for the value
+        #NOTE: if order service is not consuming messages from kafka, the consumer configuration is not needed
+    consumer:
+      group-id: order-service-group #Consumer group ID, ensure load balancing across multiple instances
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer #Deserializer for the key
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer #Deserializer for the value
+    properties:
+      spring.json.trusted.packages: '*' #Trust all packages for JSON serialization/deserialization
+#      spring.json.value.default.type: com.tjtechy.order_service.event.OrderPlacedEvent #Default type for deserialization, if needed
+      spring.json.value.default.type: com.tjtechy.events.orderEvent.OrderPlacedEvent #Default type for deserialization, if needed
+      metrics.reporters: ""
+      client.telemetry.reporter.enabled: false #Disable client telemetry to reduce overhead
+    topics:
+      order-placed: order-placed-topic
+      order-cancelled: order-cancelled-topic
+      payment-received: payment-received-topic
+      payment-failed: payment-failed-topic
+
 product-service:
   base-url: http://product-service/api/v1
 inventory-service:
@@ -15,6 +45,8 @@ springdoc:
   default-produces-media-type: application/json #default produces media type for API responses
   default-consumes-media-type: application/json #default consumes media type for API requests
   override-with-gateway-url: true #override the default URL with the gateway URL
+
+
 management:
   endpoints:
     web:
@@ -23,9 +55,17 @@ management:
   endpoint:
     health:
       show-details: always #show details in the health endpoint
+  health:
+    kafka:
+      enabled: true #enable Kafka health check
+logging:
+  level:
+    org.springframework.kafka: WARN #Set Spring Kafka logging to WARN to reduce noise
+    org.apache.kafka.clients.admin: WARN #Set Kafka Admin logging to WARN to reduce noise
+    org.apache.kafka.clients.telemetry: WARN #Set Kafka Telemetry logging to WARN to reduce noise
 
 
-
+#NOTE: SOME GET_TELEMETRY PROPERTIES ERROR IS COMING WHEN THE SERVICE PLACES ORDER, IGNORE THEM, NOT CRITICAL
 
 
 
