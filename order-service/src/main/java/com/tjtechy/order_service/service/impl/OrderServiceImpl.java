@@ -475,7 +475,7 @@ public class OrderServiceImpl implements OrderService {
             "SHIPPED", List.of("DELIVERED")
     );
 
-    //check if current status allows the transition to the new status
+    //check if the current status allows the transition to the new status
     if (!validTransitions.containsKey(orderStatusToBeUpdated) ||
             !validTransitions.get(orderStatusToBeUpdated).contains(orderStatus.trim().toUpperCase())) {
       throw new IllegalArgumentException("Invalid order status transition from " + orderStatusToBeUpdated + " to " + orderStatus);
@@ -796,6 +796,8 @@ public class OrderServiceImpl implements OrderService {
 
     //Delete the order(OrderItems will be deleted automatically due to CascadeType.ALL in Order class)
     orderRepository.delete(foundOrder);
+    //Todo: publish order deleted event to kafka topic
+
   }
 
   /**
