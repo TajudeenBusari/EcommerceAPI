@@ -2,6 +2,7 @@
 .env
 #firebase service account file
 firebase-service-account.json
+firebase-service-account.json.b64
 
 #ignore .idea folder
 .idea/
