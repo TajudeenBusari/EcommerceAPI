@@ -840,6 +840,8 @@ public class OrderServiceImpl implements OrderService {
     } catch (Exception e) {
       logger.error("Failed to send order deleted event for orderId: {} to Kafka", foundOrder.getOrderId(), e);
     }
+    //Todo: publish order deleted event to kafka topic
+
   }
 
   /**
