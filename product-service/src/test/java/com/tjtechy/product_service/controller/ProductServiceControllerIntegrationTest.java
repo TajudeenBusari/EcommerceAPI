@@ -252,7 +252,8 @@ public class ProductServiceControllerIntegrationTest {
             10, //available stock
             1, //reserved quantity
             //expiry date must be in the future
-            LocalDate.now().plusDays(30)
+            LocalDate.now().plusDays(30),
+            LocalDate.now() //manufactured date must be in the past or present
     );
     var inventoryDto = new InventoryDto(
             inventoryId,

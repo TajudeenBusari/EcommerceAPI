@@ -9,7 +9,9 @@
 package com.tjtechy.order_service.kafka;
 
 import com.tjtechy.events.orderEvent.OrderCancelledEvent;
+import com.tjtechy.events.orderEvent.OrderDeletedEvent;
 import com.tjtechy.events.orderEvent.OrderPlacedEvent;
+import com.tjtechy.events.orderEvent.OrderUpdatedEvent;
 import com.tjtechy.order_service.config.KafkaTopicsProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,12 @@ public class OrderEventProducer {
   }
 
 
+  /**
+   * Asynchronous event sending to avoid blocking the main thread
+   * @param topic
+   * @param event
+   * @param <T>
+   */
   private <T> void sendOrderEvent(String topic, T event){
     kafkaTemplate.send(topic, event)
             .whenComplete((result, ex) -> {
@@ -45,6 +53,12 @@ public class OrderEventProducer {
     kafkaTemplate.flush();
   }
 
+  /**
+   * Synchronous send to ensure order of events are maintained
+   * @param topic
+   * @param event
+   * @param <T>
+   */
   private <T> void sendOrderEventSyncChronous(String topic, T event){
     try{
       var result = kafkaTemplate.send(topic, event).get(); //blocks until send is complete
@@ -65,11 +79,39 @@ public class OrderEventProducer {
   }
 
 
+  /**
+   * Sends OrderPlacedEvent to the appropriate Kafka topic
+   * @param event
+   * Order placement logic is an asynchronous operation, so we can use async send
+   */
   public void sendOrderPlacedEvent(OrderPlacedEvent event){
     sendOrderEvent(kafkaTopicsProperties.getOrderPlaced(), event);
   }
 
+  /**
+   * Sends OrderCancelledEvent to the appropriate Kafka topic
+   * @param event
+   * Cancellation logic is a synchronous operation, so we use sync send
+   */
   public void sendOrderCancelledEvent(OrderCancelledEvent event){
     sendOrderEventSyncChronous(kafkaTopicsProperties.getOrderCancelled(), event);
+  }
+
+  /**
+   * Sends OrderDeletedEvent to the appropriate Kafka topic
+   * @param event
+   * Deletion logic is a synchronous operation, so we use sync send
+   */
+  public void sendOrderDeletedEvent(OrderDeletedEvent event){
+    sendOrderEventSyncChronous(kafkaTopicsProperties.getOrderDeleted(), event);
+  }
+
+  /**
+   * Sends OrderUpdatedEvent to the appropriate Kafka topic
+   * @param event
+   * Update logic is an asynchronous operation, so we can use async send
+   */
+  public void sendOrderUpdatedEvent(OrderUpdatedEvent event) {
+    sendOrderEvent(kafkaTopicsProperties.getOrderUpdated(), event);
   }
 }

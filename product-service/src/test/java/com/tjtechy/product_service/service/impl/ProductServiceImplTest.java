@@ -74,9 +74,9 @@ class ProductServiceImplTest {
                     100,
                     "Category 1",
                     10,
-                    LocalDate.of(2026, 10, 10),
-                    LocalDate.of(2021, 9, 5),
-                    LocalDate.of(2021, 9, 5)),
+                    LocalDate.now(), //manufactured date
+                    LocalDate.now().plusDays(30), //expiry date
+                    LocalDate.now()),
             new Product( UUID.randomUUID(),
                     "Product 2",
                     "product 2 description",
@@ -84,9 +84,9 @@ class ProductServiceImplTest {
                     200,
                     "Category 2",
                     20,
-                    LocalDate.of(2026, 10, 10),
-                    LocalDate.of(2021, 9, 5),
-                    LocalDate.of(2021, 9, 5))
+                    LocalDate.now(), //manufactured date
+                    LocalDate.now().plusDays(30), //expiry date
+                    LocalDate.now())
     );
   }
 
@@ -156,9 +156,9 @@ class ProductServiceImplTest {
     assertEquals(100, product.getProductQuantity());
     assertEquals("Category 1", product.getProductCategory());
     assertEquals(10, product.getAvailableStock());
-    assertEquals(LocalDate.of(2026, 10, 10), product.getExpiryDate());
-    assertEquals(LocalDate.of(2021, 9, 5), product.getManufacturedDate());
-    assertEquals(LocalDate.of(2021, 9, 5), product.getUpdatedAt());
+    assertEquals(LocalDate.now().plusDays(30), product.getExpiryDate());
+    assertEquals(LocalDate.now(), product.getManufacturedDate());
+    assertEquals(LocalDate.now(), product.getUpdatedAt());
 
     verify(productRepository, times(1)).findById(productId);
   }
@@ -213,9 +213,9 @@ class ProductServiceImplTest {
             300,
             "Category 3",
             30,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
     given(productRepository.save(product)).willReturn(product);
 
@@ -230,9 +230,9 @@ class ProductServiceImplTest {
     assertEquals(300, savedProduct.getProductQuantity());
     assertEquals("Category 3", savedProduct.getProductCategory());
     assertEquals(300, savedProduct.getAvailableStock()); //should now be same as product quantity
-    assertEquals(LocalDate.of(2026, 10, 10), savedProduct.getExpiryDate());
-    assertEquals(LocalDate.of(2021, 9, 5), savedProduct.getManufacturedDate());
-    assertEquals(LocalDate.of(2021, 9, 5), savedProduct.getUpdatedAt());
+    assertEquals(LocalDate.now().plusDays(30), savedProduct.getExpiryDate());
+    assertEquals(LocalDate.now(), savedProduct.getManufacturedDate());
+    assertEquals(LocalDate.now(), savedProduct.getUpdatedAt());
     verify(productRepository, times(1)).save(product);
   }
 
@@ -275,9 +275,9 @@ class ProductServiceImplTest {
             400,
             "Category 4",
             40,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
     InventoryDto inventoryDto = new InventoryDto(
             null,
@@ -438,9 +438,9 @@ class ProductServiceImplTest {
             400,
             "Category 4",
             40,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
     InventoryDto inventoryDto = new InventoryDto(
             null,
@@ -508,9 +508,9 @@ class ProductServiceImplTest {
             400,
             "Category 4",
             40,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
     given(productRepository.save(any(Product.class))).willReturn(product);
 
     //mock the inventory service config
@@ -568,9 +568,9 @@ class ProductServiceImplTest {
             100,
             "Category 1",
             10, // available stock, should be same as product quantity in the response, no matter the value set here.
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
 
     given(productRepository.findById(productId)).willReturn(Optional.of(productList.get(0)));
@@ -587,9 +587,9 @@ class ProductServiceImplTest {
     assertEquals(100, updated.getProductQuantity());
     assertEquals("Category 1", updated.getProductCategory());
     assertEquals(100, updated.getAvailableStock()); //now 100, same as product quantity
-    assertEquals(LocalDate.of(2026, 10, 10), updated.getExpiryDate());
-    assertEquals(LocalDate.of(2021, 9, 5), updated.getManufacturedDate());
-    assertEquals(LocalDate.of(2021, 9, 5), updated.getUpdatedAt());
+    assertEquals(LocalDate.now().plusDays(30), updated.getExpiryDate());
+    assertEquals(LocalDate.now(), updated.getManufacturedDate());
+    assertEquals(LocalDate.now(), updated.getUpdatedAt());
     verify(productRepository, times(1)).findById(productId);
   }
 
@@ -643,9 +643,9 @@ class ProductServiceImplTest {
             100,
             "Category 1",
             10,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
     InventoryDto inventoryDto = new InventoryDto(
             null,
@@ -727,9 +727,9 @@ class ProductServiceImplTest {
             100,
             "Category 1",
             10,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
     given(productRepository.findById(productId)).willReturn(Optional.of(product));
     given(productRepository.save(product)).willReturn(updatedProduct);
@@ -790,9 +790,9 @@ class ProductServiceImplTest {
             100,
             "Category 1",
             10,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
     given(productRepository.findById(productId)).willReturn(Optional.of(productList.get(0)));
     given(productRepository.save(productList.get(0))).willReturn(updatedProduct);
 
@@ -861,9 +861,9 @@ class ProductServiceImplTest {
             100,
             "Category 1",
             10,
-            LocalDate.of(2026, 10, 10),
-            LocalDate.of(2021, 9, 5),
-            LocalDate.of(2021, 9, 5));
+            LocalDate.now(), //manufactured date
+            LocalDate.now().plusDays(30), //expiry date
+            LocalDate.now());
 
     InventoryDto inventoryDto = new InventoryDto(
             null,
@@ -1241,6 +1241,4 @@ class ProductServiceImplTest {
     verifyNoMoreInteractions(webClientBuilder);
     verify(productRepository, never()).deleteById(productId);
   }
-
-
 }

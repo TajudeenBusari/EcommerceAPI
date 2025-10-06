@@ -1,7 +1,6 @@
 package com.tjtechy.notification_service.service.impl;
 
-import com.tjtechy.events.orderEvent.OrderCancelledEvent;
-import com.tjtechy.events.orderEvent.OrderPlacedEvent;
+import com.tjtechy.events.orderEvent.*;
 import com.tjtechy.notification_service.config.MailProperties;
 import com.tjtechy.notification_service.entity.Notification;
 import com.tjtechy.notification_service.repository.NotificationRepository;
@@ -158,7 +157,10 @@ class EmailNotificationServiceTest {
             1L,
             notifications.get(0).getRecipient(),
             "dummyToken",
-            "123456"
+            "123456",
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION
     );
 
     doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
@@ -183,7 +185,10 @@ class EmailNotificationServiceTest {
             2L,
             notifications.get(1).getRecipient(),
             "dummyToken",
-            "654321"
+            "654321",
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION
     );
 
     doThrow(new MessagingException("Simulated email sending failure"))
@@ -207,7 +212,10 @@ class EmailNotificationServiceTest {
             1L,
             notifications.get(0).getRecipient(),
             "dummyToken",
-            "123456"
+            "123456",
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION
     );
 
     doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
@@ -232,7 +240,10 @@ class EmailNotificationServiceTest {
             2L,
             notifications.get(1).getRecipient(),
             "dummyToken",
-            "654321"
+            "654321",
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION
     );
 
     doThrow(new MessagingException("Simulated email sending failure"))
@@ -244,6 +255,88 @@ class EmailNotificationServiceTest {
 
     // Then
     verify(notificationRepository, times(2)).save(any(Notification.class));
+  }
+
+  //Todo: orderUpdated event test cases and orderDeleted event test cases
+  @Test
+  void testListenToOrderDeletedSuccess() throws MessagingException {
+    //Given
+    var event = new OrderDeletedEvent(
+            2L,
+            notifications.get(0).getRecipient(),
+            "dummyToken",
+            "654321",
+            Reason.ADMIN_ACTION,
+            ActionBy.ADMIN,
+            LocalDate.now()
+    );
+    doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    // When
+    emailNotificationService.listenToOrderDeleted(event);
+    // Then
+    verify(notificationRepository, times(2)).save(any(Notification.class));
+  }
+
+  @Test
+  void testListenToOrderDeletedFailed() throws MessagingException {
+    //Given
+    var event = new OrderDeletedEvent(
+            1L,
+            notifications.get(0).getRecipient(),
+            "dummyToken",
+            "654321",
+            Reason.ADMIN_ACTION,
+            ActionBy.ADMIN,
+            LocalDate.now());
+    doThrow(new MessagingException("Simulated email sending failure"))
+            .when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    // When
+    emailNotificationService.listenToOrderDeleted(event);
+    // Then
+    verify(notificationRepository, times(2)).save(any(Notification.class));
+  }
+
+  @Test
+  void testListToOrderUpdatedSuccess() throws MessagingException {
+    //Given
+    var event = new OrderUpdatedEvent(
+            1L,
+            notifications.get(0).getRecipient(),
+            "dummyToken",
+            "654321",
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION,
+            LocalDate.now());
+
+    doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    // When
+    emailNotificationService.listenToOrderUpdated(event);
+    // Then
+    verify(notificationRepository, times(2)).save(any(Notification.class));
+  }
+
+  @Test
+  void testListenToOrderUpdatedFailed() throws MessagingException {
+    //Given
+    var event = new OrderUpdatedEvent(
+            1L,
+            notifications.get(0).getRecipient(),
+            "dummyToken",
+            "654321",
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION,
+            LocalDate.now());
+    doThrow(new MessagingException("Simulated email sending failure"))
+            .when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    //When
+    emailNotificationService.listenToOrderUpdated(event);
+    //Then
+    verify(notificationRepository, times(2)).save(any(Notification.class));
+
   }
 
   /**

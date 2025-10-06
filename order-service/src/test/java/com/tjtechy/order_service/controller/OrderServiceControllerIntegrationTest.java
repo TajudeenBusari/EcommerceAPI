@@ -186,6 +186,7 @@ public class OrderServiceControllerIntegrationTest {
             10,
             10,
             LocalDate.now().plusDays(30),
+            LocalDate.now(),
             BigDecimal.valueOf(100.00)
     );
     var getProductResponse = new Result("Get One Success", true, productDto, StatusCode.SUCCESS);
@@ -237,6 +238,7 @@ public class OrderServiceControllerIntegrationTest {
         10,
         10,
         LocalDate.now().plusDays(30),
+        LocalDate.now(),
         BigDecimal.valueOf(100.00)
     );
     var getProductResponse = new Result("Get One Success", true, productDto, StatusCode.SUCCESS);
@@ -584,6 +586,7 @@ public class OrderServiceControllerIntegrationTest {
             10,
             10,
             LocalDate.now().plusDays(30),
+            LocalDate.now(),
             BigDecimal.valueOf(100.00)
     );
     var getProductResponse = new Result("Get One Success", true, productDto, StatusCode.SUCCESS);

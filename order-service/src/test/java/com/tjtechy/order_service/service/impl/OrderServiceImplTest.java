@@ -76,6 +76,8 @@ class OrderServiceImplTest {
 
 
 
+
+
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImplTest.class);
 
 
@@ -186,11 +188,11 @@ class OrderServiceImplTest {
 
     ProductDto productDto1 = new ProductDto(
             productId1, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 5,
-            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+            LocalDate.now().plusYears(1), LocalDate.now(), new BigDecimal("10.00")
     );
     ProductDto productDto2 = new ProductDto(
             productId2, "PRODUCT2", "CATEGORY", "DESCRIPTION", 10, 5,
-            LocalDate.now().plusYears(1), new BigDecimal("20.00")
+            LocalDate.now().plusYears(1), LocalDate.now(), new BigDecimal("20.00")
     );
 
     Result productResult1 = new Result("Get One Success", true, productDto1, StatusCode.SUCCESS);
@@ -277,7 +279,7 @@ class OrderServiceImplTest {
 
     ProductDto productDto = new ProductDto(
             productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
-            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+            LocalDate.now().plusYears(1), LocalDate.now(), new BigDecimal("10.00")
     );
 
     //not really needed here, but just to show how it can be used
@@ -339,7 +341,7 @@ class OrderServiceImplTest {
     ));
     ProductDto productDto = new ProductDto(
             productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
-            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+            LocalDate.now().plusYears(1), LocalDate.now(), new BigDecimal("10.00")
     );
 
     // Mock the product service to return the product with insufficient stock
@@ -534,6 +536,9 @@ class OrderServiceImplTest {
   }
 
 
+  /**
+   * Test update order, this does include sending event to Kafka
+   */
   @Test
   void updateOrderSuccess() {
 
@@ -578,7 +583,8 @@ class OrderServiceImplTest {
             "PRODUCT1 DESCRIPTION",
             10,
             10,
-            LocalDate.now().plusYears(1),
+            LocalDate.now().plusYears(1), //expiry date
+            LocalDate.now(), //manufactured date
             new BigDecimal(10.0)
     );
 
@@ -633,18 +639,18 @@ class OrderServiceImplTest {
               // Verify total amount is calculated correctly
               // Total should be price * quantity: 10 * 2 = 20
               var expectedTotal = productDto.productPrice().multiply(BigDecimal.valueOf(2));
-
               assertEquals(expectedTotal, updatedOrder.getTotalAmount());
-
             })
     .verifyComplete();
 
-
+    //verify repository methods were called
     verify(orderRepository).findById(orderId);
     verify(orderRepository).save(any(Order.class));
-
   }
 
+  /**
+   * Test update order which also include sending event to Kafka and calling externalized services
+   */
   @Test
   void testUpdateOrderByCallingExternalizedServicesSuccess() {
 
@@ -689,7 +695,7 @@ class OrderServiceImplTest {
 
     ProductDto productDto = new ProductDto(
             productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
-            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+            LocalDate.now().plusYears(1), LocalDate.now(), new BigDecimal("10.00")
     );
 
     //mocks
@@ -733,6 +739,12 @@ class OrderServiceImplTest {
 
             })
             .verifyComplete();
+    //verify kafka event was sent
+    verify(orderEventProducer, times(1))
+            .sendOrderUpdatedEvent(argThat( event ->
+                    event.orderId().equals(orderId)
+                            && event.customerEmail().equals(updateOrder.getCustomerEmail())
+            ));
 
   }
 
@@ -770,7 +782,7 @@ class OrderServiceImplTest {
 
     ProductDto productDto = new ProductDto(
             productId, "PRODUCT1", "CATEGORY", "DESCRIPTION", 10, 10,
-            LocalDate.now().plusYears(1), new BigDecimal("10.00")
+            LocalDate.now().plusYears(1), LocalDate.now(), new BigDecimal("10.00")
     );
 
     //mocks

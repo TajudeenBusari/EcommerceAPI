@@ -8,10 +8,20 @@
 
 package com.tjtechy.events.orderEvent;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+
+import java.time.LocalDate;
+
 public record OrderCancelledEvent(
         Long orderId,
         String customerEmail,
         String customDeviceToken,
-        String customerPhoneNumber
+        String customerPhoneNumber,
+        LocalDate cancellationDate,
+        @Enumerated(EnumType.STRING)
+        ActionBy actionBy,
+        @Enumerated(EnumType.STRING)
+        Reason reason
 ) {
 }

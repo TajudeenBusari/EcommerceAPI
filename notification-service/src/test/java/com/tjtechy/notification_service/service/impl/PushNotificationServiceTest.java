@@ -3,8 +3,7 @@ package com.tjtechy.notification_service.service.impl;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
-import com.tjtechy.events.orderEvent.OrderCancelledEvent;
-import com.tjtechy.events.orderEvent.OrderPlacedEvent;
+import com.tjtechy.events.orderEvent.*;
 import com.tjtechy.notification_service.entity.Notification;
 import com.tjtechy.notification_service.repository.NotificationRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +15,9 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+
 import static org.mockito.Mockito.*;
 
 
@@ -140,7 +142,10 @@ class PushNotificationServiceTest {
             1L,
             "CUSTOMER@EMAIL.COM",
             "fcm_device_token_example",
-            "+1234567890"
+            "+1234567890",
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION
     );
 
     //mock
@@ -176,7 +181,10 @@ class PushNotificationServiceTest {
             2L,
             "CUSTOMER@EMAIL.COM",
             "fcm_device_token_example",
-            "+1244567890"
+            "+1244567890",
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION
     );
 
     //mock
@@ -190,6 +198,58 @@ class PushNotificationServiceTest {
             eq(event.customDeviceToken()),
             eq("Order Cancelled" ),
             eq("Your order with ID " + event.orderId() + " has been cancelled."),
+            eq(event.orderId())
+    );
+  }
+
+  @Test
+  void listenToOrderUpdatedSuccess() {
+    //given
+    var event = new OrderUpdatedEvent(
+            3L,
+            "CUSTOMER@EMAIL.COM",
+            "fcm_device_token_example",
+            "+1244567890",
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION,
+            LocalDate.now()
+    );
+
+    //mock
+    doNothing().when(pushNotificationService).processNotification(anyString(), anyString(), anyString(), anyLong());
+
+    //when
+    pushNotificationService.listenToOrderUpdated(event);
+
+    //then
+    verify(pushNotificationService, times(1)).processNotification(
+            eq(event.customDeviceToken()),
+            eq("Order Update Notice" ),
+            eq("Your order with ID " + event.orderId() + " has been updated."),
+            eq(event.orderId())
+    );
+  }
+
+  @Test
+  void listenToOrderDeletedSuccess() {
+    //given
+    var event = new OrderDeletedEvent(
+            4L,
+            "CUSTOMER@EMAIL.COM",
+    "fcm_device_token_example",
+            "+1244567890",
+            Reason.ADMIN_ACTION,
+            ActionBy.ADMIN,
+            LocalDate.now());
+    //mock
+    doNothing().when(pushNotificationService).processNotification(anyString(), anyString(), anyString(), anyLong());
+    //when
+    pushNotificationService.listenToOrderDeleted(event);
+    //then
+    verify(pushNotificationService, times(1)).processNotification(
+            eq(event.customDeviceToken()),
+            eq("Order Deletion Notice" ),
+            eq("Your order with ID " + event.orderId() + " has been deleted."),
             eq(event.orderId())
     );
   }

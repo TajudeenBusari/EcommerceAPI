@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.PastOrPresent;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,7 +21,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "products")
 /**
- *int is a primitive type and cannot be null, so we use Integer
+ *int is a primitive type and cannot be null, so we use Integer.
  * Integer is an object wrapper for int and can be null.
  */
 public class Product implements Serializable {
@@ -43,16 +46,21 @@ public class Product implements Serializable {
      * to know the current stock level of the product.
      */
     private Integer productQuantity;
+
     @Column(nullable = false)
     private String productCategory;
+
     @Column(nullable = false)
     private Integer availableStock; // Related to Inventory Service //TODO: Change to initialStock in future update.
-    @Column(nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate expiryDate; //Expiry date for perishable products.
+
     @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate manufacturedDate; //Timestamp when the product was created.
+
+    @Column(nullable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate expiryDate; //Expiry date for perishable products.
+
     @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate updatedAt; //Timestamp for the last update.
@@ -67,6 +75,19 @@ public class Product implements Serializable {
   protected void onUpdate() {
     this.updatedAt = LocalDate.now();
   }
+
+  //custom validation to check that the expiry date is after the manufactured date
+  private void validateExpiryDate() {
+    if (this.expiryDate == null) {
+      throw new IllegalArgumentException("Expiry date cannot be null");
+    }
+    LocalDate minExpiryDate = LocalDate.now().plusDays(15);
+    if (!this.expiryDate.isAfter(minExpiryDate)) {
+      throw new IllegalArgumentException("Expiry date must be at least 15 days in the future");
+    }
+  }
+
+
 
     public Product() {
     }
@@ -151,7 +172,7 @@ public class Product implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    public Product(UUID productId, String productName, String productDescription, BigDecimal productPrice, int productQuantity, String productCategory, int availableStock, LocalDate expiryDate, LocalDate manufacturedDate, LocalDate updatedAt) {
+    public Product(UUID productId, String productName, String productDescription, BigDecimal productPrice, int productQuantity, String productCategory, int availableStock, LocalDate manufacturedDate, LocalDate expiryDate, LocalDate updatedAt) {
         this.productId = productId;
         this.productName = productName;
         this.productDescription = productDescription;
@@ -159,8 +180,8 @@ public class Product implements Serializable {
         this.productQuantity = productQuantity;
         this.productCategory = productCategory;
         this.availableStock = availableStock;
-        this.expiryDate = expiryDate;
         this.manufacturedDate = manufacturedDate;
+        this.expiryDate = expiryDate;
         this.updatedAt = updatedAt;
   }
 
@@ -174,8 +195,8 @@ public class Product implements Serializable {
                 ", productQuantity=" + productQuantity +
                 ", productCategory='" + productCategory + '\'' +
                 ", availableStock=" + availableStock +
-                ", expiryDate=" + expiryDate +
                 ", manufacturedDate=" + manufacturedDate +
+                ", expiryDate=" + expiryDate +
                 ", updatedAt=" + updatedAt +
                 '}';
     }

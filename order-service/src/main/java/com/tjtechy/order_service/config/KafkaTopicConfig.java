@@ -22,11 +22,6 @@ import org.springframework.kafka.core.KafkaAdmin;
 public class KafkaTopicConfig {
   private static final Logger logger = LoggerFactory.getLogger(KafkaTopicConfig.class);
 
-//  @Value("${kafka.topics.order-placed}")
-//  private String orderPlacedTopic;
-//
-//  @Value("${kafka.topics.order-cancelled}")
-//  private String orderCancelledTopic;
   private final KafkaTopicsProperties kafkaTopicsProperties;
 
   public KafkaTopicConfig(KafkaTopicsProperties kafkaTopicsProperties) {
@@ -35,30 +30,17 @@ public class KafkaTopicConfig {
 
   /***
    * Creates a topic named order-placed-topic and order-cancelled-topic with 3 partitions.
-   * If topic already exists, Kafka ignores it.
+   * If the topic already exists, Kafka ignores it.
    *
    */
-
-//  @Bean
-//  public KafkaAdmin.NewTopics topics() {
-//    logger.info("Creating Kafka topics: '{}' and '{}'", orderPlacedTopic, orderCancelledTopic);
-//    return new KafkaAdmin.NewTopics(
-//            TopicBuilder.name(orderPlacedTopic)
-//                    .partitions(3)
-//                    .replicas(1)
-//                    .build(),
-//            TopicBuilder.name(orderCancelledTopic)
-//                    .partitions(3)
-//                    .replicas(1)
-//                    .build()
-//    );
-//  }
-
   @Bean
   public KafkaAdmin.NewTopics topics() {
-    logger.info("Creating Kafka topics: '{}', '{}', '{}'",
+    logger.info("Creating Kafka topics: '{}', '{}', '{}', '{}', '{}'",
             kafkaTopicsProperties.getOrderPlaced(),
             kafkaTopicsProperties.getOrderCancelled(),
+            kafkaTopicsProperties.getOrderDeleted(),
+            kafkaTopicsProperties.getOrderUpdated(),
+            //not yet implemented
             kafkaTopicsProperties.getPaymentFailed()
     );
     return new KafkaAdmin.NewTopics(
@@ -70,7 +52,16 @@ public class KafkaTopicConfig {
                     .partitions(3)
                     .replicas(1)
                     .build(),
+            //not yet implemented
             TopicBuilder.name(kafkaTopicsProperties.getPaymentFailed())
+                    .partitions(3)
+                    .replicas(1)
+                    .build(),
+            TopicBuilder.name(kafkaTopicsProperties.getOrderDeleted())
+                    .partitions(3)
+                    .replicas(1)
+                    .build(),
+            TopicBuilder.name(kafkaTopicsProperties.getOrderUpdated())
                     .partitions(3)
                     .replicas(1)
                     .build()
@@ -79,6 +70,12 @@ public class KafkaTopicConfig {
 
   @EventListener(ApplicationReadyEvent.class)
   public void logTopics() {
-    logger.info("Resolved topic names: '{}', '{}', '{}'", kafkaTopicsProperties.getOrderPlaced(), kafkaTopicsProperties.getOrderCancelled(), kafkaTopicsProperties.getPaymentFailed());
+    logger.info("Resolved topic names: '{}', '{}', '{}', '{}', '{}'",
+            kafkaTopicsProperties.getOrderPlaced(),
+            kafkaTopicsProperties.getOrderCancelled(),
+            kafkaTopicsProperties.getOrderDeleted(),
+            kafkaTopicsProperties.getOrderUpdated(),
+            //not yet implemented
+            kafkaTopicsProperties.getPaymentFailed());
   }
 }
