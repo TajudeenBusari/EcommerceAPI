@@ -131,7 +131,9 @@ class InventoryControllerTest {
             UUID.randomUUID(),
             10,
             5,
+            LocalDate.now().minusDays(1), //manufactured date and comes before expiry date
             LocalDate.now().plusYears(1)
+
     );
     var json = objectMapper.writeValueAsString(createInventoryDto);
 

@@ -17,10 +17,21 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaTopicsProperties {
   @NotBlank(message = "kafka topic 'order-placed' must not be blank")
   private String orderPlaced;
+
   @NotBlank(message = "kafka topic 'order-cancelled' must not be blank")
   private String orderCancelled;
+
+  @NotBlank(message = "kafka topic 'order-deleted' must not be blank")
+  private String OrderDeleted;
+
+  @NotBlank(message = "kafka topic 'order-updated' must not be blank")
+  private String orderUpdated;
+
+  //not yet implemented
   @NotBlank(message = "kafka topic 'payment-failed' must not be blank")
   private String paymentFailed;
+
+  //not yet implemented
   @NotBlank(message = "kafka topic 'payment-received' must not be blank")
   private String paymentReceived;
 
@@ -36,6 +47,19 @@ public class KafkaTopicsProperties {
   }
   public void setOrderCancelled(String orderCancelled) {
     this.orderCancelled = orderCancelled;
+  }
+
+  public String getOrderDeleted() {
+    return OrderDeleted;
+  }
+  public void setOrderDeleted(String orderDeleted) {
+    OrderDeleted = orderDeleted;
+  }
+  public String getOrderUpdated() {
+    return orderUpdated;
+  }
+  public void setOrderUpdated(String orderUpdated) {
+    this.orderUpdated = orderUpdated;
   }
 
   public String getPaymentFailed() {

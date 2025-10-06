@@ -22,6 +22,7 @@ public record ProductDto(
         String productDescription,
         Integer productQuantity,
         Integer availableStock,
+        LocalDate manufacturedDate,
         LocalDate expiryDate,
         BigDecimal productPrice
 

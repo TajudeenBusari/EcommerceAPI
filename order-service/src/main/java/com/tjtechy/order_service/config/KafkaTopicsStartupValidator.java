@@ -31,9 +31,17 @@ public class KafkaTopicsStartupValidator {
     if (kafkaTopicsProperties.getOrderCancelled() == null || kafkaTopicsProperties.getOrderCancelled().isBlank()) {
       throw new IllegalStateException("Kafka topic 'order-cancelled' is not configured properly.");
     }
+    if (kafkaTopicsProperties.getOrderDeleted() == null || kafkaTopicsProperties.getOrderDeleted().isBlank()) {
+      throw new IllegalStateException("Kafka topic 'order-deleted' is not configured properly.");
+    }
+    if (kafkaTopicsProperties.getOrderUpdated() == null || kafkaTopicsProperties.getOrderUpdated().isBlank()) {
+      throw new IllegalStateException("Kafka topic 'order-updated' is not configured properly.");
+    }
+    //not yet implemented
     if (kafkaTopicsProperties.getPaymentFailed() == null || kafkaTopicsProperties.getPaymentFailed().isBlank()) {
       throw new IllegalStateException("Kafka topic 'payment-failed' is not configured properly.");
     }
+    //not yet implemented
     if (kafkaTopicsProperties.getPaymentReceived() == null || kafkaTopicsProperties.getPaymentReceived().isBlank()) {
       throw new IllegalStateException("Kafka topic 'payment-received' is not configured properly.");
     }

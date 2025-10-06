@@ -11,7 +11,9 @@ package com.tjtechy.notification_service.service.impl;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.tjtechy.events.orderEvent.OrderCancelledEvent;
+import com.tjtechy.events.orderEvent.OrderDeletedEvent;
 import com.tjtechy.events.orderEvent.OrderPlacedEvent;
+import com.tjtechy.events.orderEvent.OrderUpdatedEvent;
 import com.tjtechy.notification_service.entity.Notification;
 import com.tjtechy.notification_service.repository.NotificationRepository;
 import com.tjtechy.notification_service.service.ChannelNotificationService;
@@ -100,4 +102,31 @@ public class PushNotificationService implements ChannelNotificationService {
     String message = "Your order with ID " + event.orderId() + " has been cancelled.";
     processNotification(event.customDeviceToken(), "Order Cancelled", message, event.orderId());
   }
+
+  /**
+   * Listens to order updated events from Kafka topic and processes push notification
+   * The groupId is set to push-notification-group to ensure to differentiate from other notification services,
+   * e.g., email notification service. The default value is defined in application.yml: notification-service-group
+   * @param event
+   */
+  @KafkaListener(topics= "${spring.kafka.topics.order-updated}", groupId = "push-notification-group")
+  public void listenToOrderUpdated(OrderUpdatedEvent event){
+    logger.info("Received order updated event: {}", event);
+    String message = "Your order with ID " + event.orderId() + " has been updated.";
+    processNotification(event.customDeviceToken(), "Order Update Notice", message, event.orderId());
+  }
+
+  /**
+   * Listens to order deleted events from Kafka topic and processes push notification
+   * The groupId is set to push-notification-group to ensure to differentiate from other notification services,
+   * e.g., email notification service. The default value is defined in application.yml: notification-service-group
+   * @param event
+   */
+  @KafkaListener(topics= "${spring.kafka.topics.order-deleted}", groupId = "push-notification-group")
+  public void listenToOrderDeleted(OrderDeletedEvent event){
+    logger.info("Received order deleted event: {}", event);
+    String message = "Your order with ID " + event.orderId() + " has been deleted.";
+    processNotification(event.customDeviceToken(), "Order Deletion Notice", message, event.orderId());
+  }
+
 }

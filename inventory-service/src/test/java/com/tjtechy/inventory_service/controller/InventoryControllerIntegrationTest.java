@@ -138,7 +138,9 @@ public class InventoryControllerIntegrationTest {
           UUID.randomUUID(), // Randomly generate a productId
           faker.number().numberBetween(1, 100), // Randomly generate a reserve quantity between 1 and 100
           faker.number().numberBetween(1, 100),// Randomly generate available stock
-              LocalDate.now().plusDays(30)
+              LocalDate.now(), // Set manufactured date to today and before expiry date
+              LocalDate.now().plusDays(30) // Set expiry date to 30 days in the future
+
 
       );
       inventoryDtoList.add(createInventoryDto);
@@ -174,7 +176,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100),// Randomly generate a reserved quantity
+            LocalDate.now(), // Set manufactured date to today and before expiry date
         LocalDate.now().plusDays(30) // Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
     assertThat(savedInventory).isNotNull();
@@ -197,7 +201,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
-        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
+            LocalDate.now(), // Set manufactured date to today and before expiry date
+        LocalDate.now().plusDays(365)// Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -248,7 +254,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
+            LocalDate.now(), // Set manufactured date to today
         LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -290,7 +298,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
-        LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
+            LocalDate.now(), // Set manufactured date to today
+        LocalDate.now().plusDays(365)// Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto); //inventoryDto
 
@@ -327,7 +337,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100),// Randomly generate a reserved quantity
+            LocalDate.now(), // Set manufactured date to today
         LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -375,7 +387,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100), // Randomly generate a reserved quantity
+            LocalDate.now(), // Set manufactured date to today
         LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
@@ -415,7 +429,9 @@ public class InventoryControllerIntegrationTest {
         UUID.randomUUID(), // Randomly generate a productId
         faker.number().numberBetween(1, 100), // Randomly generate a quantity between 1 and 100
         faker.number().numberBetween(1, 100),// Randomly generate a reserved quantity
+            LocalDate.now(), // Set manufactured date to today and before expiry date
         LocalDate.now().plusDays(365) // Set expiry date to 30 days in the future
+
     );
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 

@@ -39,4 +39,3 @@ yarn-error.log*
 coverage/
 #ignore .next folder
 .next/
-cls

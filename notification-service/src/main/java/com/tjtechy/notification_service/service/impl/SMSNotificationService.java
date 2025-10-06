@@ -9,7 +9,9 @@
 package com.tjtechy.notification_service.service.impl;
 
 import com.tjtechy.events.orderEvent.OrderCancelledEvent;
+import com.tjtechy.events.orderEvent.OrderDeletedEvent;
 import com.tjtechy.events.orderEvent.OrderPlacedEvent;
+import com.tjtechy.events.orderEvent.OrderUpdatedEvent;
 import com.tjtechy.notification_service.entity.Notification;
 import com.tjtechy.notification_service.repository.NotificationRepository;
 import com.tjtechy.notification_service.service.ChannelNotificationService;
@@ -89,5 +91,19 @@ public class SMSNotificationService implements ChannelNotificationService {
     logger.info("Received OrderCancelledEvent: {}", event);
     String message = "Your order with ID " + event.orderId() + " has been cancelled.";
     processNotification(event.customerPhoneNumber(), "Order Cancelled", message, event.orderId());
+  }
+
+  @KafkaListener(topics= "${spring.kafka.topics.order-updated}", groupId = "sms-notification-group")
+  public void listenToOrderUpdated(OrderUpdatedEvent event){
+    logger.info("Received OrderUpdatedEvent: {}", event);
+    String message = "Your order with ID " + event.orderId() + " has been updated.";
+    processNotification(event.customerPhoneNumber(), "Order Update Notice", message, event.orderId());
+  }
+
+  @KafkaListener(topics= "${spring.kafka.topics.order-deleted}", groupId = "sms-notification-group")
+  public void listenToOrderDeleted(OrderDeletedEvent event){
+    logger.info("Received OrderDeletedEvent: {}", event);
+    String message = "Your order with ID " + event.orderId() + " has been deleted.";
+    processNotification(event.customerPhoneNumber(), "Order Deletion Notice", message, event.orderId());
   }
 }

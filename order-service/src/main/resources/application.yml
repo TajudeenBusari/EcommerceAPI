@@ -30,6 +30,9 @@ spring:
     topics:
       order-placed: order-placed-topic
       order-cancelled: order-cancelled-topic
+      order-deleted: order-deleted-topic
+      order-updated: order-updated-topic
+      #not yet implemented
       payment-received: payment-received-topic
       payment-failed: payment-failed-topic
 

@@ -107,7 +107,7 @@ public class InventoryServiceClient {
 
   /**
    * Restores inventory for a given product by the specified quantity.
-   * This method is typically called when an order is cancelled, returned, or updated,
+   * This method is typically called when an order is canceled, returned, or updated,
    * and the inventory needs to be restored.
    * @param productId the UUID of the product
    * @param quantityToRestore the quantity to restore to inventory

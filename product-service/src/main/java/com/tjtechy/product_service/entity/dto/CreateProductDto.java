@@ -36,9 +36,11 @@ public record CreateProductDto(
         @NotNull(message = "Manufactured date is required")
                 @PastOrPresent(message = "Manufactured date must be a past or present date")
         LocalDate manufacturedDate,
-        @NotNull(message = "Expiry date is required")
-                @FutureOrPresent(message = "Expiry date must be a future or present date")
-        LocalDate expiryDate
+
+         @NotNull(message = "Expiry date is required")
+        @FutureOrPresent(message = "Expiry date must be a future or present date")
+                LocalDate expiryDate
+
 ) {
 }
 /**

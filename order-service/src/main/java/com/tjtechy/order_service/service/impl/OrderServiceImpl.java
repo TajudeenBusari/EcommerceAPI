@@ -13,12 +13,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tjtechy.businessException.OrderAlreadyCancelledException;
 import com.tjtechy.client.InventoryServiceClient;
 import com.tjtechy.client.ProductServiceClient;
+import com.tjtechy.events.orderEvent.*;
 import com.tjtechy.modelNotFoundException.OrderNotFoundException;
 import com.tjtechy.order_service.config.InventoryServiceConfig;
 import com.tjtechy.order_service.config.ProductServiceConfig;
 import com.tjtechy.order_service.entity.Order;
-import com.tjtechy.events.orderEvent.OrderPlacedEvent;
-import com.tjtechy.events.orderEvent.OrderCancelledEvent;
 import com.tjtechy.order_service.entity.dto.OrderDto;
 
 import com.tjtechy.order_service.kafka.OrderEventProducer;
@@ -46,6 +45,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -329,8 +329,15 @@ public class OrderServiceImpl implements OrderService {
 
               return Mono.fromCallable(() -> orderRepository.save(order))
                       .flatMap(savedOrder -> {
-                        // Publish order placed event to Kafka topic
-                        OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getOrderId(), savedOrder.getCustomerEmail(), "dummyToken", savedOrder.getCustomerPhone());
+                        // Publish order placed event to Kafka topic for the three channels: email, push notification and sms
+                        OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getOrderId(),
+                                savedOrder.getCustomerEmail(),
+                                "dummyToken",
+                                savedOrder.getCustomerPhone(),
+                                LocalDate.now(),
+                                ActionBy.ADMIN,
+                                Reason.ADMIN_ACTION
+                                );
                         try {
                           orderEventProducer.sendOrderPlacedEvent(event);
                         } catch (Exception e){
@@ -475,13 +482,13 @@ public class OrderServiceImpl implements OrderService {
             "SHIPPED", List.of("DELIVERED")
     );
 
-    //check if current status allows the transition to the new status
+    //check if the current status allows the transition to the new status
     if (!validTransitions.containsKey(orderStatusToBeUpdated) ||
             !validTransitions.get(orderStatusToBeUpdated).contains(orderStatus.trim().toUpperCase())) {
       throw new IllegalArgumentException("Invalid order status transition from " + orderStatusToBeUpdated + " to " + orderStatus);
     }
 
-    //if order status is set to be updated to "CANCELLED" only, restore inventory for all order items
+    //if the order status is set to be updated to "CANCELLED" only, restore inventory for all order items
     if (orderStatus.trim().equalsIgnoreCase("CANCELLED")) {
       foundOrder
               .getOrderItems()
@@ -740,8 +747,30 @@ public class OrderServiceImpl implements OrderService {
                               }));
 
             })
-            .flatMap(existingOrder -> Mono.fromCallable(() -> orderRepository.save(existingOrder))
-                    .subscribeOn(Schedulers.boundedElastic())); //Wrap blocking call in a reactive context
+            .flatMap(existingOrder -> Mono.fromCallable(() ->
+                            orderRepository.save(existingOrder))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    //publish order updated event to Kafka topic on successful save
+                    .doOnSuccess(savedOrder ->{
+                      OrderUpdatedEvent event = new OrderUpdatedEvent(
+                              savedOrder.getOrderId(),
+                              ///the three channels: email, push notification and sms
+                              savedOrder.getCustomerEmail(),
+                              "dummyToken",
+                              savedOrder.getCustomerPhone(),
+                              ActionBy.ADMIN,
+                              Reason.ADMIN_ACTION,
+                              LocalDate.now()
+                      );
+                      try {
+                        orderEventProducer.sendOrderUpdatedEvent(event);
+                      } catch (Exception e){
+                        //log kafka error but still return the saved order
+                        logger.error("Failed to send order updated event for orderId: {} to Kafka", savedOrder.getOrderId(), e);
+                      }
+                    })
+
+            ); //Wrap blocking call in a reactive context
   }
 
   /**
@@ -796,10 +825,25 @@ public class OrderServiceImpl implements OrderService {
 
     //Delete the order(OrderItems will be deleted automatically due to CascadeType.ALL in Order class)
     orderRepository.delete(foundOrder);
+    //DONE: Publish order deleted event to Kafka topic if needed
+    //TODO: UPDATE THE UNIT TEST AND INTEGRATION TESTS
+    //Publish order deleted event to Kafka topic
+    var event = new OrderDeletedEvent(foundOrder.getOrderId(),
+            foundOrder.getCustomerEmail(),
+            "dummyToken",
+            foundOrder.getCustomerPhone(),
+            Reason.ADMIN_ACTION,
+            ActionBy.ADMIN,
+            LocalDate.now());
+    try {
+      orderEventProducer.sendOrderDeletedEvent(event);
+    } catch (Exception e) {
+      logger.error("Failed to send order deleted event for orderId: {} to Kafka", foundOrder.getOrderId(), e);
+    }
   }
 
   /**
-   * Bulk delete orders by their IDs
+   * Bulk delete orders by their IDs.
    * This method will delete all orders with the given IDs
    * If any order ID is not found, it will throw OrderNotFoundException
    * @param orderIds
@@ -856,11 +900,11 @@ public class OrderServiceImpl implements OrderService {
         throw new IllegalArgumentException("Cannot delete orders that are already SHIPPED or DELIVERED");
       }
       orderRepository.deleteAll(orders);
+      //todo: publish bulk order deleted event to Kafka if needed
       logger.info("*******Deleted {} orders successfully*******", orders.size());
       } else if (!missingOrderIds.isEmpty()) {
       throw new OrderNotFoundException(missingOrderIds);
     }
-
   }
 
   /**
@@ -904,7 +948,13 @@ public class OrderServiceImpl implements OrderService {
     //soft delete the order
     foundOrder.setOrderStatus("CANCELLED");
     //publish order canceled event to Kafka topic
-    OrderCancelledEvent event = new OrderCancelledEvent(foundOrder.getOrderId(), foundOrder.getCustomerEmail(), "dummyToken", foundOrder.getCustomerPhone());
+    OrderCancelledEvent event = new OrderCancelledEvent(foundOrder.getOrderId(),
+            foundOrder.getCustomerEmail(),
+            "dummyToken",
+            foundOrder.getCustomerPhone(),
+            LocalDate.now(),
+            ActionBy.ADMIN,
+            Reason.ADMIN_ACTION);
     try {
       orderEventProducer.sendOrderCancelledEvent(event);
     } catch (Exception e){

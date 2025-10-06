@@ -35,6 +35,7 @@ public class ProductMapper {
             product.getProductDescription(),
             product.getProductQuantity(),
             product.getAvailableStock(),
+            product.getManufacturedDate(),
             product.getExpiryDate(),
             product.getProductPrice()
            );
@@ -60,8 +61,8 @@ public class ProductMapper {
             productDto.productQuantity(), //int
             productDto.productCategory(), //String
             productDto.availableStock(),
-            productDto.expiryDate(),
             null,
+            productDto.expiryDate(),
             null
     );
   }

@@ -162,7 +162,8 @@ public class ProductServiceImpl implements ProductService {
               savedProduct.getProductId(),
               savedProduct.getAvailableStock(),
               1,
-              savedProduct.getExpiryDate()
+              savedProduct.getExpiryDate(),
+              savedProduct.getManufacturedDate()
       );
 
       webClientBuilder.build()
@@ -235,6 +236,13 @@ public class ProductServiceImpl implements ProductService {
             savedProduct.getProductId(),
             savedProduct.getAvailableStock(),
             1,
+            /**
+             * //the order of arrangement of these two dates parameters is important
+             * //arrange it in a way that it appears in the CreateInventoryDto record
+             * Because both uses LocalDate type, the compiler will not be able to differentiate
+             * In the future, it may be better to use different date types
+             */
+            savedProduct.getManufacturedDate(),
             savedProduct.getExpiryDate()
     );
     inventoryServiceClient.createInventoryForProductAsync(createInventoryDto);

@@ -13,15 +13,16 @@ import jakarta.persistence.Enumerated;
 
 import java.time.LocalDate;
 
-public record OrderPlacedEvent(
+public record OrderDeletedEvent(
         Long orderId,
         String customerEmail,
         String customDeviceToken,
         String customerPhoneNumber,
-        LocalDate orderDate,
         @Enumerated(EnumType.STRING)
-        ActionBy actionBy,
+        Reason reason, /// USER_REQUEST, ADMIN_ACTION, SYSTEM_CLEANUP, FRAUD_DETECTION, OTHER
         @Enumerated(EnumType.STRING)
-        Reason reason
+        ActionBy deletedBy, /// e.g., "USER", "ADMIN", "SYSTEM"
+        LocalDate deletionDate
 ) {
+
 }
