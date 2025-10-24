@@ -160,10 +160,7 @@ public class InventoryServiceClient {
                 return Mono.error(new IllegalArgumentException("Failed to retrieve inventory for productId: " + productId));
               }
             });
-
-
   }
-
 
   public Mono<Result> updateInventory(Long inventoryId, UpdateInventoryDto updateInventoryDto) {
     //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/update/" + inventoryId;
@@ -178,7 +175,6 @@ public class InventoryServiceClient {
             .bodyToMono(Result.class);
   }
 
-
   public Mono<Result> deleteInventory(Long inventoryId) {
     if (inventoryId == null) {
       return Mono.error(new IllegalArgumentException("Inventory ID cannot be null"));
@@ -191,5 +187,4 @@ public class InventoryServiceClient {
             .retrieve()
             .bodyToMono(Result.class);
   }
-
 }

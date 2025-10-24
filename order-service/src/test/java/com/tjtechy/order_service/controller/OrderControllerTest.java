@@ -1,9 +1,11 @@
 package com.tjtechy.order_service.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
 import com.tjtechy.Result;
+import com.tjtechy.actuator.Meter;
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.OrderItem;
 import com.tjtechy.order_service.entity.dto.CreateOrderDto;
@@ -65,13 +67,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OrderControllerTest {
 
   /**
-   * The MockitoBean annotation is used to create a mock instance of the OrderService
+   * The MockitoBean annotation is used to create a mock instance of the OrderService and other dependencies.
+   * This allows us to isolate the controller tests from the actual service layer and focus on testing
+   * the controller's behavior.
    */
   @MockitoBean
   private OrderService orderService;
 
   @MockitoBean
   private RedisConnectionFactory redisConnectionFactory;
+
+  @MockitoBean
+  private Meter meterRegistry;
 
   @Autowired
   ObjectMapper objectMapper;
@@ -130,6 +137,71 @@ class OrderControllerTest {
   void tearDown() {
   }
 
+  /**
+   * Test the createOrderReactivelyByCallingExternalizedServices method of the OrderController.
+   * This test uses WebTestClient to send a POST request to the /order/reactive/externalized endpoint
+   * and verifies that the response is as expected.
+   * It also verifies that the meterRegistry.incrementCounter method is called for each product in the order.
+   */
+  @Test
+  void testCreateOrderReactivelyByCallingExternalizedServices() throws JsonProcessingException {
+    //Given
+    //create a list of order item dto
+    List<OrderItemDto> orderItemDtos = Arrays.asList(
+            new OrderItemDto(UUID.randomUUID(), "PRODUCT1", 10),
+            new OrderItemDto(UUID.randomUUID(), "PRODUCT2", 20)
+
+    );
+    //create a createOrder dto
+    CreateOrderDto createOrderDto = new CreateOrderDto(
+            "customer1 name",
+            "customer1@email.com",
+            "+1234567890",
+            "customer1 address",
+            orderItemDtos
+    );
+    var json = objectMapper.writeValueAsString(createOrderDto);
+
+    doNothing().when(meterRegistry).incrementCounter(anyString(), anyString(), anyString());
+    //mock the save order of the order service
+    var savedOrder = new Order();
+    savedOrder.setOrderId(1L);
+    savedOrder.setCustomerName("customer1 name");
+    savedOrder.setOrderStatus("PLACED");
+    savedOrder.setShippingAddress("customer1 address");
+    savedOrder.setOrderDate(LocalDate.now());
+    savedOrder.setTotalAmount(BigDecimal.TEN);
+    savedOrder.setCustomerEmail("customer1@email.com");
+    savedOrder.setOrderItems(new ArrayList<>());
+
+    when(orderService.processOrderReactivelyByCallingExternalizedServices(any(Order.class)))
+            .thenReturn(Mono.just(savedOrder));
+    //map order to order dto
+    var orderDto = OrderMapper.mapFromOrderToOrderDto(savedOrder);
+    //When and Then
+    webTestClient.post()
+            .uri(  baseUrl + "/order/reactive/externalized")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(json)
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody()
+            .jsonPath("$.message").isEqualTo("Order created successfully by calling required external services")
+            .jsonPath("$.flag").isEqualTo(true)
+            .jsonPath("$.data.customerName").isEqualTo(orderDto.getCustomerName())
+            .jsonPath("$.data.customerEmail").isEqualTo(orderDto.getCustomerEmail())
+            .jsonPath("$.data.shippingAddress").isEqualTo(orderDto.getShippingAddress());
+    //verify the counter was incremented for each product
+    verify(meterRegistry, times(orderItemDtos.size())).incrementCounter(eq("orders.requests.by.product.id.total"), eq("productId"), anyString());
+  }
+
+
+  /**
+   * Test the createOrderReactively method of the OrderController.
+   * This test uses WebTestClient to send a POST request to the /order/reactive endpoint
+   * and verifies that the response is as expected.
+   */
   @Test
   void createOrderSuccess() throws Exception {
     //Given

@@ -107,7 +107,7 @@ public class ProductServiceImpl implements ProductService {
       var foundProduct = productRepository
               .findById(productId)
               .orElseThrow(() -> new ProductNotFoundException(productId));
-
+      logger.info("fetched product {} from database", productId);
         return foundProduct;
     }
 
@@ -205,7 +205,6 @@ public class ProductServiceImpl implements ProductService {
   @Override
   public Product saveProductWithInventoryUsingExternalizedService(Product product) {
 
-
     //first check if the productQuantity is equal to the availableStock, else set availableStock to productQuantity
 //    if (product.getProductQuantity() != null && product.getAvailableStock() == null) {
 //      product.setAvailableStock(product.getProductQuantity());
@@ -246,7 +245,6 @@ public class ProductServiceImpl implements ProductService {
             savedProduct.getExpiryDate()
     );
     inventoryServiceClient.createInventoryForProductAsync(createInventoryDto);
-
     return savedProduct;
   }
 

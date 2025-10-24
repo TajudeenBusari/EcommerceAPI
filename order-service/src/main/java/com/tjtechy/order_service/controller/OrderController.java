@@ -6,6 +6,7 @@
  */
 package com.tjtechy.order_service.controller;
 
+import com.tjtechy.actuator.Meter;
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.UpdateOrderDto;
@@ -26,8 +27,11 @@ import java.util.List;
 @RequestMapping("${api.endpoint.base-url}/order")
 public class OrderController {
   private final OrderService orderService;
-  public OrderController(OrderService orderService) {
-    this.orderService = orderService;}
+  private final Meter meterRegistry;
+  public OrderController(OrderService orderService, Meter meterRegistry) {
+    this.orderService = orderService;
+    this.meterRegistry = meterRegistry;
+  }
 
   /**
    * This is the method to create order
@@ -46,9 +50,7 @@ public class OrderController {
           "Endpoint is deprecated and will be removed in the next version. Use any of the /reactive instead.",
           responses = {@ApiResponse(responseCode = "200", description = "Order created successfully"),
 
-          }
-
-  )
+          })
   @PostMapping
   @Deprecated(since = "1.1", forRemoval = true)
   public Result createOrder(@Valid @RequestBody CreateOrderDto createOrderDto) {
@@ -113,6 +115,13 @@ public class OrderController {
   })
   @PostMapping("/reactive/externalized")
   public Mono<Result> processOrderReactivelyByCallingExternalizedServices(@Valid @RequestBody CreateOrderDto createOrderDto) {
+    //extract productIds from createOrderDto
+    createOrderDto.getOrderItems().forEach(orderItem -> {
+      var productId = orderItem.getProductId().toString();
+      //increment the counter metric for each productId
+      meterRegistry.incrementCounter("orders.requests.by.product.id.total", "productId", productId);
+    });
+
     //map from createOrderDto to Order
     var order = OrderMapper.mapFromCreateOrderDtoToOrder(createOrderDto);
 
@@ -125,7 +134,6 @@ public class OrderController {
               return new Result("Order created successfully by calling required external services", true, orderDto, StatusCode.SUCCESS);
             });
   }
-
 
   /**
    * This is deprecated and will be removed in the next version
@@ -286,9 +294,7 @@ public class OrderController {
   })
   @GetMapping("/status")
   public Result getOrdersByStatus(@RequestParam String orderStatus) {
-
     var orderDtos = orderService.getOrdersByStatus(orderStatus);
-
     return new Result("Orders by status retrieved successfully", true, orderDtos, StatusCode.SUCCESS);
   }
 
@@ -398,6 +404,4 @@ public class OrderController {
     orderService.forcedDeleteOrder(orderId);
     return new Result("Order forced deleted successfully", true, null, StatusCode.SUCCESS);
   }
-
-
 }

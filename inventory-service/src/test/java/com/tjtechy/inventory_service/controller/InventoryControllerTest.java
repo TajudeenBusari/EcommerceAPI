@@ -13,6 +13,8 @@ import com.tjtechy.inventory_service.exception.ExceptionHandlingAdvice;
 import com.tjtechy.inventory_service.service.InventoryService;
 import com.tjtechy.modelNotFoundException.InventoryNotFoundException;
 import com.tjtechy.modelNotFoundException.ProductNotFoundException;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +74,9 @@ class InventoryControllerTest {
   private InventoryService inventoryService;
 
   @MockitoBean
+  private MeterRegistry meterRegistry;
+
+  @MockitoBean
   private RedisConnectionFactory redisConnectionFactory;
 
   @Autowired
@@ -116,13 +121,12 @@ class InventoryControllerTest {
       inventory.setReservedQuantity(faker.number().randomDigit());
       inventoryList.add(inventory);
     }
-
-
   }
 
   @AfterEach
   void tearDown() {
   }
+
 
   @Test
   void testAddInventorySuccess() throws Exception {
@@ -155,6 +159,7 @@ class InventoryControllerTest {
             .andExpect(jsonPath("$.data.reservedQuantity").value(createInventoryDto.reservedQuantity()));
   }
 
+
   @Test
   void testGetInventoryByInventoryId() throws Exception {
     //Given
@@ -168,8 +173,13 @@ class InventoryControllerTest {
     );
 
     //mock the inventoryService.getInventoryByInventoryId method
+    Counter counterValue = mock(Counter.class);
+
     when(inventoryService.getInventoryByInventoryId(inventoryId))
             .thenReturn(inventory);
+    when(meterRegistry.counter("inventory.requests.by.id.total", "inventoryId", inventoryId.toString()))
+            .thenReturn(counterValue);
+
     //When and then
     mockMvc.perform(get(baseUrl + "/inventory/" + inventoryId)
             .contentType(MediaType.APPLICATION_JSON))
@@ -178,7 +188,6 @@ class InventoryControllerTest {
             .andExpect(jsonPath("$.data.inventoryId").value(inventoryId))
             .andExpect(jsonPath("$.data.productId").value(inventoryDto.productId().toString()))
             .andExpect(jsonPath("$.data.reservedQuantity").value(inventoryDto.reservedQuantity()));
-
   }
 
   @Test

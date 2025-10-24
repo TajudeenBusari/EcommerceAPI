@@ -8,6 +8,9 @@ package com.tjtechy.inventory_service;
 
 import com.tjtechy.RedisCacheConfig;
 
+import com.tjtechy.actuator.ActuatorConfiguration;
+import com.tjtechy.actuator.CustomBeansEndpoint;
+import com.tjtechy.actuator.CustomUsableMemoryHealthIndicator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -27,14 +30,16 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 @EnableDiscoveryClient
 @EnableJpaRepositories(basePackages = "com.tjtechy") // This is to scan the common-utils package for the Inventory class
 @EntityScan(basePackages = "com.tjtechy") // This is to scan the common-utils package for the Inventory class
-@Import(RedisCacheConfig.class)
-//@ComponentScan(basePackages = "com.tjtechy.inventory_service")
+@Import({RedisCacheConfig.class,
+        ActuatorConfiguration.class,
+        CustomBeansEndpoint.class,
+        CustomUsableMemoryHealthIndicator.class})
+
 
 public class InventoryServiceApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(InventoryServiceApplication.class, args);
-
   }
 
   /**

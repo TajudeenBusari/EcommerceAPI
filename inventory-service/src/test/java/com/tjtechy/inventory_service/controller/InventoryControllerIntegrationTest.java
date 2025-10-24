@@ -189,7 +189,6 @@ public class InventoryControllerIntegrationTest {
     System.out.println(savedInventory.get("reservedQuantity"));
     System.out.println(savedInventory.get("inventoryId"));
     System.out.println(savedInventory.get("availableStock"));
-
   }
 
   @Test

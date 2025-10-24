@@ -20,11 +20,61 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        #health,customes-beans,httpexchanges all have custom implementation in the system module
+        include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,customs-beans,prometheus
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
+tracing:
+  #url: http://ecommerce-jaeger:4318/v1/traces # OTLP endpoint for Jaeger in docker-compose environment
+  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
+
+#    exporter:
+#      otlp:
+#        endpoint: http://ecommerce-jaeger:4318/v1/traces # OTLP endpoint for OpenTelemetry Collector
+#        endpoint: http://ecommerce-jaeger:4317 # OTLP endpoint for OpenTelemetry Collector
   endpoint:
     health:
       show-details: always #show details in the health endpoint
+    #TODO: httpexchanges should not be enabled in production as it can expose sensitive information,when security service is implemented, this can be enabled
+    httpexchanges:
+      enabled: false #enable http exchanges endpoint, now disabled for security reasons
+    env:
+      show-values: always #show values in the env endpoint
+    configprops:
+      show-values: always #show values in the configprops endpoint
+    info:
+      build:
+        enabled: true
+      env:
+        enabled: true
+      git:
+        enabled: true
+      java:
+        enabled: true
+      os:
+        enabled: true
+
 logging:
-  level:
-    org.springframework.boot.context.config: DEBUG
-    org.springframework.cloud.config.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n" # Custom log pattern
+    file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
+  file:
+    name: ./logs/inventory-service/app.log # Log file path
+  #increase tracing verbosity for debugging
+#  level:
+#    io.micrometer.tracing: DEBUG
+#    io.opentelemetry.exporter.otlp: DEBUG
+
+info:
+  app:
+    name:
+    description: Inventory Service
+    version: @project.version@ #retrieved from pom.xml
+    author: Tajudeen Busari (tjtechy)
+    links:
+      github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/inventory-service
+
+
+

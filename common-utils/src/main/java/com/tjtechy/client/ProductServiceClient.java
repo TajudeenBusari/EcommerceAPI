@@ -45,7 +45,7 @@ public class ProductServiceClient {
             .get()
             .uri(url)
             .retrieve()
-            //this step handles when product is not found it is very important to handle this when
+            //this step handles when a product is not found it is very important to handle this when
             //creating a new order with a product that does not exist in the database
             //if the statuscode for the response is 404 NOT FOUND, then it will throw a ProductNotFoundException
             .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {

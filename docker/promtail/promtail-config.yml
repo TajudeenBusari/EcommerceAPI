@@ -1,0 +1,105 @@
+server:
+  http_listen_port: 9080 # promtail metrics/ui endpoint (optional)
+  grpc_listen_port: 0 # disable gRPC server
+
+#positions file keeps track of how far promtail has read in each log file
+positions:
+  filename: /tmp/positions.yaml #keeps track of how far promtail has read in each log file
+
+#loki client config
+clients:
+  - url: http://loki:3100/loki/api/v1/push #loki endpoint inside docker network
+    batchwait: 2s #maximum time to wait before sending a batch of log entries to Loki
+    batchsize: 512000 #maximum size of a batch of log entries to send to
+
+#scrape logs from system files
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log #redas typical OS log files, if mounted
+
+#scrape all docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: dockerLogs
+          __path__: /var/lib/docker/containers/*/*.log
+
+  #scrape application logs from each microservice (if written to host directory)
+  #/mnt/log/inventory-service/*log is used instead of /var/log/inventory-service/*.log
+  #because /var/log is not writable by default in many linux distros
+  - job_name: inventory-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: inventory-service
+          __path__: /mnt/log/inventory-service/*.log #path where inventory-service writes its log files, must be defined
+                                                    #in the inventory-service application.yml (make sure local runs writes to this path)
+                                                    #and under environment variable in docker-compose.yml (make sure docker container writes to this path)
+  - job_name: product-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: product-service
+          __path__: /mnt/log/product-service/*.log
+
+  - job_name: order-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: order-service
+          __path__: /mnt/log/order-service/*.log
+
+  - job_name: notification-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: notification-service
+          __path__: /mnt/log/notification-service/*.log
+
+  - job_name: api-gateway
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: api-gateway
+          __path__: /mnt/log/api-gateway/*.log
+
+  - job_name: config-server
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: config-server
+          __path__: /mnt/log/config-server/*.log
+
+  - job_name: eureka-server
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: eureka-server
+          __path__: /mnt/log/eureka-server/*.log
+
+
+
+
+#Promtail is the agent that collects and sends logs to loki
+#reponsible for :
+#1. Log discovery and collection
+ #- discovers log files from systems and applications, monitor specified directories for new log files
+  # and tail log files (like the tail -f command)
+#2. Processes logs
+#3. sends logs to loki
+#Without promtail, loki is just a log storage and query engine, it has no way of collecting logs on its own
+#Typical Architecture: check readme file in docker directory

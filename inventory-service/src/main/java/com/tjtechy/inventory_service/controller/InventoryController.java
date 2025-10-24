@@ -9,6 +9,7 @@ package com.tjtechy.inventory_service.controller;
 import com.tjtechy.*;
 import com.tjtechy.inventory_service.mapper.InventoryMapper;
 import com.tjtechy.inventory_service.service.InventoryService;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
@@ -24,15 +25,18 @@ import java.util.UUID;
 public class InventoryController {
 
   private final InventoryService inventoryService;
-  public InventoryController(InventoryService inventoryService) {
+  //for custom metrics
+  private final MeterRegistry meterRegistry;
+  public InventoryController(InventoryService inventoryService, MeterRegistry meterRegistry) {
 
     this.inventoryService = inventoryService;
+    this.meterRegistry = meterRegistry;
   }
 
   /**
    * This is method is used internally by the product service to create inventory
    * when a product is created. It is not exposed to the public.
-   * But if you need to test in postman for example, you need to get the productId first from the product service
+   * But if you need to test in Postman, for example, you need to get the productId first from the product service
    * @param createInventoryDto
    * @return Result {@link Result}
    */
@@ -43,7 +47,6 @@ public class InventoryController {
   })
   @PostMapping("/internal/create")
   public Result addInventory(@Valid @RequestBody CreateInventoryDto createInventoryDto) {
-
     var inventory = InventoryMapper.mapFromCreateInventoryDtoToInventory(createInventoryDto);
     var savedInventory = inventoryService.createInventory(inventory);
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(savedInventory);
@@ -64,10 +67,15 @@ public class InventoryController {
   public Result getInventoryById(@PathVariable Long inventoryId) {
 
     var inventory = inventoryService.getInventoryByInventoryId(inventoryId);
+    meterRegistry.counter("inventory.requests.by.id.total", "inventoryId",  inventoryId.toString()).increment();
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(inventory);
     return new Result("Inventory retrieved successfully", true, inventoryDto, StatusCode.SUCCESS);
   }
 
+  /**
+   * This method is used to get all inventories
+   * @return Result {@link Result}
+   */
   @GetMapping
   @Operation(summary = "Get All Inventories",
           description = "This endpoint is used to get all inventories.",
@@ -97,7 +105,6 @@ public class InventoryController {
     var inventory = inventoryService.getInventoryByProductId(productId);
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(inventory);
     return new Result("Inventory with productId: " + inventoryDto.productId() + " retrieved successfully", true, inventoryDto, StatusCode.SUCCESS);
-
   }
 
   /**
@@ -117,15 +124,11 @@ public class InventoryController {
 
     //map from updateInventoryDto to inventory
     var inventory = InventoryMapper.mapFromUpdateInventoryDtoToInventory(updateInventoryDto);
-
     //call the service to update inventory
     var updatedInventory = inventoryService.updateInventory(inventoryId, inventory);
-
     //map from inventory to inventoryDto
     var inventoryDto = InventoryMapper.mapFromInventoryToInventoryDto(updatedInventory);
-
     return new Result("Inventory updated successfully", true, inventoryDto, StatusCode.SUCCESS);
-
   }
   /**
    * This method is used to delete inventory
@@ -206,7 +209,7 @@ public class InventoryController {
 
   /**
    * This method is used to restore inventory by product id and quantity.
-   * It is typically used internally by the Order-Service when an order is cancelled,
+   * It is typically used internally by the Order-Service when an order is canceled,
    * returned or updated and the inventory needs to be restored.
    * @param restoreInventoryDto
    * @return Result {@link Result}

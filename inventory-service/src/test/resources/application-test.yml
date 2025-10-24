@@ -28,7 +28,9 @@ spring:
 api:
   endpoint:
     base-url: /api/v1
-#suppress the memory leak warning
+
 logging:
   level:
     org.apache.catalina.loader.WebappClassLoaderBase: ERROR
+
+#TODO: Enable or disable tracing in tests if needed here. For now, we disable via the TracingConfig class
