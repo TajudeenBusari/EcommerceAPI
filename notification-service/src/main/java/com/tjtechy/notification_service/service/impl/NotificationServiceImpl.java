@@ -60,8 +60,9 @@ public class NotificationServiceImpl implements NotificationService<Object> {
   @Override
   @Cacheable(value = "notifications")
   public List<Notification> getAllNotifications() {
-
-    return notificationRepository.findAll();
+    var notifications = notificationRepository.findAll();
+    log.info("Fetched {} notifications", notifications.size());
+    return notifications;
   }
 
   /**
@@ -74,6 +75,7 @@ public class NotificationServiceImpl implements NotificationService<Object> {
     var notification = notificationRepository.findById(id)
             .orElseThrow(() ->
             new NotificationNotFoundException(id));
+    log.info("Fetched notification with id: {}", id);
     return notification;
   }
 

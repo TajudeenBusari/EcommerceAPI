@@ -49,10 +49,55 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info #Expose all actuator endpoints, can be restricted in production
+        include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,customs-beans,prometheus #Expose all actuator endpoints, can be restricted in production
   endpoint:
     health:
       show-details: always #show details in the health endpoint, can be restricted in production
+    env:
+      show-values: always #show values in the env endpoint, can be restricted in production
+    configprops:
+      show-values: always #show values in the configprops endpoint, can be restricted in production
+    info:
+      build:
+        enabled: true
+      env:
+        enabled: true
+      git:
+        enabled: true
+      java:
+        enabled: true
+      os:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
+    enabled: true
+#    otel:
+#      exporter:
+#        otlp:
+#          endpoint: http://ecommerce-jaeger:4318/v1/traces # send traces to jaeger #/v1/traces
+#          #endpoint: http://ecommerce-jaeger:4317 # OTLP endpoint for OpenTelemetry Collector
+tracing:
+  #url: http://ecommerce-jaeger:4318/v1/traces # OTLP endpoint for Jaeger
+  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n" # Custom log pattern
+    file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
+  file:
+    name: ./logs/notification-service/app.log # Log file path
+  level:
+    io.micrometer.tracing: INFO #FOR DETAILED TRACING LOGS, can be set to INFO or WARN in production
+    io.opentelemetry.exporter.otlp: INFO #reduce opentelemetry logs in production
+info:
+  app:
+    name:
+    description: Notification Service
+    version: @project.version@ #retrieved from pom.xml
+    author: Tajudeen Busari (tjtechy)
+    links:
+      github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/notification-service
 
 
 #custome application properties

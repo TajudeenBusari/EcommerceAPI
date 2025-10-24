@@ -62,9 +62,24 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Observability STACK dependencies: Added here bcause module does not inherit from
+         parent ECommerceMicroservices -->
+		<!-- Spring Boot Actuator (Optional - Useful for Monitoring: metrics, health, traces) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<!-- Micrometer Prometheus Registry: Metrics exporter, -exposes the /actuator/prometheus-->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+
+		<!-- OpenTelemetry exporter for Prometheus -->
+		<dependency>
+			<groupId>io.opentelemetry.instrumentation</groupId>
+			<artifactId>opentelemetry-instrumentation-api</artifactId>
+			<version>2.20.1</version>
 		</dependency>
 
 	</dependencies>

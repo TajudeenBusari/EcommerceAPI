@@ -1,2 +1,6 @@
 com\tjtechy\Result.class
+com\tjtechy\actuator\ActuatorConfiguration.class
+com\tjtechy\actuator\Meter.class
 com\tjtechy\StatusCode.class
+com\tjtechy\actuator\CustomBeansEndpoint.class
+com\tjtechy\actuator\CustomUsableMemoryHealthIndicator.class

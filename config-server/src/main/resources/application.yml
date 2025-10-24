@@ -33,7 +33,42 @@ management:
     endpoints:
         web:
             exposure:
-                include: health,info
+                include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,customs-beans,prometheus
     endpoint:
         health:
             show-details: always #show details in the health endpoint
+    env:
+        show-values: always #show values in the env endpoint
+    configprops:
+        show-values: always #show values in the configprops endpoint
+    info:
+        build:
+            enabled: true
+        env:
+            enabled: true
+        git:
+            enabled: true
+        java:
+            enabled: true
+        os:
+            enabled: true
+    tracing:
+        sampling:
+            probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
+    otlp:
+        tracing:
+            endpoint: http://jaeger:4318 # send traces to jaeger
+logging:
+    pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n" # Custom log pattern
+        file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
+    file:
+        name: ./logs/config-server/app.log # Log file path
+info:
+    app:
+        name:
+        description: Configuration Server
+        version: @project.version@ #retrieved from pom.xml
+        author: Tajudeen Busari (tjtechy)
+        links:
+            github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/config-server

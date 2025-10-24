@@ -37,10 +37,53 @@
         <spring-cloud.version>2024.0.0</spring-cloud.version>
     </properties>
     <dependencies>
+        <!-- Observability STACK dependencies -->
+        <!-- Spring Boot Actuator (Optional - Useful for Monitoring: metrics, health, traces) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Micrometer Prometheus Registry: Metrics exporter, -exposes the /actuator/prometheus-->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!--Jaeger specific dependencies-->
+        <!-- Micrometer tracing bridge otel: bridge between Micrometer Tracing-->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <!-- OTLP(OpenTelemetry Protocol) Exporter: to send traces to Jaeger -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-observation</artifactId>
+        </dependency>
+
+        <!-- OpenTelemetry exporter for Prometheus.
+        NOTE: I MAY NEED TO REMOVE THIS
+        DEPENDENCY BECAUSE I WILL ADD SOME DEPENDENCIES FOR JAEGER FOR TRACING
+        -->
 <!--        <dependency>-->
-<!--            <groupId>org.springframework.cloud</groupId>-->
-<!--            <artifactId>spring-cloud-starter-config</artifactId>-->
+<!--            <groupId>io.opentelemetry.instrumentation</groupId>-->
+<!--            <artifactId>opentelemetry-instrumentation-api</artifactId>-->
+<!--            <version>2.20.1</version>-->
 <!--        </dependency>-->
+
+        <!-- The dependency: Automatically enables context propagation (traceId/spanId passing between services)-->
+<!--        <dependency>-->
+<!--            <groupId>io.opentelemetry.instrumentation</groupId>-->
+<!--            <artifactId>opentelemetry-spring-boot-starter</artifactId>-->
+<!--            <version>2.20.1</version>-->
+<!--        </dependency>-->
+
+
     </dependencies>
 
     <dependencyManagement>
@@ -65,7 +108,6 @@
 
         </dependencies>
     </dependencyManagement>
-
     <build>
         <plugins>
             <plugin>

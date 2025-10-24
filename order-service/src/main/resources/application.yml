@@ -49,15 +49,41 @@ springdoc:
   default-consumes-media-type: application/json #default consumes media type for API requests
   override-with-gateway-url: true #override the default URL with the gateway URL
 
-
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,customs-beans,prometheus
   endpoint:
     health:
       show-details: always #show details in the health endpoint
+    env:
+      show-values: always #show values in the env endpoint
+    configprops:
+      show-values: always #show values in the configprops endpoint
+    info:
+      build:
+        enabled: true
+      env:
+        enabled: true
+      git:
+        enabled: true
+      java:
+        enabled: true
+      os:
+        enabled: true
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
+#    exporter:
+#      otlp:
+#        endpoint: http://ecommerce-jaeger:4318/v1/traces # send traces to jaeger
+        #endpoint: http://ecommerce-jaeger:4317 # OTLP endpoint for OpenTelemetry Collector
+tracing:
+#  url: http://ecommerce-jaeger:4318/v1/traces # OTLP endpoint for Jaeger
+  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
+
   health:
     kafka:
       enabled: true #enable Kafka health check
@@ -66,6 +92,19 @@ logging:
     org.springframework.kafka: WARN #Set Spring Kafka logging to WARN to reduce noise
     org.apache.kafka.clients.admin: WARN #Set Kafka Admin logging to WARN to reduce noise
     org.apache.kafka.clients.telemetry: WARN #Set Kafka Telemetry logging to WARN to reduce noise
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n" # Custom log pattern
+    file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
+  file:
+    name: ./logs/order-service/app.log # Log file path
+info:
+  app:
+    name:
+    description: Order Service
+    version: @project.version@ #retrieved from pom.xml
+    author: Tajudeen Busari (tjtechy)
+    link:
+      github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/order-service
 
 
 #NOTE: SOME GET_TELEMETRY PROPERTIES ERROR IS COMING WHEN THE SERVICE PLACES ORDER, IGNORE THEM, NOT CRITICAL

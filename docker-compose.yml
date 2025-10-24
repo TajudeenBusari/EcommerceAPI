@@ -36,7 +36,8 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres-init:/docker-entrypoint-initdb.d:ro
-      - postgres-data:/var/lib/postgresql/data
+#      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql #the latest image does not require /data subdirectory CHECK THREAD HERE:https://github.com/docker-library/postgres/pull/1259
     networks:
       - microservices-network
     healthcheck:
@@ -192,18 +193,22 @@ services:
       retries: 3
       start_period: 120s
 
-
+  #=================
   #THE EUREKA SERVER
+  #=================
   eureka-server:
     build: eureka-server
     container_name: eureka-server
     ports:
       - "8763:8763"
+    volumes:
+      - ./logs/eureka-server:/mnt/log/eureka-server #mount from host(./logs/eureka-server) to container(/mnt/log/eureka-server)
     environment:
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
       - EUREKA_CLIENT_FETCH_REGISTRY=false
       - EUREKA_SERVER_WAIT_TIME_IN_MS_WHEN_SYNC_EMPTY=0
       - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=false
+      - LOGGING_FILE_NAME=/mnt/log/eureka-server/app.log #tells app to write log to this file, important when running inside Docker container
     networks:
       - microservices-network
     healthcheck:
@@ -211,8 +216,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
+  #=================
   #THE CONFIG SERVER
+  #=================
   config-server:
     build: config-server
     container_name: config-server
@@ -223,10 +229,12 @@ services:
         condition: service_healthy
     volumes:
       - ./applicationsConfiguration:/config
+      - ./logs/config-server:/mnt/log/config-server #mount from host(./logs/config-server) to container(/mnt/log/config-server)
     environment:
       - SPRING_PROFILES_ACTIVE=native
       - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/config
       - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - LOGGING_FILE_NAME=/mnt/log/config-server/app.log #tells app to write log to this file, important when running inside Docker container
     networks:
       - microservices-network
     healthcheck:
@@ -235,7 +243,9 @@ services:
       timeout: 10s
       retries: 3
 
+  #=================
   #THE API GATEWAY
+  #=================
   api-gateway:
     build: api-gateway
     container_name: api-gateway
@@ -246,6 +256,8 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+    volumes:
+      - ./logs/api-gateway:/mnt/log/api-gateway #mount from host(./logs/api-gateway) to container(/mnt/log/api-gateway)
     environment:
       - SPRING_APPLICATION_NAME=api-gateway
       - SPRING_PROFILES_ACTIVE=default
@@ -253,6 +265,7 @@ services:
       - EUREKA_CLIENT_FETCH_REGISTRY=true
       - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - LOGGING_FILE_NAME=/mnt/log/api-gateway/app.log #tells app to write log to this file, important when running inside Docker container
     networks:
       - microservices-network
     healthcheck:
@@ -261,7 +274,9 @@ services:
       timeout: 10s
       retries: 3
 
+  #===================
   #THE PRODUCT SERVICE
+  #===================
   product-service:
     build: product-service
     container_name: product-service
@@ -278,6 +293,23 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      ecommerce-jaeger:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      promtail:
+        condition: service_started
+
+    volumes:
+      - ./logs/product-service:/mnt/log/product-service #mount from host(./logs/product-service) to container(/mnt/log/product-service)
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
@@ -290,6 +322,11 @@ services:
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - LOGGING_FILE_NAME=/mnt/log/product-service/app.log #tells app to write log to this file, important when running inside Docker container
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint
+      - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
     networks:
       - microservices-network
     healthcheck:
@@ -298,7 +335,9 @@ services:
       timeout: 10s
       retries: 3
 
+  #=====================
   #THE INVENTORY SERVICE
+  #=====================
   inventory-service:
     build: inventory-service
     container_name: inventory-service
@@ -315,6 +354,20 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      ecommerce-jaeger:
+        condition: service_healthy
+
+      grafana:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      promtail:
+        condition: service_started #promtail may take longer to be healthy, so just ensure it's started
+
+    volumes:
+      - ./logs/inventory-service:/mnt/log/inventory-service #mount from host(./logs/inventory-service) to container(/mnt/log/inventory-service)
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
@@ -327,6 +380,11 @@ services:
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - LOGGING_FILE_NAME=/mnt/log/inventory-service/app.log #tells app to write log to this file, important when running inside Docker container
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
 #      - DEBUG=true
     networks:
       - microservices-network
@@ -336,7 +394,9 @@ services:
       timeout: 10s
       retries: 3
 
+  #=================
   #THE  ORDER SERVICE
+  #=================
   order-service:
     build: order-service
     container_name: order-service
@@ -353,6 +413,22 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+      ecommerce-jaeger:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      promtail:
+        condition: service_started
+      prometheus:
+        condition: service_healthy
+    volumes:
+      - ./logs/order-service:/mnt/log/order-service #mount from host(./logs/order-service) to container(/mnt/log/order-service)
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
@@ -373,6 +449,11 @@ services:
       - LOGGING_LEVEL_ORG_APACHE_KAFKA_CLIENTS_TELEMETRY=DEBUG
       - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_KAFKA=DEBUG
       - LOGGING_LEVEL_ORG_APACHE_KAFKA_CLIENTS_ADMIN=WARN
+      - LOGGING_FILE_NAME=/mnt/log/order-service/app.log #tells app to write log to this file, important when running inside Docker container
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
 #      - kafka.topics.order-placed=order-placed-topic
 #      - kafka.topics.order-cancelled=order-cancelled-topic
     networks:
@@ -383,12 +464,14 @@ services:
       timeout: 10s
       retries: 3
 
+  #========================
   #THE NOTIFICATION SERVICE
+  #========================
   notification-service:
     build: notification-service
     container_name: notification-service
     env_file:
-      - .env #one level up, docker-compose explicitly loads the .env file and injects those values as container env variables. Spring boot inside container then resolves them the same way
+      - .env #docker-compose explicitly loads the .env file and injects those values as container env variables. Spring boot inside container then resolves them the same way
 
     ports:
       - "8085:8085"
@@ -402,6 +485,18 @@ services:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+      ecommerce-jaeger:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      promtail:
+        condition: service_started
+      prometheus:
+        condition: service_healthy
+      inventory-service:
         condition: service_healthy
     environment:
       - SPRING_DATA_REDIS_HOST=redis
@@ -425,9 +520,14 @@ services:
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
       - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
+      - LOGGING_FILE_NAME=/mnt/log/notification-service/app.log #tells app to write log to this file, important when running inside Docker container
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
+#      - MANAGEMENT_TRACING_OTEL_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint #/v1/traces
+#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
     volumes:
       - ./firebase-service-account.json:/app/firebase/firebase-service-account.json:ro #ro=read only
-
+      - ./logs/notification-service:/mnt/log/notification-service #mount from host(./logs/notification-service) to container(/mnt/log/notification-service)
     networks:
       - microservices-network
     healthcheck:
@@ -435,6 +535,151 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+#obsrvability-services
+  #=================================
+  #Jaeger for distributed tracing
+  #==================================
+  ecommerce-jaeger:
+    #image: jaegertracing/jaeger:2.0.0
+    image: jaegertracing/all-in-one:latest
+    container_name: ecommerce-jaeger
+    restart: always
+    ports:
+      - "4318:4318" #OTLP HTTP accepts telemetry data using HTTP
+      - "16686:16686" #Jaeger UI
+      - "4317:4317" #OTLP gRPC accepts telemetry data using gRPC
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_OTLP_HTTP_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_ENABLED=true
+      - LOG_LEVEL=debug
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=3", "--spider", "http://localhost:16686"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+  #===============================
+  #prometheus for metrics scraping
+  #http://localhost:9797/targets shows all the targets being scraped by Prometheus, i.e. our microservices
+  #===============================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:${PROMETHEUS_PORT:-9090}" #defaults to 9090 if PROMETHEUS_PORT is not set in .env file
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.listen-address=:${PROMETHEUS_PORT:-9090}"
+    restart: always
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=3 --spider http://localhost:${PROMETHEUS_PORT:-9090}/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+  #===============================
+  #loki for log aggregation
+  #===============================
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - ./docker/loki/data:/tmp/loki #persist loki data, generate if not exists
+    command: -config.file=/etc/loki/loki-config.yml #enure loki uses our config file
+    networks:
+      - microservices-network
+    healthcheck:
+      #Ref for accurate health check:
+      #https://github.com/grafana/loki/blob/main/examples/getting-started/docker-compose.yaml
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=3 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 3
+
+  #===============================
+  #Promtail for shipping logs to Loki
+  #===============================
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    ports:
+      - "9080:9080" #promtail metrics/ui endpoint (optional)
+    restart: always
+    volumes:
+      - /var/log:/var/log:ro #system logs
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro #docker container logs
+      - ./docker/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro #promtail config file
+      - ./docker/promtail/data:/tmp #persist promtail data, generate if not exists, directory for Promtail position tracking
+      - ./logs:/mnt/log:ro #mount the local logs directory to /mnt/log inside the container
+      #define service logs path if you want to scrape application logs written to host directory
+      #Mount the local services log directory, so Promtail can see the local logs at
+      #/var/log/<service-name> inside the container which matches
+      # __path__: /var/log/<service-name>/*.log defined in promtail-config.yml for each service
+      #WORKS for both running locally and inside Docker container
+      #mnt is used instead of var to avoid causing issue read/write permission issue
+      - ./logs/inventory-service:/mnt/log/inventory-service:ro #mount from host(./logs/inventory-service) to container(mnt/log/inventory-service)
+      - ./logs/product-service:/mnt/log/product-service:ro
+      - ./logs/order-service:/mnt/log/order-service:ro
+      - ./logs/notification-service:/mnt/log/notification-service:ro
+      - ./logs/api-gateway:/mnt/log/api-gateway:ro
+      - ./logs/config-server:/mnt/log/config-server:ro
+      - ./logs/eureka-server:/mnt/log/eureka-server:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=3 --spider http://localhost:9080/ready || exit 1"]
+      interval: 30s
+      timeout: 15s
+      start_period: 60s
+      retries: 5
+
+  #===============================================
+  #Grafana for visualization (metrics, logs, traces)
+  #===============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      ecommerce-jaeger:
+        condition: service_healthy
+    volumes:
+      - ./docker/grafana:/var/lib/grafana
+    env_file:
+      - ./docker/grafana/grafana-config.env
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   microservices-network:

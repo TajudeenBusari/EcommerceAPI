@@ -7,8 +7,6 @@
  */
 
 package com.tjtechy.order_service.controller;
-
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -225,6 +223,7 @@ public class OrderServiceControllerIntegrationTest {
     var createdOrder = (Map<String, Object>) response.getBody().getData();
     return createdOrder;
   }
+
   @Test
   @DisplayName("Create Order reactively by calling externalized product-service and inventory-service - Success")
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
@@ -264,7 +263,6 @@ public class OrderServiceControllerIntegrationTest {
     orderItemDto1.setProductId(productDto.productId());
     orderItemDto1.setProductName(productDto.productName());
     orderItemDto1.setQuantity(10);
-
 
     var createOrderDto = new CreateOrderDto();
     createOrderDto.setCustomerName("Customer" + System.currentTimeMillis());
@@ -307,7 +305,6 @@ public class OrderServiceControllerIntegrationTest {
     wireMockServer.verify(1, WireMock.patchRequestedFor(urlEqualTo("/api/v1/inventory/internal/deduct-inventory-reactive"))
             .withRequestBody(matchingJsonPath("$.productId", equalTo(productDto.productId().toString())))
             .withRequestBody(matchingJsonPath("$.quantity", equalTo("10"))));
-
   }
 
   @Test
@@ -387,7 +384,6 @@ public class OrderServiceControllerIntegrationTest {
     createOrderDto2.setCustomerEmail("test2" + System.currentTimeMillis() + "@test.com");
     createOrderDto2.setShippingAddress("456 Test Avenue, Test City, TC 67890");
     createOrderDto2.setOrderItems(List.of(orderItemDto1));
-
 
     // Create the order reactively
     Map<String, Object> createdOrder = createOrderReactively(createOrderDto1);

@@ -161,9 +161,10 @@ public class OrderServiceImpl implements OrderService {
       var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
       totalAmount = totalAmount.add(itemTotal);
 
-
-      System.out.println("Product Price: " + itemTotal);
-      System.out.println("Product Quantity: " + quantity);
+//      System.out.println("Product Price: " + itemTotal);
+//      System.out.println("Product Quantity: " + quantity);
+      logger.info("PRODUCT PRICE: {}", itemTotal);
+      logger.info("PRODUCT QUANTITY: {}", quantity);
 
       /**
        * set the order for the order item
@@ -176,7 +177,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     order.setTotalAmount(totalAmount);
-    System.out.println("Final Total Amount: " + order.getTotalAmount());
+//    System.out.println("Final Total Amount: " + order.getTotalAmount());
+    logger.info("THE_FINAL_TOTAL_AMOUNT: {}", order.getTotalAmount());
 
     //3. Deduct from Inventory
     //ToDo: Implement Inventory deduction
@@ -233,6 +235,8 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
 
+                        //Before deducting from Inventory, check if inventory is available for this product?
+                        //no need for this since for product to exist, inventory must have been created
                         var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
                         return webClientBuilder.build()
                                 .patch()
@@ -253,8 +257,10 @@ public class OrderServiceImpl implements OrderService {
                                   orderItem.setOrder(order);
                                   //d. calculate the subtotal for the order item
                                   var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
-                                  System.out.println("Product Price: " + itemTotal);
-                                  System.out.println("Product Quantity: " + quantity);
+//                                  System.out.println("Product Price: " + itemTotal);
+//                                  System.out.println("Product Quantity: " + quantity);
+                                  logger.info("Product Price: {}", productDto.productPrice());
+                                  logger.info("Product Quantity: {}", productDto.productQuantity());
 
                                   return Mono.just(itemTotal);
                                 });
@@ -297,13 +303,13 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new ProductNotFoundException(productId));
                         }
                         //b. check if product quantity is available
-
                         ///changed to availableStock
                         if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
                         //Call inventory service to deduct stock
-                        //first check if inventory is not available for this product
+                        //first check if inventory is not available for this product?
+                        //no need for this since for product to exist, inventory must have been created
                         return inventoryServiceClient.deductInventory(productId, quantity)
 
                                 .then(Mono.defer(() -> {
@@ -314,9 +320,8 @@ public class OrderServiceImpl implements OrderService {
                                   orderItem.setOrder(order);
                                   //d. calculate the subtotal for the order item
                                   var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
-                                  System.out.println("Product Price: " + itemTotal);
-                                  System.out.println("Product Quantity: " + quantity);
-
+                                  logger.info("Product Price is: {}", productDto.productPrice());
+                                  logger.info("Product Quantity is: {}", productDto.productQuantity());
                                   return Mono.just(itemTotal);
                                 }));
                       });
@@ -363,9 +368,7 @@ public class OrderServiceImpl implements OrderService {
 
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
-
     return foundOrder;
-
   }
 
   /**
@@ -400,7 +403,6 @@ public class OrderServiceImpl implements OrderService {
    */
   @Override
   @Cacheable(value = "orders", key = "#customerEmail")
-  //TODO: Change the return type to OrderDto to fix the serialization issue
   //DONE: The return type has been changed to OrderDto
   public List<OrderDto> getOrdersByCustomerEmail(String customerEmail) {
     if (customerEmail == null || customerEmail.isEmpty()) {
@@ -417,7 +419,6 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   @Cacheable(value = "orders", key = "#orderStatus")
-  //TODO: Change the return type to OrderDto to fix the serialization issue
   //DONE: The return type has been changed to OrderDto
   public List<OrderDto> getOrdersByStatus(String orderStatus) {
     if (orderStatus == null || orderStatus.isBlank()) {
@@ -531,7 +532,8 @@ public class OrderServiceImpl implements OrderService {
     return Mono.justOrEmpty(orderRepository.findById(orderId)) //convert Optional to Mono
             .switchIfEmpty(Mono.error(new OrderNotFoundException(orderId)))
             .flatMap(existingOrder -> {
-              System.out.println("Updating Order: " + existingOrder);
+//              System.out.println("Updating Order: " + existingOrder);
+              logger.info("Updating existing order: {}", existingOrder);
 
               //TODO: Restore inventory for old items here
 
@@ -586,8 +588,10 @@ public class OrderServiceImpl implements OrderService {
                                   orderItem.setProductPrice(productDto.productPrice());
                                   //d. calculate the subtotal for the order item
                                   var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
-                                  System.out.println("Product Price: " + itemTotal);
-                                  System.out.println("Product Quantity: " + quantity);
+//                                  System.out.println("Product Price: " + itemTotal);
+//                                  System.out.println("Product Quantity: " + quantity);
+                                  logger.info("PRODUCT_PRICE: {}", itemTotal);
+                                  logger.info("PRODUCT_QUANTITY: {}", quantity);
                                   return Mono.just(orderItem);
                                 });
                       })
@@ -610,13 +614,10 @@ public class OrderServiceImpl implements OrderService {
                         existingOrder.setTotalAmount(totalAmount);
                         System.out.println("Final Total Amount: " + existingOrder.getTotalAmount());
 
-
                         //4. Set order status to "PLACED"
                         existingOrder.setOrderStatus("PLACED");
-
                       })
                       .then(Mono.just(existingOrder));
-
             }).flatMap(existingOrder -> Mono.fromCallable(() -> orderRepository.save(existingOrder))
                     .subscribeOn(Schedulers.boundedElastic())); //Wrap blocking call in a reactive context
 
@@ -715,10 +716,11 @@ public class OrderServiceImpl implements OrderService {
                                                               orderItem.setOrder(existingOrder);
                                                               //d. calculate the subtotal for the order item
                                                               var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
-                                                              System.out.println("Product Price: " + itemTotal);
-                                                              System.out.println("Product Quantity: " + quantity);
+//                                                              System.out.println("Product Price: " + itemTotal);
+//                                                              System.out.println("Product Quantity: " + quantity);
+                                                              logger.info("THE_PRODUCT_PRICE: {}", itemTotal);
+                                                              logger.info("THE_PRODUCT_QUANTITY: {}", quantity);
                                                               return orderItem;
-
                                                             }));
 
                                                   });
@@ -737,8 +739,8 @@ public class OrderServiceImpl implements OrderService {
                                                           .multiply(BigDecimal.valueOf(item.getProductQuantity())))
                                                   .reduce(BigDecimal.ZERO, BigDecimal::add);
                                           existingOrder.setTotalAmount(totalAmount);
-                                          System.out.println("Final Total Amount: " + existingOrder.getTotalAmount());
-
+//                                          System.out.println("Final Total Amount: " + existingOrder.getTotalAmount());
+                                          logger.info("FINAL_TOTAL_AMOUNT: {}", existingOrder.getTotalAmount());
 
                                           //4. Set order status to "PLACED"
                                           existingOrder.setOrderStatus("PLACED");
@@ -769,7 +771,6 @@ public class OrderServiceImpl implements OrderService {
                         logger.error("Failed to send order updated event for orderId: {} to Kafka", savedOrder.getOrderId(), e);
                       }
                     })
-
             ); //Wrap blocking call in a reactive context
   }
 
@@ -840,8 +841,6 @@ public class OrderServiceImpl implements OrderService {
     } catch (Exception e) {
       logger.error("Failed to send order deleted event for orderId: {} to Kafka", foundOrder.getOrderId(), e);
     }
-    //Todo: publish order deleted event to kafka topic
-
   }
 
   /**
@@ -866,7 +865,6 @@ public class OrderServiceImpl implements OrderService {
             .filter(id -> !foundOrders.contains(id)).toList();
     //first check if foundOrders status is CANCELLED, SHIPPED or DELIVERED
     List<String> excludedStatuses = List.of("CANCELLED", "SHIPPED", "DELIVERED");
-
 
     //Restore inventory for all found orders before deleting the orders
       orders.forEach(order -> {
@@ -998,14 +996,10 @@ public class OrderServiceImpl implements OrderService {
      * //It will delete the order without restoring inventory
      * //This method should be used with caution
      */
-
     var foundOrder = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
-
     //order can be deleted regardless of its status
     //Delete the order(OrderItems will be deleted automatically due to CascadeType.ALL in Order class)
     orderRepository.delete(foundOrder);
-
   }
-
 }

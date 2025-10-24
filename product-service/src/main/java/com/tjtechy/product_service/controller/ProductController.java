@@ -34,7 +34,6 @@ public class ProductController {
 
   /**
    * Endpoint to get all products.
-   *
    * @return a Result object containing a list of all products
    */
   @Operation(summary = "Get All Products", description = "Retrieve all products from the product service",
@@ -119,6 +118,13 @@ public class ProductController {
     return new Result("Add One Success Using Externalized", true, savedProductDto, StatusCode.SUCCESS);
   }
 
+  /**
+   * Endpoint to update an existing product with inventory.
+   *
+   * @param productId the UUID of the product to update
+   * @param updateProductDto the DTO containing the updated product details
+   * @return a Result object containing the updated product details
+   */
   @Operation(summary = "Update Product With Inventory", description = "Update an existing product with inventory",
           responses = {
           @ApiResponse(responseCode = "200", description = "Update One Success"),

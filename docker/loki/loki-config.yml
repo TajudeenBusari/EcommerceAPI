@@ -1,0 +1,52 @@
+auth_enabled: false
+server:
+  http_listen_port: 3100
+
+#common
+common:
+  path_prefix: /tmp/loki
+  replication_factor: 1
+  storage:
+    filesystem:
+      chunks_directory: /tmp/loki/chunks
+      rules_directory: /tmp/loki/rules
+  ring:
+    kvstore:
+      store: inmemory
+
+#schema config for TSDB storage backend
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem #s3
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+#storage config
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /tmp/loki/boltdb-shipper-active
+    cache_location: /tmp/loki/boltdb-shipper-cache
+  filesystem:
+    directory: /tmp/loki/chunks
+
+
+#Limit configuration to avoid excessive resource usage
+limits_config:
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h #1 week
+  allow_structured_metadata: false
+  metric_aggregation_enabled: true #enable metric aggregation
+  enable_multi_variant_queries: true #Allows running multiple queries variants in parallel
+  #prevent logging too many request errors in the promtail logs
+  ingestion_rate_mb: 16 #maximum ingestion rate in MB per second
+  ingestion_burst_size_mb: 32 #maximum burst size in MB for ingestion
+
+#Documentation:
+  #https://grafana.com/docs/loki/latest/configuration/#compactor
+    #https://grafana.com/docs/loki/latest/configure/examples/configuration-examples/
+    #https://grafana.com/docs/loki/latest/configure/examples/configuration-examples/
+    #sample here: https://github.com/grafana/loki/blob/main/examples/getting-started/loki-config.yaml

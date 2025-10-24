@@ -36,9 +36,6 @@ public record CreateInventoryDto(
         @NotNull(message = "Expiry date is required")
         @FutureOrPresent(message = "Expiry date must be a future or present date")
         LocalDate expiryDate
-
-
-
 ) {
 
 

@@ -9,7 +9,6 @@
 		 <relativePath>../pom.xml</relativePath><!-- lookup parent from repository -->
 	</parent>
 
-
 	<artifactId>notification-service</artifactId>
 	<version>0.0.1</version>
 	<name>notification-service</name>
@@ -65,11 +64,12 @@
 			<version>3.0.0</version>
 		</dependency>
 
-		<!-- Spring Boot Actuator (Optional - Useful for Monitoring) -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
+		<!-- Spring Boot Actuator (Optional - Useful for Monitoring)
+		already available in the parent pom.xml (ECommerceMicroservices)-->
+<!--		<dependency>-->
+<!--			<groupId>org.springframework.boot</groupId>-->
+<!--			<artifactId>spring-boot-starter-actuator</artifactId>-->
+<!--		</dependency>-->
 
 		<!--kafka dependencies-->
 		<!-- Messaging (Kafka Example) -->
@@ -77,8 +77,6 @@
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
-
-
 		<!-- Alternatively: RabbitMQ Messaging -->
 		<!--
         <dependency>
