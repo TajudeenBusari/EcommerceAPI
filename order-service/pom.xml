@@ -40,6 +40,7 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
+		<!--Spring Boot Starter Web, it is blocking MVC-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -66,12 +67,6 @@
 <!--		<dependency>-->
 <!--			<groupId>io.micrometer</groupId>-->
 <!--			<artifactId>micrometer-registry-prometheus</artifactId>-->
-<!--		</dependency>-->
-<!--		&lt;!&ndash; OpenTelemetry exporter for Prometheus &ndash;&gt;-->
-<!--		<dependency>-->
-<!--			<groupId>io.opentelemetry.instrumentation</groupId>-->
-<!--			<artifactId>opentelemetry-instrumentation-api</artifactId>-->
-<!--			<version>2.20.1</version>-->
 <!--		</dependency>-->
 
 		<dependency>
@@ -136,6 +131,10 @@
 			<artifactId>spring-cloud-starter-bootstrap</artifactId>
 		</dependency>
 
+		<!-- Jackson module to support Hibernate types and lazy loading
+		 It prevents infinite recursion or unexpected JSON.E.G.,When you have
+		 when you have another entity inside another entity related by for
+		 example @OneToMany-->
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-hibernate6</artifactId>
@@ -201,7 +200,7 @@
 <!--			<scope>test</scope>-->
 <!--		</dependency>-->
 
-		<!-- Optional: For using JSON serialization in Redis
+		<!-- Optional: For using JSON serialization in Redis,
 			 You don't need this if we are not serializing in redis
 			 -->
 		<dependency>
