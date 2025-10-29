@@ -74,10 +74,6 @@ class OrderServiceImplTest {
   @Mock
   private OrderEventProducer orderEventProducer;
 
-
-
-
-
   private static final Logger logger = LoggerFactory.getLogger(OrderServiceImplTest.class);
 
 

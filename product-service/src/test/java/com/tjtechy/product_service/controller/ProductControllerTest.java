@@ -187,7 +187,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            100, //available stock, should now be same as product quantity
+            100, //available stock should now be the same as product quantity
             LocalDate.now().plusDays(30),//expiry date
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date
@@ -235,7 +235,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            100, //available stock, should now be same as product quantity
+            100, //available stock should now be the same as product quantity
             LocalDate.now().plusDays(30),
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date
@@ -279,7 +279,7 @@ class ProductControllerTest {
             new BigDecimal("100.0"),
             100,
             "Category 1",
-            100, //available stock, should now be same as product quantity
+            100, //available stock should now be the same as product quantity
             LocalDate.now().plusDays(30),//expiry date
             LocalDate.of(2024, 10, 10),//manufactured date
             LocalDate.of(2026, 9, 5)));//updated date

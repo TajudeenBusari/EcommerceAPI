@@ -252,7 +252,6 @@ class OrderControllerTest {
 
     //Then: Verify Interactions
     verify(orderService).processOrderReactively(any(Order.class));
-
   }
 
   @Test

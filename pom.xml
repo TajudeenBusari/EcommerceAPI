@@ -29,6 +29,7 @@
         <module>inventory-service</module>
         <module>notification-service</module>
         <module>user-service</module>
+        <module>security</module>
     </modules>
 
     <properties>
@@ -65,24 +66,6 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-observation</artifactId>
         </dependency>
-
-        <!-- OpenTelemetry exporter for Prometheus.
-        NOTE: I MAY NEED TO REMOVE THIS
-        DEPENDENCY BECAUSE I WILL ADD SOME DEPENDENCIES FOR JAEGER FOR TRACING
-        -->
-<!--        <dependency>-->
-<!--            <groupId>io.opentelemetry.instrumentation</groupId>-->
-<!--            <artifactId>opentelemetry-instrumentation-api</artifactId>-->
-<!--            <version>2.20.1</version>-->
-<!--        </dependency>-->
-
-        <!-- The dependency: Automatically enables context propagation (traceId/spanId passing between services)-->
-<!--        <dependency>-->
-<!--            <groupId>io.opentelemetry.instrumentation</groupId>-->
-<!--            <artifactId>opentelemetry-spring-boot-starter</artifactId>-->
-<!--            <version>2.20.1</version>-->
-<!--        </dependency>-->
-
 
     </dependencies>
 
