@@ -11,7 +11,6 @@
     </parent>
 
     <artifactId>inventory-service</artifactId>
-    <version>0.0.1</version>
     <name>inventory-service</name>
     <description>Inventory Service Module for ECommerce Microservices</description>
     <url/>
@@ -130,7 +129,7 @@
             <version>2.2.2</version>
         </dependency>
 
-        <!-- Optional: For using JSON serialization in Redis
+        <!-- Optional: For using JSON serialization in Redis,
 			 You don't need this if we are not serializing in redis
 			 -->
         <dependency>
@@ -189,7 +188,7 @@
 
     </dependencies>
 
-    <!--dependencies management-->
+    <!--dependency management-->
     <dependencyManagement>
         <dependencies>
             <dependency>

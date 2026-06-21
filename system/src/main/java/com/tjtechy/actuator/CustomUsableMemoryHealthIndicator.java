@@ -26,9 +26,7 @@ import java.io.File;
  */
 @Component
 public class CustomUsableMemoryHealthIndicator implements HealthIndicator {
-  /**
-   * @return
-   */
+
   @Override
   public Health health() {
     File path = new File("."); //current directory

@@ -15,7 +15,7 @@
         <version>0.0.1</version>
         <packaging>jar</packaging>  <!-- ✅ Add this -->
         <name>system</name>
-        <description>Shared system utilities for the microservices</description>
+        <description>Shared system utilities for the Ecommerce Microservices</description>
 
     <properties>
         <java.version>17</java.version>
@@ -26,24 +26,24 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
-        <!-- Needed for @Configuration, @Bean, etc -->
+        <!-- Needed for @Configuration, @Bean, etc., -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
-        <!--Needed for Actuator , HttpExchangeRepository-->
+        <!--Needed for Actuator, HttpExchangeRepository-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-actuator</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-actuator</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-actuator</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 
 

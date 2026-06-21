@@ -9,7 +9,6 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>api-gateway</artifactId>
-	<version>0.0.1</version>
 	<name>api-gateway</name>
 	<description>api-gateway service Module for ECommerce Microservices</description>
 	<url/>
@@ -43,7 +42,7 @@
 		</dependency>
 
 
-		<!-- this is for reactive based gateway
+		<!-- this is for reactive-based gateway
 		for spring boot 3.5, it uses this: <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>-->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -117,7 +116,7 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 
-		<!--OpenAPI Documentation Dependency for WebFlux (Reactive):JSON-->
+		<!--OpenAPI Documentation Dependency for WebFlux (Reactive): JSON-->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webflux-api</artifactId>
