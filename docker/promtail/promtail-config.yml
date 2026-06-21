@@ -42,7 +42,7 @@ scrape_configs:
           job: inventory-service
           __path__: /mnt/log/inventory-service/*.log #path where inventory-service writes its log files, must be defined
                                                     #in the inventory-service application.yml (make sure local runs writes to this path)
-                                                    #and under environment variable in docker-compose.yml (make sure docker container writes to this path)
+                                                #and under environment variable in docker-compose.yml (make sure docker container writes to this path)
   - job_name: product-service
     static_configs:
       - targets:

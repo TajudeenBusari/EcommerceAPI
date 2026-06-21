@@ -1,3 +1,5 @@
+debug: true # Enable debug logging for troubleshooting
+
 server:
   port: 8083
 spring:
@@ -27,23 +29,23 @@ management:
       show-values: always #show values in the env endpoint
     configprops:
       show-values: always #show values in the configprops endpoint
-    info:
-      build:
-        enabled: true
-      env:
-        enabled: true
-      git:
-        enabled: true
-      java:
-        enabled: true
-      os:
-        enabled: true
+  info:
+    build:
+      enabled: true
+    env:
+      enabled: true
+    git:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
   tracing:
     enabled: true
     sampling:
       probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
 tracing:
-  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
+  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment, defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
 #  url: http://ecommerce-jaeger:4318/v1/traces # OTLP for Jaeger in docker-compose environment
 
 logging:
@@ -52,6 +54,14 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
   file:
     name: ./logs/product-service/app.log # Log file path
+
+app:
+  security:
+    enabled: false
+  openapi:
+    serviceUrl: http://localhost:8083
+    gatewayUrl: ${GATEWAY_URL:http://localhost:8080} # Use environment variable for gateway URL, default to localhost if not set
+
 info:
   app:
     name:

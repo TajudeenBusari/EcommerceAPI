@@ -30,6 +30,7 @@
         <module>notification-service</module>
         <module>user-service</module>
         <module>security</module>
+        <module>shared-domain</module>
     </modules>
 
     <properties>
@@ -93,22 +94,25 @@
     </dependencyManagement>
     <build>
         <plugins>
-            <plugin>
+            <!--This is removed from the parent pom because
+            not all modules should be run as application for example
+            shared-domain-->
+            <!--<plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
+            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
-                <executions>
+                <!--Not needed<executions>
                     <execution>
                         <goals>
                             <goal>compile</goal>
                             <goal>testCompile</goal>
                         </goals>
                     </execution>
-                </executions>
+                </executions>-->
             </plugin>
         </plugins>
     </build>

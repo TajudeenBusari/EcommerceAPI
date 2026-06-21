@@ -8,7 +8,8 @@
 
 package com.tjtechy.user_service.repository;
 
-import com.tjtechy.user_service.entity.User;
+
+import userutils.entity.User;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import reactor.core.publisher.Mono;
 

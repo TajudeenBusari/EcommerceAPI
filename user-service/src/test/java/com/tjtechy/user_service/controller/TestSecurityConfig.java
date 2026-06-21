@@ -1,9 +1,9 @@
 
-/**
+/*
  * Copyright © 2025  
  * @Author = TJTechy (Tajudeen Busari)  
  * @Version = 1.0  
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.  
+ * This file is part user-service test module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.user_service.controller;
@@ -16,7 +16,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 
 /**
  * Test security configuration that disables security for testing purposes.
- * We have similar config in the security module, but in the future we may need to
+ * We have a similar config in the security module, but in the future we may need to
  * enable that in that module (security) and disable it here for testing only.
  */
 @TestConfiguration

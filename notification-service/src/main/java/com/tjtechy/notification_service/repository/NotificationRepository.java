@@ -17,7 +17,7 @@ import java.time.LocalDate;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
   /**
-   * With deleteAllBy... method, Spring Data JPA will generate a query that deletes all records
+   * With the deleteAllBy... method, Spring Data JPA will generate a query that deletes all records
    * where the sentAt field is less than or equal to the specified date.
    * A DELETE or UPDATE query returns an int (or a long) indicating the number of rows affected by the query, or
    * you can ignore the result and use void as the return type.
@@ -26,8 +26,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
    * the number of rows affected(count).
    * DELETE FROM notification WHERE sent_at <= '2025-08-01';
    * This has multiple implementations in the NotificationServiceImpl class.
-   * @param cuffOffDate
-   * @return
    */
   long deleteAllBySentAtLessThanEqual(LocalDate cuffOffDate);
 }

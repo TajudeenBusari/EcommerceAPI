@@ -6,6 +6,7 @@ CREATE DATABASE "ECommerce-Inventory-Service";
 CREATE DATABASE "ECommerce-Notification-Service";
 CREATE DATABASE "ECommerce-User-Service";
 
+
 -- Grant all privileges on the databases to the postgres user
 GRANT ALL PRIVILEGES ON DATABASE "ECommerce-Order-Service" TO postgres;
 GRANT ALL PRIVILEGES ON DATABASE "ECommerce-Product-Service" TO postgres;

@@ -1,0 +1,8 @@
+#server:
+  #port: 8087
+#spring:
+  #application:
+    #name: security-config-server
+#api:
+  #endpoint:
+    #base-url: /api/v1

@@ -8,7 +8,7 @@ or Liquibase to manage your database schema.
 ----------------------------------------------------------------------------------------------
 OPTION1: Manually create the necessary tables in the database before running the application.
 OPTION2: Use a database migration tool like Flyway or Liquibase to manage your database schema
-         add migration scripts in, for example: 
+         add migration scripts in, for example, 
                **src/main/resources/db/migration folder**.
                V1__create_users_table.sql
                Flyway runs on startup (blocking JDBC) and ensures that table exits, works with reactive R2DBC.
@@ -40,5 +40,5 @@ OPTION2: Use a database migration tool like Flyway or Liquibase to manage your d
         
 
 
-it is advisable not to make directly changes in the .sql scripts else it may lead to inconsistencies in the database schema management.
+It is advisable not to make direct changes in the .sql scripts else it may lead to inconsistencies in the database schema management.
 In this case, you will have to delete the database and re-create it again to ensure that the migration scripts are applied correctly from scratch.

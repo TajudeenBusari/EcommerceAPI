@@ -8,8 +8,13 @@
 
 package com.tjtechy.user_service.service.impl;
 
+import com.tjtechy.UsernameAlreadyExistsException;
 import com.tjtechy.modelNotFoundException.UserNotFoundException;
-import com.tjtechy.user_service.entity.User;
+import com.tjtechy.security.config.MyUserPrincipal;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
+import reactor.core.scheduler.Schedulers;
+import userutils.entity.User;
 import com.tjtechy.user_service.repository.UserRepository;
 import com.tjtechy.user_service.service.UserService;
 import org.slf4j.Logger;
@@ -25,7 +30,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, ReactiveUserDetailsService {
   private final UserRepository userRepository;
   ///PasswordEncoder bean is configured in the security module,
   /// without the bean, application will fail to start.
@@ -37,37 +42,38 @@ public class UserServiceImpl implements UserService {
     this.passwordEncoder = passwordEncoder;
   }
 
-  /**
-   * @param user
-   * @return
-   */
   @Override
   public Mono<User> createUser(User user) {
-    user.setPassword(passwordEncoder.encode(user.getPassword()));
-    //TODO: Assign role based on registration data in future.
-    // For example if admin is creating a user they should be able to set role to ADMIN.
-    //For now, all new users are assigned CUSTOMER role.
-    user.setRole(User.Role.CUSTOMER);
-    user.setEnabled(true);
-    return userRepository.save(user)
-            //TODO: Consider changing this to doOnNext if issues arise, so that step is only called when user is actually saved.
-            .doOnSuccess(savedUser -> {
-              logger.info("Created new user with username: {}", savedUser.getUserName());
-            })
-            .doOnError(error -> {
-              logger.error("Error creating user with username: {}: {}", user.getUserName(), error.getMessage());
-            });
+
+    return userRepository.findByUserName(user.getUserName())
+
+            //without Mono.<User>error, the compiler will infer the type as Mono<Object>,
+            // which causes a compilation error when we try to log
+            // savedUser later, because the logger expects a User type, not Object.
+            //In Reactor, generic type inference can sometimes lead to unexpected types,
+            // especially when using methods like flatMap that can return different types based on the logic.
+            // By explicitly specifying Mono.<User>error, we ensure that the error Mono is of the correct type,
+            // allowing for proper logging and error handling downstream.
+
+            .flatMap(existingUser -> Mono.<User>error(new UsernameAlreadyExistsException("User already exists with username: " + user.getUserName())))
+            .switchIfEmpty(Mono.fromCallable(() -> {
+              user.setPassword(passwordEncoder.encode(user.getPassword()));
+              user.setEnabled(true);
+              return user;
+            }).subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(userRepository::save))
+            .doOnNext(savedUser -> logger.info("Created user with username: {}", savedUser.getUserName()))
+            .doOnError(error -> logger.error("Error creating user with username: {}: {}", user.getUserName(), error.getMessage()));
   }
 
   /**
-   * @param username
-   * @return
+   * Business logic to find user by username, with logging and caching.
    */
   @Override
-  @Cacheable(value = "user", key = "#username")
+  @Cacheable(value = "usersByUsername", key = "#username", unless = "#result == null")
   public Mono<User> findUserByUsername(String username) {
     return userRepository.findByUserName(username)
-            /**
+            /*
              * .doOnNext is only called when a user is found, else, it is skipped.
              * if doOnSuccess is used, it will also log the Found with username even when user is not found,
              * because Mono.empty() is considered a successful completion.
@@ -82,8 +88,21 @@ public class UserServiceImpl implements UserService {
   }
 
   /**
-   * @param id
-   * @return
+   * This method is required by the ReactiveUserDetailsService
+   * interface for Spring Security authentication.
+   */
+  @Override
+  public Mono<UserDetails> findByUsername(String username) {
+
+    return findUserByUsername(username)
+            .switchIfEmpty(Mono.error(new RuntimeException("User not found with username: " + username))) //handle the UsernameNotFoundException in the RestControllerAdvice class
+            //cast MyUserPrincipal to UserDetails explicitly else it causes compilation error
+            .map(user -> (UserDetails) new MyUserPrincipal(user))//wrap User entity into MyUserPrincipal
+            .doOnNext(u -> logger.debug("Loaded User for authentication: {}", u.getUsername()))
+            .doOnError(error -> logger.error("Error loading user for authentication with username {}: {}", username, error.getMessage()));
+  }
+
+  /**
    */
   @Override
   public Mono<User> findUserById(UUID id) {
@@ -91,7 +110,6 @@ public class UserServiceImpl implements UserService {
   }
 
   /**
-   * @return
    */
   @Override
   public Flux<User> findAllUsers() {
@@ -153,4 +171,5 @@ public class UserServiceImpl implements UserService {
   public Flux<User> updateAllUsers(Flux<User> users) {
     return null;
   }
+
 }

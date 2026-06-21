@@ -1,4 +1,4 @@
-
+#Sample to restart and rebuild a specific service: docker-compose up -d --build <service-name>
 services:
   redis:
     image: redis
@@ -102,7 +102,7 @@ services:
     container_name: kafka
     ports:
       - "9092:9092" #for container to container communication
-      - "9093:9093" #Optional: for external access, e.g. services on local machine
+      - "9093:9093" #Optional: for external access, e.g., services on a local machine
     depends_on:
 #      - zookeeper
         zookeeper:
@@ -115,14 +115,14 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       #Advertise:
       #internal services (Docker containers) will use kafka:9092
-      #external services (e.g. local machine) will use localhost:9093
+      #external services (e.g., local machine) will use localhost:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT #new
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_MESSAGE_MAX_BYTES: 200000000 #200mb
       KAFKA_REPLICA_FETCH_MAX_BYTES: 200000000 #200mb
       KAFKA_METRICS_REPORTER_TELEMETRY_API_ENABLED: "false" #Disable Kafka broker telemetry to reduce logging noise
-      #This WARN from kafka server log can be ignored for now: WARN [Controller id=1, targetBrokerId=1] Connection to
+      #This WARN from the kafka server log can be ignored for now: WARN [Controller id=1, targetBrokerId=1] Connection to
       #node 1 (kafka/172.24.0.3:9092) could not be established. Broker may not be available. (org.apache.kafka.clients.NetworkClient)
 
     networks:
@@ -187,7 +187,8 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      #test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -256,6 +257,16 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
     volumes:
       - ./logs/api-gateway:/mnt/log/api-gateway #mount from host(./logs/api-gateway) to container(/mnt/log/api-gateway)
     environment:
@@ -266,6 +277,18 @@ services:
       - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - LOGGING_FILE_NAME=/mnt/log/api-gateway/app.log #tells app to write log to this file, important when running inside Docker container
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
+      - API_OPENAPI_GATEWAYURL=http://localhost:8080
+      #OPTIONALLY: Enable cors via env variables, can be overridden if needed
+      - SPRING_CLOUD_GATEWAY_GLOBALCORS_CORS_CONFIGURATIONS_[/**]_ALLOWEDORIGINPATTERNS=http://localhost:*,http://127.0.0.1:*,http://host.docker.internal:*,http://172.18.0.*:*
+      - SPRING_CLOUD_GATEWAY_GLOBALCORS_CORS_CONFIGURATIONS_[/**]_ALLOWEDMETHODS=GET,POST,PUT,DELETE,OPTIONS,HEAD,PATCH
+      - SPRING_CLOUD_GATEWAY_GLOBALCORS_CORS_CONFIGURATIONS_[/**]_ALLOWEDHEADERS=*
+      - SPRING_CLOUD_GATEWAY_GLOBALCORS_CORS_CONFIGURATIONS_[/**]_ALLOWCREDENTIALS=true
+      - SPRING_CLOUD_GATEWAY_GLOBALCORS_CORS_CONFIGURATIONS_[/**]_MAXAGE=3600
+      #to check if env is loaded in the container: docker exec -it api-gateway printenv | findstr SPRING_CLOUD_GATEWAY_GLOBALCORS
+      #restart and build new image: docker-compose up -d --build api-gateway
+
     networks:
       - microservices-network
     healthcheck:
@@ -324,9 +347,10 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - LOGGING_FILE_NAME=/mnt/log/product-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
+      - APP_OPENAPI_SERVICEURL=http://localhost:8083
+      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY
     networks:
       - microservices-network
     healthcheck:
@@ -383,8 +407,9 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/inventory-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
+      - OPENAPI_GATEWAY_SERVER_URL=http://localhost:8080
+      - OPENAPI_SELF_SERVER_URL=http://localhost:8084
+      #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY, NOT REALLY NEEDED HERE
 #      - DEBUG=true
     networks:
       - microservices-network
@@ -452,10 +477,9 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/order-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
-#      - kafka.topics.order-placed=order-placed-topic
-#      - kafka.topics.order-cancelled=order-cancelled-topic
+      - OPENAPI_GATEWAY_SERVER_URL=http://localhost:8080
+      - OPENAPI_SELF_SERVER_URL=http://localhost:8082
+     # - RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY, NOT REALLY NEEDED HERE
     networks:
       - microservices-network
     healthcheck:
@@ -523,8 +547,10 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/notification-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-#      - MANAGEMENT_TRACING_OTEL_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4318/v1/traces # OTLP HTTP endpoint #/v1/traces
-#      - MANAGEMENT_TRACING_EXPORTER_OTLP_ENDPOINT=http://ecommerce-jaeger:4317 # OTLP gRPC endpoint
+      - OPENAPI_GATEWAY_SERVER_URL=http://localhost:8080
+      - OPENAPI_SELF_SERVER_URL=http://localhost:8085
+      #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY
+
     volumes:
       - ./firebase-service-account.json:/app/firebase/firebase-service-account.json:ro #ro=read only
       - ./logs/notification-service:/mnt/log/notification-service #mount from host(./logs/notification-service) to container(/mnt/log/notification-service)
@@ -532,6 +558,70 @@ services:
       - microservices-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  #=============================
+  #user-service
+  #=============================
+  user-service:
+    build: user-service
+    container_name: user-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+      ecommerce-jaeger:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      promtail:
+        condition: service_started
+      prometheus:
+        condition: service_healthy
+      kafka-ui:
+        condition: service_started
+      zookeeper:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_APPLICATION_NAME=user-service
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - LOGGING_FILE_NAME=/mnt/log/user-service/app.log #tells app to write log to this file, important when running inside Docker container
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+      - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
+      - APP_SECURITY_ENABLED=true
+      - APP_ADMIN_USERNAME=${ADMIN_USERNAME} #loaded from the .env file
+      - APP_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - APP_OPENAPI_SERVICEURL=http://localhost:8086
+      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -605,10 +695,10 @@ services:
     healthcheck:
       #Ref for accurate health check:
       #https://github.com/grafana/loki/blob/main/examples/getting-started/docker-compose.yaml
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=3 --spider http://localhost:3100/ready || exit 1" ]
+      test: [ "CMD", "/usr/bin/loki", "-health" ]
       interval: 30s
       timeout: 10s
-      start_period: 180s
+      start_period: 30s
       retries: 3
 
   #===============================
@@ -639,18 +729,21 @@ services:
       - ./logs/api-gateway:/mnt/log/api-gateway:ro
       - ./logs/config-server:/mnt/log/config-server:ro
       - ./logs/eureka-server:/mnt/log/eureka-server:ro
+      - ./logs/user-service:/mnt/log/user-service:ro
     command: -config.file=/etc/promtail/promtail-config.yml
     depends_on:
       loki:
-        condition: service_healthy
+        condition: service_started #loki may take longer to be healthy, so just ensure it's started
     networks:
       - microservices-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=3 --spider http://localhost:9080/ready || exit 1"]
-      interval: 30s
-      timeout: 15s
-      start_period: 60s
-      retries: 5
+#    healthcheck: remove health check for promtail, it's not working properly and most services that depends on it do not need to be healthy
+#      #test: ["CMD-SHELL", "wget --no-verbose --tries=3 --spider http://localhost:9080/ready || exit 1"]
+#      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9080/ready"]
+#      #test: ["CMD", "curl", "-f", "http://localhost:9080/ready"]
+#      interval: 30s
+#      timeout: 15s
+#      start_period: 60s
+#      retries: 5
 
   #===============================================
   #Grafana for visualization (metrics, logs, traces)
@@ -665,7 +758,7 @@ services:
       prometheus:
         condition: service_healthy
       loki:
-        condition: service_healthy
+        condition: service_started
       ecommerce-jaeger:
         condition: service_healthy
     volumes:
@@ -687,7 +780,7 @@ networks:
 volumes:
   postgres-data:
 
-
+#docker compose up -d redis zookeeper kafka schema-registry kafka-ui ecommerce-jaeger prometheus loki promtail grafana
 #schema Registry: http://localhost:8081
 #
 #Kafka UI: http://localhost:8085

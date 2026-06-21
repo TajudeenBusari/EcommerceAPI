@@ -39,3 +39,49 @@ yarn-error.log*
 coverage/
 #ignore .next folder
 .next/
+
+#grafana plugins
+docker/grafana/plugins/
+
+#loki
+docker/loki/data/wal/
+docker/loki/data/chunks/
+docker/loki/data/boltdb-shipper-active
+docker/loki/data/boltdb-shipper-archive
+docker/loki/data/rules
+docker/loki/data/boltdb-shipper-cache/index_20385/compactor-1761939062556415012.r
+docker/loki/data/boltdb-shipper-cache/index_20385/compactor-1761327169157137314
+docker/loki/data/boltdb-shipper-cache/
+
+#promtail
+docker/promtail/data/.positions.yaml648197089
+docker/promtail/data/.positions.*
+
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+#### exception/target file ###
+exception/target/
+**/target/
+
+##system target file
+system/target/system-0.0.1.jar

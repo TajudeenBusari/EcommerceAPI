@@ -1,39 +1,32 @@
-/**
- * Copyright © 2025
- *
- * @Author = TJTechy (Tajudeen Busari)
- * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
- */
-
 package com.tjtechy.product_service.controller;
 
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.tjtechy.UpdateInventoryDto;
-import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.tjtechy.CreateInventoryDto;
 import com.tjtechy.InventoryDto;
 import com.tjtechy.Result;
+import com.tjtechy.UpdateInventoryDto;
 import com.tjtechy.client.InventoryServiceClient;
 import org.junit.jupiter.api.*;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -50,29 +43,25 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
-import static org.testcontainers.shaded.com.google.common.base.Preconditions.checkState;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
-
+import static org.assertj.core.util.Preconditions.checkState;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-properties = {
-        "spring.cloud.config.enabled=false",
-        "spring.cloud.config.discovery.enabled=false",
-        "spring.cloud.discovery.enabled=false",
-        "eureka.client.enabled=false",
-        "eureka.client.fetchRegistry=false",
-        "eureka.client.registerWithEureka=false",
-        "spring.cloud.loadbalancer.enabled=false", // Disable load balancer
-        "spring.cloud.service-registry.auto-registration.enabled=false",
-        "redis.enabled=false", //disable redis
-        "spring.cache.type=none", //disable caching
-})
+        properties = {
+                "spring.cloud.config.enabled=false",
+                "spring.cloud.config.discovery.enabled=false",
+                "spring.cloud.discovery.enabled=false",
+                "eureka.client.enabled=false",
+                "eureka.client.fetchRegistry=false",
+                "eureka.client.registerWithEureka=false",
+                "spring.cloud.loadbalancer.enabled=false", // Disable load balancer
+                "spring.cloud.service-registry.auto-registration.enabled=false",
+                "redis.enabled=false", //disable redis
+                "spring.cache.type=none", //disable caching
+        })
 @EnableAutoConfiguration(exclude ={
         EurekaClientAutoConfiguration.class,
         EurekaDiscoveryClientConfiguration.class,
@@ -83,6 +72,7 @@ properties = {
 @ActiveProfiles("test")
 @Tag("ProductServiceControllerIntegrationTest")
 
+
 public class ProductServiceControllerIntegrationTest {
 
   @Autowired
@@ -91,8 +81,11 @@ public class ProductServiceControllerIntegrationTest {
   @LocalServerPort
   private int port;
 
+  @Autowired
+  private ObjectMapper objectMapper;
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+
+  //private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
@@ -105,14 +98,13 @@ public class ProductServiceControllerIntegrationTest {
   private static final String UPDATE_INVENTORY_URL = "/api/v1/inventory/internal/update";
   private static final String DELETE_INVENTORY_URL = "/api/v1/inventory";
 
-
   @Container
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:15.0")
           .withDatabaseName("productdb")
           .withUsername("postgres")
           .withPassword("postgres");
 
-//  private static final WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+  //  private static final WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
   private static final WireMockServer wireMockServer;
 
   static {
@@ -156,12 +148,9 @@ public class ProductServiceControllerIntegrationTest {
     wireMockServer.resetAll();
   }
 
-
   //helper method to create product with inventory
   /**
    * This helper method will be used for when inventory service is not available.
-   * @return
-   * @throws Exception
    */
   private Map<String, Object> createProductWithInventory() throws Exception {
 
@@ -197,7 +186,6 @@ public class ProductServiceControllerIntegrationTest {
     return savedProduct;
   }
 
-  //helper method to create product without inventory
 
   /**
    * Used for just creating a product without inventory.
@@ -233,7 +221,7 @@ public class ProductServiceControllerIntegrationTest {
 
     return savedProduct;
 
-  }
+      }
 
   /**
    * This method will be used to test the product creation with inventory
@@ -301,7 +289,7 @@ public class ProductServiceControllerIntegrationTest {
     System.out.println(savedProduct.get("productName"));
 
     return savedProduct;
-  }
+    }
 
   @Test
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
@@ -332,7 +320,6 @@ public class ProductServiceControllerIntegrationTest {
 
     assertThat(restTemplate).isNotNull();
   }
-
 
   @Test
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
@@ -419,7 +406,7 @@ public class ProductServiceControllerIntegrationTest {
 
     var updateInventoryResponse = new Result("Inventory updated successfully", true, inventoryDto, 200);
     WireMock.stubFor(WireMock.put(WireMock.urlEqualTo(UPDATE_INVENTORY_URL +"/"+ inventoryId))
-                    .withRequestBody(WireMock.matchingJsonPath("$.productId", equalTo(tempProductId.toString())))
+            .withRequestBody(WireMock.matchingJsonPath("$.productId", equalTo(tempProductId.toString())))
             .withRequestBody(WireMock.matchingJsonPath("$.availableStock", equalTo("20")))
             .withRequestBody(WireMock.matchingJsonPath("$.reservedQuantity", equalTo("1")))
             .willReturn(WireMock.okJson(objectMapper.writeValueAsString(updateInventoryResponse))));
@@ -434,7 +421,7 @@ public class ProductServiceControllerIntegrationTest {
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     assertThat(responseBody.get("flag")).isEqualTo(true);
 
-   await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+    await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
       WireMock.verify(WireMock.getRequestedFor(WireMock.urlEqualTo(GET_INVENTORY_BY_PRODUCT_URL + "/" + tempProductId)));
       WireMock.verify(WireMock.putRequestedFor(WireMock.urlEqualTo(UPDATE_INVENTORY_URL +"/"+ inventoryId))
               .withRequestBody(WireMock.matchingJsonPath("$.availableStock", equalTo("20")))

@@ -26,7 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 				"spring.datasource.password=testpassword",
 				"redis.enabled=false", //disable redis
 				"spring.profiles.active=test",
-				//removed all these because was causing some connection issues in the service and controller unit test when all tests are run together.
+				//removed all these because were causing some connection issues in the service and controller unit test when all tests are run together.
 //				"spring.kafka.bootstrap-servers=localhost:0", // Use an invalid port to prevent actual connections
 //				"spring.kafka.admin.auto-create=false", // Prevent auto-creation of topics
 //				"spring.kafka.consumer.auto-offset-reset=none", // Prevent consumer from auto-starting

@@ -31,3 +31,10 @@ spring:
 api:
   endpoint:
     base-url: /api/v1
+
+app:
+  security:
+    enabled: true
+  admin:
+    username: admin
+    password: Admin@123
