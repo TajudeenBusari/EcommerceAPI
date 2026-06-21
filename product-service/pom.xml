@@ -12,7 +12,6 @@
 	</parent>
 
 	<artifactId>product-service</artifactId>
-	<version>0.0.1</version>
 	<name>product-service</name>
 	<description>Product Service Module for ECommerce Microservices</description>
 	<url/>

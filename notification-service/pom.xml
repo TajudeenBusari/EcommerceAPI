@@ -10,7 +10,6 @@
 	</parent>
 
 	<artifactId>notification-service</artifactId>
-	<version>0.0.1</version>
 	<name>notification-service</name>
 	<description>Notification Service Module for ECommerce Microservices</description>
 	<url/>

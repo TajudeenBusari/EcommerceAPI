@@ -10,7 +10,6 @@
 	</parent>
 
 	<artifactId>order-service</artifactId>
-	<version>0.0.1</version>
 	<name>order-service</name>
 	<description>Order Service Module for ECommerce Microservices</description>
 	<url/>

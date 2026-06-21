@@ -95,7 +95,7 @@
     <build>
         <plugins>
             <!--This is removed from the parent pom because
-            not all modules should be run as application for example
+            not all modules should be run as application, for example,
             shared-domain-->
             <!--<plugin>
                 <groupId>org.springframework.boot</groupId>
