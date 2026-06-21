@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tjtechy.Result;
+import com.tjtechy.user_service.config.AdminUserInitializer;
+import com.tjtechy.user_service.repository.UserRepository;
 import org.junit.jupiter.api.*;
 import userutils.dto.LoginRequestDto;
 import userutils.dto.LoginResponseDto;
@@ -59,7 +61,7 @@ properties = {
         EurekaDiscoveryClientConfiguration.class,
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-//@Import(TestSecurityConfig.class) //to disable security (csrf) for testing
+@Import(TestConfig.class) //TO INITIALIZE THE ADMIN USER IN THE DB
 public class UserControllerIntegrationTest {
   @Autowired
   private WebTestClient webTestClient;
@@ -69,6 +71,18 @@ public class UserControllerIntegrationTest {
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
+
+  @BeforeAll
+  static void startContainers() {
+
+    postgreSQLContainer.start();
+  }
+
+  @AfterAll
+  static void stopContainers() {
+    postgreSQLContainer.stop();
+  }
+
 
   @Container
   private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
@@ -85,18 +99,6 @@ public class UserControllerIntegrationTest {
     ));
     registry.add("spring.r2dbc.username", postgreSQLContainer::getUsername);
     registry.add("spring.r2dbc.password", postgreSQLContainer::getPassword);
-  }
-  @BeforeAll
-  static void startContainers() {
-    postgreSQLContainer.start();
-  }
-
-  @AfterAll
-  static void stopContainers() {
-    if(postgreSQLContainer != null && postgreSQLContainer.isRunning()){
-      postgreSQLContainer.stop();
-    }
-
   }
 
   //private method to login and generate token
