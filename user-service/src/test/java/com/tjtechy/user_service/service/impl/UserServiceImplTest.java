@@ -1,7 +1,7 @@
 package com.tjtechy.user_service.service.impl;
 
 import com.tjtechy.modelNotFoundException.UserNotFoundException;
-import com.tjtechy.user_service.entity.User;
+import userutils.entity.User;
 import com.tjtechy.user_service.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,13 +103,14 @@ class UserServiceImplTest {
   void createUserSuccess() {
     //Given
     given(passwordEncoder.encode(users.get(0).getPassword())).willReturn("encodedPassword123");
+    given(userRepository.findByUserName(users.get(0).getUserName())).willReturn(Mono.empty());
     given(userRepository.save(users.get(0))).willReturn(Mono.just(users.get(0)));
 
     //When
     var createdUserMono = userService.createUser(users.get(0));
 
     //Then
-    /**
+    /*
      * StepVerifier is a utility from Project Reactor used for testing reactive streams.
      * It allows you to create a test scenario where you can define expectations about the sequence of
      * events (like emitted items, completion signals, or errors) that a Mono or Flux should produce.
@@ -124,7 +125,8 @@ class UserServiceImplTest {
   @Test
   void createUserWithInvalidPasswordLength() {
     //Given
-    given(passwordEncoder.encode(users.get(2).getPassword())).willReturn("encodedPassword123");
+    given(passwordEncoder.encode(users.get(2).getPassword())).willReturn("invalidEncodedPasswordLength");
+    given(userRepository.findByUserName(users.get(2).getUserName())).willReturn(Mono.empty());
     given(userRepository.save(users.get(2))).willReturn(Mono.error(new IllegalArgumentException("Password must be at least 6 characters long")));
 
     //When
@@ -134,14 +136,16 @@ class UserServiceImplTest {
             .expectErrorSatisfies(throwable -> {
               assertTrue(throwable instanceof IllegalArgumentException);
               assertEquals("Password must be at least 6 characters long", throwable.getMessage());
-            });
+            }).verify();
 
   }
 
   @Test
   void createUserWithInvalidEmail() {
     //Given
+
     given(passwordEncoder.encode(users.get(3).getPassword())).willReturn("encodedPassword123");
+    given(userRepository.findByUserName(users.get(3).getUserName())).willReturn(Mono.empty());
     given(userRepository.save(users.get(3))).willReturn(Mono.error(new IllegalArgumentException("Email should be valid")));
 
     //When
@@ -149,9 +153,9 @@ class UserServiceImplTest {
     //Then
     StepVerifier.create(createdUserMono)
             .expectErrorSatisfies(throwable -> {
-              assertTrue(throwable instanceof IllegalArgumentException);
+              assertInstanceOf(IllegalArgumentException.class, throwable);
               assertEquals("Email should be valid", throwable.getMessage());
-            });
+            }).verify();
   }
 
   @Test
@@ -180,8 +184,6 @@ class UserServiceImplTest {
     StepVerifier.create(foundUserMono)
             .verifyComplete(); // Expecting completion without any emitted item
   }
-
-
 
   @Test
   void findUserById() {

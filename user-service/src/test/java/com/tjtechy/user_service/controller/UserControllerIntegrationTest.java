@@ -1,17 +1,21 @@
 /**
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of the user-service test module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.user_service.controller;
 
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tjtechy.user_service.entity.dto.UserRegistrationDto;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.tjtechy.Result;
 import org.junit.jupiter.api.*;
+import userutils.dto.LoginRequestDto;
+import userutils.dto.LoginResponseDto;
+import userutils.dto.UserRegistrationDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -28,6 +32,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import userutils.entity.User;
 
 import java.util.Map;
 
@@ -54,7 +59,7 @@ properties = {
         EurekaDiscoveryClientConfiguration.class,
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@Import(TestSecurityConfig.class) //to disable security (csrf) for testing
+//@Import(TestSecurityConfig.class) //to disable security (csrf) for testing
 public class UserControllerIntegrationTest {
   @Autowired
   private WebTestClient webTestClient;
@@ -75,7 +80,6 @@ public class UserControllerIntegrationTest {
   static void dynamicProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.r2dbc.url", () -> String.format("r2dbc:postgresql://%s:%d/%s",
             postgreSQLContainer.getHost(),
-//            postgreSQLContainer.getFirstMappedPort(),
             postgreSQLContainer.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
             postgreSQLContainer.getDatabaseName()
     ));
@@ -95,8 +99,28 @@ public class UserControllerIntegrationTest {
 
   }
 
- //private method to create user
+  //private method to login and generate token
+  //the application.test.yml with the db initializer creates the admin user (role admin) with username and password as "admin",
+  // so we can use that to login and get the token for authenticated requests if needed in the future tests.
+  private String loginInfo() throws Exception {
+    var loginRequest = new LoginRequestDto("admin", "Admin@123");
+    var json = objectMapper.writeValueAsString(loginRequest);
+    var response = webTestClient.post()
+            .uri(baseUrl+ "/auth/login")
+            .bodyValue(json)
+            .header("Content-Type", "application/json")
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    Map<String, Object> data = (Map<String, Object>) response.getData();
+    return (String) data.get("token");
+  }
+  //private method to create user
   private Map<String, Object> createUser() throws Exception {
+    String token = loginInfo();
+    //System.out.println("=============Generated token===========: " + token);
     var uniqueUsername = "BruceSmith" + System.currentTimeMillis();
     var userRegistrationDto = new UserRegistrationDto(
             uniqueUsername,
@@ -105,11 +129,13 @@ public class UserControllerIntegrationTest {
             "firstname1",
             "lastname1",
             "+1234567890",
+            User.Role.CUSTOMER, // Set role to CUSTOMER for testing
             true
     );
     var requestBody = objectMapper.writeValueAsString(userRegistrationDto);
     var responseBody = webTestClient.post()
             .uri(baseUrl + "/user/register")
+            .header("Authorization", "Bearer " + loginInfo()) // Include the token in the Authorization header
             .bodyValue(requestBody)
             .header("Content-Type", "application/json")
             .exchange()
@@ -152,6 +178,7 @@ public class UserControllerIntegrationTest {
             "firstname1",
             "lastname1",
             "+1234567890",
+            User.Role.CUSTOMER, // Set role to CUSTOMER for testing
             false
     );
 
@@ -160,6 +187,7 @@ public class UserControllerIntegrationTest {
             .uri(baseUrl + "/user/register")
             .bodyValue(requestBody)
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + loginInfo()) // Include the token in the Authorization header
             .exchange()
             .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
             .expectBody()
@@ -180,6 +208,7 @@ public class UserControllerIntegrationTest {
             "firstname1",
             "lastname1",
             "+1234567890",
+            User.Role.CUSTOMER, // Set role to CUSTOMER for testing
             false
     );
 
@@ -188,6 +217,7 @@ public class UserControllerIntegrationTest {
             .uri(baseUrl + "/user/register")
             .bodyValue(requestBody)
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + loginInfo()) // Include the token in the Authorization header
             .exchange()
             .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
             .expectBody()
@@ -200,8 +230,7 @@ public class UserControllerIntegrationTest {
 
 
   /**
-   * Test adding a new user successfully. Same as testCreateUserSuccess but without using helper method.
-   * @throws Exception
+   * Test adding a new user successfully. Same as testCreateUserSuccess but without using the helper method
    */
   @Test
   @DisplayName("Test Add User without helper method Success (POST /user/register)")
@@ -214,6 +243,7 @@ public class UserControllerIntegrationTest {
             "firstname1",
             "lastname1",
             "+1234567890",
+            User.Role.CUSTOMER, // Set role to CUSTOMER for testing
             false
     );
 
@@ -222,6 +252,7 @@ public class UserControllerIntegrationTest {
             .uri(baseUrl + "/user/register")
             .bodyValue(requestBody)
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + loginInfo())
             .exchange()
             .expectStatus().isOk()
             .expectBody()
@@ -246,6 +277,7 @@ public class UserControllerIntegrationTest {
     webTestClient.get()
             .uri(baseUrl + "/user/by-username" +"?username=" + username)
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + loginInfo())
             .exchange()
             .expectStatus().isOk()
             .expectBody()
@@ -267,6 +299,7 @@ public class UserControllerIntegrationTest {
     webTestClient.delete()
             .uri(baseUrl + "/user/" + userId)
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + loginInfo())
             .exchange()
             .expectStatus().isOk()
             .expectBody()
@@ -276,5 +309,44 @@ public class UserControllerIntegrationTest {
             .jsonPath("$.flag").isEqualTo(true)
             .jsonPath("$.code").isEqualTo(200)
             .jsonPath("$.message").isEqualTo("User deleted successfully");
+  }
+
+  @Test
+  @DisplayName("Check Login User (POST /auth/login)")
+  public void testLoginUserSuccess() throws Exception {
+
+    //first create user
+    Map<String, Object> createdUser = createUser();
+    String username = (String) createdUser.get("userName");
+    String password = "BruceSmith@123"; //same as the password used in createUser()
+
+    //then login with the created user
+    var loginRequestBody = objectMapper.writeValueAsString(Map.of(
+            "username", username,
+            "password", password
+    ));
+
+    webTestClient.post()
+            .uri(baseUrl + "/auth/login")
+            .bodyValue(loginRequestBody)
+            .header("Content-Type", "application/json")
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .consumeWith(res -> {
+              String body = new String(res.getResponseBody());
+              ObjectMapper mapper = new ObjectMapper();
+              try {
+                JsonNode jsonNode = mapper.readTree(body);
+                ((ObjectNode) jsonNode.path("data")).put("token", "***"); // Mask the token value in the logs
+                System.out.println("ResponseBody: " + mapper.writeValueAsString(jsonNode));
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+              //System.out.println("ResponseBody: " + new String(res.getResponseBody()));
+            })
+            .jsonPath("$.flag").isEqualTo(true)
+            .jsonPath("$.data.userInfo.userName").isEqualTo(username)
+            .jsonPath("$.data.token").isNotEmpty();
   }
 }

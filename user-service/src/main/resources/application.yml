@@ -3,6 +3,26 @@ server:
 spring:
   application:
     name: user-service # This name is used in WebClient URI
+  #config:
+    #import: optional:file:../../.env[.properties] # Import environment variables from .env file, with .properties which means the file should be read using the .properties format parser(key=value pairs), and the "optional" prefix means that if the file is not found, it will not throw an error and the application will continue to start with default values or other configuration sources.
+  #Kafka configurations
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: user-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    properties:
+      spring.json.trusted.packages: '*' #trust all packages for JSON serialization/deserialization
+      metrics.reporters: ""
+      client.telemetry.reporter.enabled: false #disable client telemetry to reduce overhead
+    topics:
+      user-created: user-created-topic
+      user-updated: user-updated-topic
+      user-deleted: user-deleted-topic
 management:
   endpoints:
     web:
@@ -15,43 +35,65 @@ management:
       show-values: always #show values in the env endpoint
     configprops:
       show-values: always #show values in the configprops endpoint
-    info:
-      build:
-        enabled: true
-      env:
-        enabled: true
-      git:
-        enabled: true
-      java:
-        enabled: true
-      os:
-        enabled: true
+  info:
+    build:
+      enabled: true
+    env:
+      enabled: true
+    git:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
   tracing:
     enabled: true
     sampling:
       probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
 tracing:
-  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
-# kafka configurations
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
-  producer:
-    key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-  consumer:
-    group-id: user-service-group
-    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-    properties:
-      spring.json.trusted.packages: '*' #trust all packages for JSON serialization/deserialization
-      metrics.reporters: ""
-      client.telemetry.reporter.enabled: false #disable client telemetry to reduce overhead
-    topics:
-      user-created: user-created-topic
-      user-updated: user-updated-topic
-      user-deleted: user-deleted-topic
+  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment, defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
+
+#swagger/OpenAPI configuration
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html #will be access at http://localhost:8086/swagger-ui.html in browser
+    try-it-out-enabled: true
+  api-docs:
+    enabled: true
+    path: /v3/api-docs #will be access at http://localhost:8086/v3/api-docs in JSON format
+  default-produces-media-type: application/json #default produces media type for API responses
+  default-consumes-media-type: application/json #default consumes media type for API requests
+  #override-with-gateway-url: true #override the default URL with the gateway URL
+
+#logging configuration
 logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n" # Custom log pattern
+    file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
+  file:
+    name: ./logs/user-service/app.log # Log file path
   level:
     org.flywaydb: INFO #set Flyway logging level to INFO
     org.springframework.r2dbc: INFO #set R2DBC logging level to DEBUG for detailed SQL logs
     io.r2dbc: INFO #set R2DBC core logging level to DEBUG
+    #org.springframework.security: DEBUG #set Spring Security logging level to DEBUG for detailed security logs. Enabled for debugging security-related issues.
+app:
+  security:
+    enabled: true # Enable or disable security features
+  #initialize Admin user on application startup.Will be used by service runs in the docker container. For local development, it is set in the IDE environment variables file
+  admin:
+    username: ${ADMIN_USERNAME:admin} #default admin username is 'admin' if not set in environment variables file
+    password: ${ADMIN_PASSWORD}
+  openapi:
+    serviceUrl: http://localhost:8086
+    gatewayUrl: http://localhost:8080
+info:
+  app:
+    name: user-service
+    description: @project.version@ #retrieved from pom.xml
+    author: Tajudeen Busari (tjtechy)
+    link:
+      github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/user-service
+
+

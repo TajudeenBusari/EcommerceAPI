@@ -6,8 +6,7 @@
  * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
  */
 package com.tjtechy.user_service.service;
-
-import com.tjtechy.user_service.entity.User;
+import userutils.entity.User;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -22,7 +21,6 @@ public interface UserService {
    * This is not ideal for large datasets as it loads all users into memory.
    * It means wait till all users are fetched, then emit them as one big list.
    * A better approach is to use Flux<User> which streams users one by one.
-   * @return
    */
   //Mono<List<User>> getAllUsers();
   Flux<User> findAllUsers();

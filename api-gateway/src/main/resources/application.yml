@@ -12,19 +12,15 @@ spring:
           enabled: true
           #new
       globalcors:
+        #THE CORS CONFIG CAN ALSO BE DONE VIA A BEAN INSTEAD OF YAML
         cors-configurations:
           '[/**]':
             allowedOriginPatterns: #allow all origins
-              - "http://localhost:[*]"
-              - "http://127.0.0.1:[*]"
-              - "http://host.docker.internal:[*]"# Docker host
-              - "http://api-gateway:[*]" # Docker Compose service name
-              - "http://inventory-service:[*]"
-              - "http://product-service:[*]"
-              - "http://order-service:[*]"
-              - "http://notification-service:[*]"
-              - "https://docs.swagger.io"
-
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+              #- "http://host.docker.internal:[*]" #for docker desktop
+              #- "http://api-gateway:[*]" #for docker-compose internal access http://172.18.0.15
+              #- "http://172.18.0.*:[*]" #for docker-compose internal access
             allowedMethods: #allow all methods
               - GET
               - POST
@@ -36,65 +32,93 @@ spring:
               - '*'
             allowCredentials: true #allow credentials
             maxAge: 3600 #cache preflight response for 1 hour
-        # new
-      routes:
-        #product api route
-        - id: product-service
-          uri: lb://product-service
-          predicates:
-            - Path=/api/v1/product/**
-          #product swagger route
-        - id: product-docs
-          uri: lb://product-service
-          predicates:
-            - Path=/aggregate/product-service/v3/api-docs
-          filters:
-            - RewritePath=/aggregate/product-service/v3/api-docs, /v3/api-docs
+        # new Already have a customRouteLocator bean defined in the GatewayConfig class.
+#      routes:
+#        #product api route
+#        - id: product-service
+#          uri: lb://product-service
+#          predicates:
+#            - Path=/api/v1/product/**
+#        #product swagger route
+#        - id: product-docs
+#          uri: lb://product-service
+#          predicates:
+#            - Path=/aggregate/product-service/v3/api-docs
+#          filters:
+#            - RewritePath=/aggregate/product-service/v3/api-docs, /v3/api-docs
+#
+#        #inventory api route
+#        - id: inventory-service
+#          uri: lb://inventory-service
+#          predicates:
+#            - Path=/api/v1/inventory/**
+#        #inventory swagger route
+#        - id: inventory-docs
+#          uri: lb://inventory-service
+#          predicates:
+#            - Path=/aggregate/inventory-service/v3/api-docs
+#          filters:
+#            - RewritePath=/aggregate/inventory-service/v3/api-docs, /v3/api-docs
+#
+#        #order api route
+#        - id: order-service
+#          uri: lb://order-service
+#          predicates:
+#            - Path=/api/v1/order/**
+#        #order swagger route
+#        - id: order-docs
+#          uri: lb://order-service
+#          predicates:
+#            - Path=/aggregate/order-service/v3/api-docs
+#          filters:
+#            - RewritePath=/aggregate/order-service/v3/api-docs, /v3/api-docs
+#
+#        #notification api route
+#        - id: notification-service
+#          uri: lb://notification-service
+#          predicates:
+#            - Path=/api/v1/notification/**
+#
+#        #notification swagger route
+#        - id: notification-docs
+#          uri: lb://notification-service
+#          predicates:
+#            - Path=/aggregate/notification-service/v3/api-docs
+#          filters:
+#            - RewritePath=/aggregate/notification-service/v3/api-docs, /v3/api-docs
+#
+#        #user api route
+#        - id: user-service
+#          uri: lb://user-service
+#          predicates:
+#            - Path=/api/v1/user/**
+#
+#        - id: user-auth-service
+#          uri: lb://user-service
+#          predicates:
+#            - Path=/api/v1/auth/**
+#
+#        #user swagger route for aggregation
+#        - id: user-docs
+#          uri: lb://user-service
+#          predicates:
+#            - Path=/aggregate/user-service/v3/api-docs
+#          filters:
+#            - RewritePath=/aggregate/user-service/v3/api-docs, /v3/api-docs
 
-        #inventory api route
-        - id: inventory-service
-          uri: lb://inventory-service
-          predicates:
-            - Path=/api/v1/inventory/**
-        #inventory swagger route
-        - id: inventory-docs
-          uri: lb://inventory-service
-          predicates:
-            - Path=/aggregate/inventory-service/v3/api-docs
-          filters:
-            - RewritePath=/aggregate/inventory-service/v3/api-docs, /v3/api-docs
-
-        #order api route
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/api/v1/order/**
-        #order swagger route
-        - id: order-docs
-          uri: lb://order-service
-          predicates:
-            - Path=/aggregate/order-service/v3/api-docs
-          filters:
-            - RewritePath=/aggregate/order-service/v3/api-docs, /v3/api-docs
-
-        #notification api route
-        - id: notification-service
-          uri: lb://notification-service
-          predicates:
-            - Path=/api/v1/notification/**
-        #notification swagger route
-        - id: notification-docs
-          uri: lb://notification-service
-          predicates:
-            - Path=/aggregate/notification-service/v3/api-docs
-          filters:
-            - RewritePath=/aggregate/notification-service/v3/api-docs, /v3/api-docs
-
+# no need to create a SwaggerAggregateConfig bean for this, it is already here
 springdoc: #access at http://localhost:8080/swagger-ui.html
   api-docs:
-    path: /api-docs
+    enabled: true
+    path: /v3/api-docs
   swagger-ui:
+    enabled: true
     path: /swagger-ui.html
+    #tell swagger UI where to find the config
+    config-url: /v3/api-docs/swagger-config
+    #use default swagger-ui.html page
+    url: /v3/api-docs
+    ## no need to create a SwaggerAggregateConfig bean for this, it is already here. List all the services here for aggregation
     urls:
     - name: Product Service
       url: /aggregate/product-service/v3/api-docs
@@ -104,7 +128,15 @@ springdoc: #access at http://localhost:8080/swagger-ui.html
       url: /aggregate/order-service/v3/api-docs
     - name: Notification Service
       url: /aggregate/notification-service/v3/api-docs
-
+    - name: User Service
+      url: /aggregate/user-service/v3/api-docs
+    try-it-out-enabled: true
+    display-request-duration: true
+    disable-swagger-default-url: true
+    operations-sorter: method
+    tags-sorter: alpha
+    show-extensions: true
+    show-common-extensions: true
 
 management:
   endpoints:
@@ -114,10 +146,10 @@ management:
   endpoint:
     health:
       show-details: always #show details in the health endpoint
-  env:
-    show-values: always #show values in the env endpoint
-  configprops:
-    show-values: always #show values in the configprops endpoint
+    env:
+      show-values: always #show values in the env endpoint
+    configprops:
+      show-values: always #show values in the configprops endpoint
   info:
     build:
       enabled: true
@@ -130,19 +162,22 @@ management:
     os:
       enabled: true
   tracing:
+    enabled: true
     sampling:
       probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
-  otlp:
-    tracing:
-      endpoint: http://jaeger:4318 # send traces to jaeger
+tracing:
+  url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment, defaults to localhost if not set.In docker-compose, it will be set to: http://ecommerce-jaeger:4318/v1/traces
+
 logging:
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
   file:
     name: ./logs/api-gateway/app.log # Log file path
   level:
-    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway: DEBUG
     com.tjtechy: DEBUG
+    org.springframework.web: DEBUG
 
 #info details
 info:
@@ -150,8 +185,14 @@ info:
     name:
     description: API Gateway
     version: @project.version@ #retrieved from pom.xml
+api:
+  openapi:
+    gatewayUrl: http://localhost:8080 #override the default URL with the gateway URL, this is important for swagger-ui to work correctly and show the correct URLs for the downstream services
 
 
-              #I will create custom filters later and will be added here
-            #check https://www.geeksforgeeks.org/advance-java/spring-cloud-gateway-with-spring-webflux/
+#I will create custom filters later and will be added here
+#check https://www.geeksforgeeks.org/advance-java/spring-cloud-gateway-with-spring-webflux/
 
+#app:
+  #security:
+    #enabled: false #disable security for now, will enable later

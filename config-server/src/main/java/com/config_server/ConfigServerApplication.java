@@ -2,7 +2,7 @@
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of config-server module of the Ecommerce Microservices project.
+ * This file is part of the config-server module of the Ecommerce Microservices project.
  */
 package com.config_server;
 
@@ -14,7 +14,7 @@ import org.springframework.cloud.config.server.EnableConfigServer;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableConfigServer
-public class ConfigServerApplication {
+public class  ConfigServerApplication {
   public static void main(String[] args) {
 
     SpringApplication.run(ConfigServerApplication.class, args);

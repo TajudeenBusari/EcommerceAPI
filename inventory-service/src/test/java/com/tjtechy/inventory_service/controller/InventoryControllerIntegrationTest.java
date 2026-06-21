@@ -22,10 +22,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -81,14 +78,14 @@ public class InventoryControllerIntegrationTest {
 
   /**
    * ObjectMapper instance to handle JSON serialization and deserialization.
-   * By default, Jackson does not handle Java 8+ time classes(LocalDate, LocalDateTime, Instant etc.),
+   * By default, Jackson does not handle Java 8+ time classes(LocalDate, LocalDateTime, Instant, etc.),
    * JavaTimeModule comes fromjackson-datatype-jsr310 dependency and adds support for these types,
    * so the .registerModule(new JavaTimeModule()) line registers this module with the ObjectMapper instance.
    * The .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) ensures that
    * dates are serialized in a readable format(<"expiryDate": "2025-09-03">) instead of as
    * numeric timestamps (<"expiryDate":"1725408000000">).
    * .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) prevents errors(InvalidDefinitionException)
-   * during serialization of object with no properties. Disabling ensure Jackson output to be {}
+   * during serialization of an object with no properties. Disabling ensures Jackson output to be {}
    *
    */
   private final ObjectMapper objectMapper = new ObjectMapper()
@@ -161,7 +158,7 @@ public class InventoryControllerIntegrationTest {
       headers.setContentType(MediaType.APPLICATION_JSON);
       var request = new HttpEntity<>(objectMapper.writeValueAsString(createInventoryDto), headers);
       var response = restTemplate.postForEntity(url, request, String.class);
-      assertThat(response.getStatusCodeValue()).isEqualTo(200);
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
       Map<String, Object> savedInventory = (Map<String, Object>) responseBody.get("data");
       assertNotNull(savedInventory, "Saved inventories should not be null");
@@ -212,7 +209,7 @@ public class InventoryControllerIntegrationTest {
     // Now get the inventory by id
     var url = "http://localhost:" + port + baseUrl + "/inventory/" + expectedInventoryId;
     var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     Map<String, Object> inventoryDto = (Map<String, Object>) responseBody.get("data");
     assertNotNull(inventoryDto, "Retrieved inventory should not be null");
@@ -235,7 +232,7 @@ public class InventoryControllerIntegrationTest {
     // Now get all inventories
     var url = "http://localhost:" + port + baseUrl + "/inventory";
     var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     //assert the response message
     assertThat(response.getBody()).contains("All inventories retrieved successfully");
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
@@ -265,7 +262,7 @@ public class InventoryControllerIntegrationTest {
     // Now get the inventory by product id
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/product/" + expectedProductId;
     var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     Map<String, Object> inventoryDto = (Map<String, Object>) responseBody.get("data");
     assertNotNull(inventoryDto, "Retrieved inventory should not be null");
@@ -283,7 +280,7 @@ public class InventoryControllerIntegrationTest {
     // Now get the inventory by product id
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/product/" + nonExistentProductId;
     var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(404);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     assertThat(responseBody.get("message")).isEqualTo("Product not found with id: " + nonExistentProductId);
   }
@@ -319,7 +316,7 @@ public class InventoryControllerIntegrationTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
     var request = new HttpEntity<>(objectMapper.writeValueAsString(updateInventoryDto), headers);
     var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.PUT, request, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     Map<String, Object> updatedInventoryDto = (Map<String, Object>) responseBody.get("data");
     assertNotNull(updatedInventoryDto, "Updated inventory should not be null");
@@ -348,7 +345,7 @@ public class InventoryControllerIntegrationTest {
     // Now delete the inventory
     var url = "http://localhost:" + port + baseUrl + "/inventory/" + inventoryId;
     var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.DELETE, null, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     assertThat(responseBody.get("message")).isEqualTo("Inventory deleted successfully");
   }
@@ -371,7 +368,7 @@ public class InventoryControllerIntegrationTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
     var request = new HttpEntity<>(objectMapper.writeValueAsString(inventoryIds), headers);
     var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.DELETE, request, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     assertThat(responseBody.get("message")).isEqualTo("Inventories deleted successfully");
   }
@@ -414,7 +411,7 @@ public class InventoryControllerIntegrationTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
     var request = new HttpEntity<>(objectMapper.writeValueAsString(deductInventoryRequestDto), headers);
     var response = restTemplate.exchange(url, HttpMethod.PATCH, request, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     assertThat(responseBody.get("message")).isEqualTo("Inventory deducted successfully");
   }
@@ -446,7 +443,7 @@ public class InventoryControllerIntegrationTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
     var request = new HttpEntity<>(objectMapper.writeValueAsString(restoreInventoryDto), headers);
     var response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
     assertThat(responseBody.get("message")).isEqualTo("Inventory restored successfully");

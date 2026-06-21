@@ -17,8 +17,10 @@ public class OrderServiceCorsConfig implements WebMvcConfigurer {
   @Override
   public void addCorsMappings(CorsRegistry registry) {
     registry.addMapping("/**")
-            .allowedOriginPatterns("*") // Allow all origins
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allow specific methods
+            .allowedOriginPatterns(
+                    "http://localhost:8080", "http://localhost:8082"
+            ) // Allow all origins
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Allow specific methods
             .allowedHeaders("*") // Allow all headers
             .allowCredentials(true); // Allow credentials
   }

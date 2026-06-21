@@ -57,28 +57,24 @@ management:
       show-values: always #show values in the env endpoint, can be restricted in production
     configprops:
       show-values: always #show values in the configprops endpoint, can be restricted in production
-    info:
-      build:
-        enabled: true
-      env:
-        enabled: true
-      git:
-        enabled: true
-      java:
-        enabled: true
-      os:
-        enabled: true
+  info:
+    build:
+      enabled: true
+    env:
+      enabled: true
+    git:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
   tracing:
     sampling:
       probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
     enabled: true
-#    otel:
-#      exporter:
-#        otlp:
-#          endpoint: http://ecommerce-jaeger:4318/v1/traces # send traces to jaeger #/v1/traces
-#          #endpoint: http://ecommerce-jaeger:4317 # OTLP endpoint for OpenTelemetry Collector
-tracing:
+
   #url: http://ecommerce-jaeger:4318/v1/traces # OTLP endpoint for Jaeger
+tracing:
   url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
 
 logging:
@@ -100,11 +96,16 @@ info:
       github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/notification-service
 
 
-#custome application properties
+#custom application properties
 app:
   scheduling:
     timezone: Africa/Lagos #Set the timezone for scheduled tasks
     retention-days: 30 #Retention period for logs or data cleanup tasks
+  security:
+    enabled: false
+  openapi:
+    serviceUrl: http://localhost:8085
+    gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
 
 #Swagger/OpenAPI configuration
 springdoc:

@@ -2,7 +2,7 @@
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of inventory-service module of the Ecommerce Microservices project.
+ * This file is part of the inventory-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.inventory_service.controller;
 
@@ -37,8 +37,6 @@ public class InventoryController {
    * This is method is used internally by the product service to create inventory
    * when a product is created. It is not exposed to the public.
    * But if you need to test in Postman, for example, you need to get the productId first from the product service
-   * @param createInventoryDto
-   * @return Result {@link Result}
    */
   @Operation(summary = "Create Inventory",
           description = "This endpoint is used to create inventory for a product. It is used internally by the product service when a product is created.",
@@ -55,7 +53,6 @@ public class InventoryController {
 
   /**
    * This method is used to get inventory by id
-   * @param inventoryId
    * @return Result {@link Result}
    */
   @Operation(summary = "Get Inventory by ID",
@@ -91,7 +88,6 @@ public class InventoryController {
   /**
    * This method is used to get inventory by product id.
    * It is used internally by the product service.
-   * @param productId
    * @return Result {@link Result}
    */
   @Operation(summary = "Get Inventory by Product ID",
@@ -110,8 +106,6 @@ public class InventoryController {
   /**
    * This method is used to update inventory, internally used by the product service
    * when a product is updated. The method is not exposed to the public.
-   * @param inventoryId
-   * @param updateInventoryDto
    * @return Result {@link Result}
    */
   @Operation(summary = "Update Inventory",
@@ -132,7 +126,6 @@ public class InventoryController {
   }
   /**
    * This method is used to delete inventory
-   * @param inventoryId
    * @return Result {@link Result}
    */
   @Operation(summary = "Delete Inventory",
@@ -151,7 +144,6 @@ public class InventoryController {
 
   /**
    * This method is used to bulk delete inventories by inventory ids.
-   * @param inventoryIds
    * @return Result {@link Result}
    */
   @Operation(summary = "Bulk Delete Inventories",
@@ -171,7 +163,6 @@ public class InventoryController {
 
   /**
    * This method is used to deduct inventory by product id and quantity non-reactively and blocking.
-   * @param deductInventoryRequestDto
    * @return Result {@link Result}
    */
   @Operation(summary = "Deduct Inventory",
@@ -190,7 +181,6 @@ public class InventoryController {
    * This method is used to deduct inventory reactively by product id and quantity
    * and non-blocking. It will be used in the order service to deduct inventory when
    * an order is placed/created.
-   * @param deductInventoryRequestDto
    * @return Result {@link Result}
    */
   @Operation(summary = "Deduct Inventory Reactively",
@@ -211,7 +201,6 @@ public class InventoryController {
    * This method is used to restore inventory by product id and quantity.
    * It is typically used internally by the Order-Service when an order is canceled,
    * returned or updated and the inventory needs to be restored.
-   * @param restoreInventoryDto
    * @return Result {@link Result}
    */
   @Operation(summary = "Restore Inventory",

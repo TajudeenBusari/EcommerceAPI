@@ -1,5 +1,5 @@
 server:
-  port: 8082 #Optional: can be overriden by Config Server
+  port: 8082 #Optional: can be overridden by Config Server
 spring:
   application:
     name: order-service # This name is used in WebClient URI
@@ -36,6 +36,7 @@ spring:
       payment-received: payment-received-topic
       payment-failed: payment-failed-topic
 
+
 product-service:
   base-url: http://product-service/api/v1
 inventory-service:
@@ -47,7 +48,7 @@ springdoc:
     path: /v3/api-docs #will be access at http://localhost:8082/v3/api-docs
   default-produces-media-type: application/json #default produces media type for API responses
   default-consumes-media-type: application/json #default consumes media type for API requests
-  override-with-gateway-url: true #override the default URL with the gateway URL
+  #override-with-gateway-url: true #override the default URL with the gateway URL
 
 management:
   endpoints:
@@ -61,32 +62,26 @@ management:
       show-values: always #show values in the env endpoint
     configprops:
       show-values: always #show values in the configprops endpoint
-    info:
-      build:
-        enabled: true
-      env:
-        enabled: true
-      git:
-        enabled: true
-      java:
-        enabled: true
-      os:
-        enabled: true
+  info:
+    build:
+      enabled: true
+    env:
+      enabled: true
+    git:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
   tracing:
     enabled: true
     sampling:
       probability: 1.0 # Adjust the sampling probability as needed (0.0 to 1.0)
-#    exporter:
-#      otlp:
-#        endpoint: http://ecommerce-jaeger:4318/v1/traces # send traces to jaeger
-        #endpoint: http://ecommerce-jaeger:4317 # OTLP endpoint for OpenTelemetry Collector
-tracing:
+
 #  url: http://ecommerce-jaeger:4318/v1/traces # OTLP endpoint for Jaeger
+tracing:
   url: ${TRACING_URL:http://localhost:4318/v1/traces} #OTLP endpoint for Jaeger in local environment,defaults to localhost if not set.In docker-compose,it will be set to: http://ecommerce-jaeger:4318/v1/traces
 
-  health:
-    kafka:
-      enabled: true #enable Kafka health check
 logging:
   level:
     org.springframework.kafka: WARN #Set Spring Kafka logging to WARN to reduce noise
@@ -97,6 +92,13 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [${spring.application.name}] [traceId=%X{traceId}, spanId=%X{spanId}] %-5level %logger{36} - %msg%n"
   file:
     name: ./logs/order-service/app.log # Log file path
+app:
+  security:
+    enabled: false
+  openapi:
+    gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
+    serviceUrl: http://localhost:8082
+
 info:
   app:
     name:

@@ -3,8 +3,8 @@ package com.tjtechy.user_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
-import com.tjtechy.user_service.entity.User;
-import com.tjtechy.user_service.entity.dto.UserRegistrationDto;
+import userutils.entity.User;
+import userutils.dto.UserRegistrationDto;
 import com.tjtechy.user_service.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -150,6 +150,7 @@ class UserControllerTest {
             "John",
             "Doe",
             "1234567890",
+            User.Role.CUSTOMER,
             true
     );
     var json = objectMapper.writeValueAsString(registrationRequestDto);
@@ -181,6 +182,7 @@ class UserControllerTest {
             "Invalid",
             "User",
             "1112223333",
+            User.Role.CUSTOMER,
             true
     );
     var json = objectMapper.writeValueAsString(registrationRequestDto);
@@ -208,6 +210,7 @@ class UserControllerTest {
             "BadEmail",
             "User",
             "4445556666",
+            User.Role.CUSTOMER,
             true
     );
     var json = objectMapper.writeValueAsString(registrationRequestDto);

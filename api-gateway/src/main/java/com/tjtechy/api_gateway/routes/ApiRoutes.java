@@ -3,7 +3,7 @@
  *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of the Api-gateway module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.api_gateway.routes;
@@ -20,6 +20,11 @@ public class ApiRoutes {
   @Bean
   public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
     return builder.routes()
+            //swagger config route
+            .route("swagger-config", r->r.path("/api-docs/swagger-config")
+                    .filters(f -> f.rewritePath("/api-docs/swagger-config", "/v3/api-docs/swagger-config"))
+            .uri("http://localhost:8080"))
+
             //PRODUCT SERVICE
             .route("product-service", r -> r.path("/api/v1/product/**")
                     .uri("lb://PRODUCT-SERVICE")) //Service is registered with Eureka
@@ -49,8 +54,13 @@ public class ApiRoutes {
                     .uri("lb://NOTIFICATION-SERVICE"))
 
             //USER SERVICE/Authentication service
-            //PAYMENT SERVICE
+            .route("user-service", r -> r.path("/api/v1/user/**", "/api/v1/auth/**")
+                    .uri("lb://USER-SERVICE"))
+            .route("user-service-docs", r -> r.path("/aggregate/user-service/v3/api-docs")
+                    .filters(f -> f.rewritePath("/aggregate/user-service/v3/api-docs", "/v3/api-docs"))
+                    .uri("lb://USER-SERVICE"))
 
+            //PAYMENT SERVICE
 
             .build();
   }

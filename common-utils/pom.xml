@@ -44,11 +44,6 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-web</artifactId>-->
-<!--        </dependency>-->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -119,13 +114,6 @@
             <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>it.ozimov</groupId>-->
-<!--            <artifactId>embedded-redis</artifactId>-->
-<!--            <version>0.7.2</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
-
 
         <!--JUnit-->
         <dependency>
@@ -135,17 +123,18 @@
             <scope>test</scope>
         </dependency>
 
-
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.tjtechy</groupId>
             <artifactId>system</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>com.tjtechy</groupId>
             <artifactId>exception</artifactId>
@@ -153,7 +142,15 @@
             <scope>compile</scope>
         </dependency>
 
+        <!--<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+        </dependency>-->
 
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-relational</artifactId>
+        </dependency>
 
     </dependencies>
 

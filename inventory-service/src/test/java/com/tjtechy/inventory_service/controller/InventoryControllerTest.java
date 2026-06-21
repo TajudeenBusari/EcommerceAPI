@@ -279,8 +279,8 @@ class InventoryControllerTest {
     var inventoryId = updatedInventory.getInventoryId();
     var updateInventoryDto = new UpdateInventoryDto(
             updatedInventory.getProductId(),
-            updatedInventory.getAvailableStock(),
-            updatedInventory.getReservedQuantity()
+            updatedInventory.getAvailableStock() + 1, //in case random data 0 is generated, we will add 1 to it to avoid validation error of available stock must be greater than 0
+            updatedInventory.getReservedQuantity() + 1
     );
     var json = objectMapper.writeValueAsString(updateInventoryDto);
 
