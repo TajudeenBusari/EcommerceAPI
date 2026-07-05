@@ -1,8 +1,16 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the user-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import userutils.entity.User;
 import userutils.dto.UserRegistrationDto;
 import com.tjtechy.user_service.service.UserService;
@@ -13,8 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -55,8 +62,7 @@ class UserControllerTest {
   @Autowired
   private WebTestClient webTestClient;
 
-  @Autowired
-  ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
@@ -154,7 +160,7 @@ class UserControllerTest {
             true
     );
     var json = objectMapper.writeValueAsString(registrationRequestDto);
-    when(userService.createUser(any(User.class))).thenReturn(Mono.just(users.get(0)));
+    when(userService.createUser(any(User.class))).thenReturn(Mono.just(users.getFirst()));
 
     //when and then
     webTestClient.post()
@@ -232,7 +238,7 @@ class UserControllerTest {
   void getUserByUsernameSuccess() {
     //given
     String username = "john_doe";
-    when(userService.findUserByUsername(username)).thenReturn(Mono.just(users.get(0)));
+    when(userService.findUserByUsername(username)).thenReturn(Mono.just(users.getFirst()));
     //when and then
     webTestClient.get()
             .uri(baseUrl + "/user/by-username" + "?username=" + username)
@@ -249,7 +255,7 @@ class UserControllerTest {
   @DisplayName("Delete User Success DELETE api/v1/user/{userId}")
   void deleteUserSuccess() {
     //given
-    UUID userId = users.get(0).getUserId();
+    UUID userId = users.getFirst().getUserId();
     when(userService.deleteUser(userId)).thenReturn(Mono.empty());
     //when and then
     webTestClient.delete()

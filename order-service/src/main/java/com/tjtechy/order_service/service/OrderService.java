@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.order_service.service;
 
@@ -32,8 +32,6 @@ public interface OrderService {
    * returned instead of throwing an exception or returning null.
    * This avoids unnecessary complexity in error handling.
    * If only one order exists for the customer, the list will simply contain a single element.
-   * @param customerEmail
-   * @return
    */
   List<OrderDto>  getOrdersByCustomerEmail(String customerEmail);
 

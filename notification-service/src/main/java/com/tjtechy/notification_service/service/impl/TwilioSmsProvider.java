@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.service.impl;
@@ -43,10 +42,7 @@ public class TwilioSmsProvider implements SmsProvider {
     logger.info("Using from number: {}", twilioProperties.getFromNumber());
   }
 
-  /**It sends an SMS message using Twilio's API.
-   * @param phoneNumber
-   * @param message
-   * @throws Exception
+  /*It sends an SMS message using Twilio's API.
    */
   @Override
   public void sendSms(String phoneNumber, String message) {

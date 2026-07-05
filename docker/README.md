@@ -225,7 +225,7 @@ When services starts inside its own container
            - Click Import.
            - You will get a beautiful panel showing for example for Prometheus: CPU, Memory, HTTP requests, JVM metrics, thread count, Request latency, JVM GC activity etc.
 
-   5. Jaeger (optional): Distributed tracing system to trace requests across microservices.
+   1. Jaeger (optional): Distributed tracing system to trace requests across microservices.
       It helps visualize request flows, latencies, and errors across services.
       Read more in Jaeger documentation: https://www.jaegertracing.io/docs/1.41/?utm_source=chatgpt.com
 
@@ -263,7 +263,7 @@ When services starts inside its own container
 
 EXTRA:
 ---------------------------------------------------------------------------------
-   When spring boot app collects tracing data (e.g., using Micrometer Tracing + OpenTelemetry), it needs a way to
+   When the spring boot app collects tracing data (e.g., using Micrometer Tracing + OpenTelemetry), it needs a way to
    send that data somewhere for storage and visualization---> such as Jaeger,Tempo, Zipkin or Grafana Cloud.
    OTLP defines the format and transport for sending that data. 
    TWO OPTIONS:

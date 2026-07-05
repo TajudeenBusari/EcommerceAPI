@@ -1,14 +1,10 @@
 package com.tjtechy.api_gateway.Config;
 
 
-import io.swagger.v3.oas.models.servers.Server;
-import org.springdoc.core.customizers.OpenApiCustomizer;
-import org.springframework.context.annotation.Bean;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.config.ResourceHandlerRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
-
-import java.util.List;
 
 @Configuration
 public class SwaggerWebFluxConfig implements WebFluxConfigurer {

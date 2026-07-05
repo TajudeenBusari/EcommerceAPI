@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of inventory-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.inventory_service.mapper;
 
 import com.tjtechy.CreateInventoryDto;
@@ -20,8 +26,6 @@ public class InventoryMapper {
 
   /**
    * This method is not used in the codebase, but it is here for future reference
-   * @param createInventoryDto
-   * @return
    */
   public static InventoryDto mapFromCreateInventoryDtoToInventoryDto(CreateInventoryDto createInventoryDto) {
     var inventoryDto = new InventoryDto(
@@ -35,7 +39,6 @@ public class InventoryMapper {
 
   /**
    * This method converts CreateInventoryDto to Inventory
-   * @param createInventoryDto
    * @return Inventory
    */
   public static Inventory mapFromCreateInventoryDtoToInventory(CreateInventoryDto createInventoryDto) {
@@ -50,7 +53,6 @@ public class InventoryMapper {
 
   /**
    * This method converts Inventory to InventoryDto
-   * @param inventories
    * @return List<InventoryDto>
    */
   public static List<InventoryDto> mapFromInventoryListToInventoryDtoList(List<Inventory> inventories) {

@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of Order-service of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the EcommerceMicroservices project.
  */
 
 package com.tjtechy.order_service.config;
@@ -46,14 +46,4 @@ public class OrderServiceOpenAPIConfig {
                      new Server().url(openApiProperties.getServiceUrl()).description("Direct access to Order Service")));
    }
 
-   /**
-    * Detects if the application is running inside a Docker container.
-    * This logic has somewhat eliminated the Cors issue when accessing the service via the API Gateway in Docker.
-    *
-    */
-//   private boolean isRunningInDocker(){
-//     String env = System.getenv("RUNNING_IN_DOCKER");
-//     return env != null && System.getenv("HOSTNAME") != null && System.getenv("HOSTNAME")
-//         .startsWith("api-gateway");
-//   }
 }

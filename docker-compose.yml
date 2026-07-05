@@ -214,6 +214,7 @@ services:
       - microservices-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8763/actuator/health"]
+      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8763/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -240,6 +241,7 @@ services:
       - microservices-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -296,6 +298,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
 
   #===================
   #THE PRODUCT SERVICE
@@ -626,7 +629,7 @@ services:
       timeout: 10s
       retries: 3
 
-#obsrvability-services
+#observability-services
   #=================================
   #Jaeger for distributed tracing
   #==================================

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025
  *
  * @Author = TJTechy (Tajudeen Busari)
@@ -24,11 +24,7 @@ import reactor.core.publisher.Mono;
 public class CorsLoggingWebFilter implements WebFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(CorsLoggingWebFilter.class);
-    /**
-     * @param exchange
-     * @param chain
-     * @return
-     */
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String origin = exchange.getRequest().getHeaders().getFirst("Origin");

@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of inventory-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.inventory_service.config;
@@ -59,10 +58,5 @@ public class InventoryServiceOpenAPIConfig {
                     )
             );
   }
-//  private boolean isRunningInDocker(){
-//    String env = System.getenv("RUNNING_IN_DOCKER");
-//    return env != null && System.getenv("HOSTNAME") != null && System.getenv("HOSTNAME")
-//        .startsWith("api-gateway");
-//  }
 }
 

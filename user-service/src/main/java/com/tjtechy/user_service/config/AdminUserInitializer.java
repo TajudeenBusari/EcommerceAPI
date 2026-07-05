@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the User Service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.config;
 
 import com.tjtechy.user_service.repository.UserRepository;
@@ -49,7 +55,10 @@ public class AdminUserInitializer {
 
 
                 return userRepository.save(adminUser)
-                        .doOnSuccess(savedAdmin -> logger.info("Admin user created with username: {}", savedAdmin.getUserName()));
+                        .doOnSuccess(savedAdmin -> {
+                          assert savedAdmin != null;
+                          logger.info("Admin user created with username: {}", savedAdmin.getUserName());
+                        });
               })).doOnError(error -> logger.error("Error initializing admin user: {}", error.getMessage()))
               .subscribe();
     };

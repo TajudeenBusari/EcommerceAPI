@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of Security module of the EcommerceMicroservices project.
+ * This file is part of the user-service module of the EcommerceMicroservices project.
  */
 package com.tjtechy.user_service.controller;
 

@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.order_service.entity;
 
@@ -183,7 +183,6 @@ public class Order implements Serializable {
 
     /**
      * Add order items to the order
-     * @param orderItems
      */
     public void addOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
@@ -194,7 +193,6 @@ public class Order implements Serializable {
 
     /**
      * Helper method to validate order status
-     * @return
      */
     public boolean isOrderStatusValid(String orderStatus) {
         if(orderStatus == null) return false;

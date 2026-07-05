@@ -1,8 +1,8 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of System module of the Ecommerce Microservices project.
+ * This file is part of system module of the Ecommerce Microservices project.
  */
 package com.tjtechy;
 

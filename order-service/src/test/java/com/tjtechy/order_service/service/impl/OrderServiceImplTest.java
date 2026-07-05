@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the order-service module of the EcommerceMicroservices project.
+ */
 package com.tjtechy.order_service.service.impl;
 
 import com.tjtechy.*;
@@ -33,17 +39,16 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
-import java.net.URI;
+
 import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
-import static org.springframework.cloud.contract.verifier.assertion.SpringCloudContractAssertions.assertThat;
 
 @ExtendWith(MockitoExtension.class) //Enable Mockito annotations
-/**
+/*
  *  @MockitoSettings(strictness = Strictness.LENIENT)
  *  Allow lenient stubbing. This is useful when you want to avoid strict stubbing errors
  * especially when some mocks are not used in every test case.
@@ -87,22 +92,20 @@ class OrderServiceImplTest {
   @BeforeEach
   void setUp() {
 
-//    MockitoAnnotations.openMocks(this);
-
     // Create a list of order items
     List<OrderItem> orderItem1 = Arrays.asList(
-            new OrderItem(1L, UUID.randomUUID(), "PRODUCT1", new BigDecimal(100.00), 10),
-            new OrderItem(2L, UUID.randomUUID(), "PRODUCT2", new BigDecimal(200.00), 20),
-            new OrderItem(3L, UUID.randomUUID(), "PRODUCT3", new BigDecimal(300.00), 30)
+            new OrderItem(1L, UUID.randomUUID(), "PRODUCT1", new BigDecimal("100.00"), 10),
+            new OrderItem(2L, UUID.randomUUID(), "PRODUCT2", new BigDecimal("200.00"), 20),
+            new OrderItem(3L, UUID.randomUUID(), "PRODUCT3", new BigDecimal("300.00"), 30)
     );
     List<OrderItem> orderItem2 = Arrays.asList(
-            new OrderItem(4L, UUID.randomUUID(), "PRODUCT4", new BigDecimal(400.00), 40),
-            new OrderItem(5L, UUID.randomUUID(), "PRODUCT5", new BigDecimal(500.00), 50),
-            new OrderItem(6L, UUID.randomUUID(), "PRODUCT6", new BigDecimal(600.00), 60));
+            new OrderItem(4L, UUID.randomUUID(), "PRODUCT4", new BigDecimal("400.00"), 40),
+            new OrderItem(5L, UUID.randomUUID(), "PRODUCT5", new BigDecimal("500.00"), 50),
+            new OrderItem(6L, UUID.randomUUID(), "PRODUCT6", new BigDecimal("600.00"), 60));
 
     List<OrderItem> orderItem3 = Arrays.asList(
-            new OrderItem(7L, UUID.randomUUID(), "PRODUCT7", new BigDecimal(700.00), 70),
-            new OrderItem(8L, UUID.randomUUID(), "PRODUCT8", new BigDecimal(800.00), 80));
+            new OrderItem(7L, UUID.randomUUID(), "PRODUCT7", new BigDecimal("700.00"), 70),
+            new OrderItem(8L, UUID.randomUUID(), "PRODUCT8", new BigDecimal("800.00"), 80));
 
     // Create a list of orders
     orderList = Arrays.asList(
@@ -112,7 +115,7 @@ class OrderServiceImplTest {
                 "order1@email.com",
                 "+1234567890",
                 "order 1 address",
-                new BigDecimal(100.0),
+                new BigDecimal("100.0"),
                 LocalDate.of(2025, 10, 10),
                 "PLACED",
                 orderItem1),
@@ -123,7 +126,7 @@ class OrderServiceImplTest {
                 "order2@email.com",
                 "+1987654321",
                 "order 2 address",
-                new BigDecimal(200.0),
+                new BigDecimal("200.0"),
                 LocalDate.of(2025, 10, 10),
                 "SHIPPED",
                 orderItem2),
@@ -134,7 +137,7 @@ class OrderServiceImplTest {
                 "order3@email.com",
                 "+1122334455",
                 "order 3 address",
-                new BigDecimal(300.0),
+                new BigDecimal("300.0"),
                 LocalDate.of(2025, 10, 10),
                 "DELIVERED",
                 orderItem3
@@ -145,7 +148,7 @@ class OrderServiceImplTest {
                     "order4@email.com",
                     "+1222333444",
                     "order 3 address",
-                    new BigDecimal(400.0),
+                    new BigDecimal("400.0"),
                     LocalDate.of(2025, 11, 10),
                     "CANCELLED",
                     orderItem3
@@ -156,7 +159,7 @@ class OrderServiceImplTest {
                     "order1@email.com",
                     "+1555666777",
                     "order 5 address",
-                    new BigDecimal(500.0),
+                    new BigDecimal("500.0"),
                     LocalDate.of(2025, 12, 10),
                     "PLACED",
                     orderItem3
@@ -307,7 +310,7 @@ class OrderServiceImplTest {
             .assertNext(savedOrder -> {
               assertNotNull(savedOrder);
               assertEquals(1, savedOrder.getOrderItems().size());
-              assertEquals("PRODUCT1", savedOrder.getOrderItems().get(0).getProductName());
+              assertEquals("PRODUCT1", savedOrder.getOrderItems().getFirst().getProductName());
               assertEquals(new BigDecimal("20.00"), savedOrder.getTotalAmount());
               assertEquals("PLACED", savedOrder.getOrderStatus());
 
@@ -324,7 +327,7 @@ class OrderServiceImplTest {
   @Test
   void testCreateOrderReactivelyByCallingExternalizedServicesWithInsufficientQuantity() {
     // Given
-    /**
+    /*
      * TODO: I may need to refactor the check for insufficient stock quantity logic
      * in the OrderServiceImpl class by comparing the amount to be deducted (productQuantity in the orderItem)
      * with the availableStock in the product DB and not the productQuantity in the product DB.
@@ -355,8 +358,8 @@ class OrderServiceImplTest {
   @Test
   void getOrderByIdSuccess() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    given(orderRepository.findById(orderId)).willReturn(Optional.of(orderList.get(0)));
+    var orderId = orderList.getFirst().getOrderId();
+    given(orderRepository.findById(orderId)).willReturn(Optional.of(orderList.getFirst()));
 
     //When
     var order = orderService.getOrderById(orderId);
@@ -366,7 +369,7 @@ class OrderServiceImplTest {
     assertEquals("order 1 customer", order.getCustomerName());
     assertEquals("order1@email.com", order.getCustomerEmail());
     assertEquals("order 1 address", order.getShippingAddress());
-    assertEquals(new BigDecimal(100.0), order.getTotalAmount());
+    assertEquals(new BigDecimal("100.0"), order.getTotalAmount());
     assertEquals(LocalDate.of(2025, 10, 10), order.getOrderDate());
   }
 
@@ -406,7 +409,7 @@ class OrderServiceImplTest {
   @Test
   void getAllOrdersWithoutCancelledOnesSuccess() {
     //Given
-    //filter out cancelled orders
+    //filter out canceled orders
     List<Order> expectedOrders = orderList.stream()
                     .filter(order -> !order.getOrderStatus().equals("CANCELLED"))
                     .toList();
@@ -474,8 +477,8 @@ class OrderServiceImplTest {
   @Test
   void updateOrderStatusSuccess() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
     var newOrderStatus = "sHIPPED"; //Formally PLACED
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
     given(orderRepository.save(order)).willReturn(order);
@@ -506,8 +509,8 @@ class OrderServiceImplTest {
   @Test
   void updateOrderStatusOrderStatusIsNullOrEmpty(){
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
     var newOrderStatus = ""; //covers the case where order status is null or empty
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
@@ -520,8 +523,8 @@ class OrderServiceImplTest {
   @Test
   void updateOrderStatusOrderStatusIsInvalid(){
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
     var newOrderStatus = "INVALID"; //covers the case where order status is invalid
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
@@ -549,7 +552,7 @@ class OrderServiceImplTest {
             BigDecimal.ZERO,
             LocalDate.now(),
             "PENDING",
-            new ArrayList<>(Arrays.asList(
+            new ArrayList<>(List.of(
                     new OrderItem(1L, UUID.randomUUID(), "Old Product", BigDecimal.TEN, 1)
             ))
     );
@@ -561,7 +564,7 @@ class OrderServiceImplTest {
     updateOrder.setCustomerName("Updated Customer");
     updateOrder.setCustomerEmail("updated@email.com");
     updateOrder.setShippingAddress("Updated Address");
-    updateOrder.setOrderItems(new ArrayList<>(Arrays.asList(
+    updateOrder.setOrderItems(new ArrayList<>(List.of(
             new OrderItem(null, productId, null, null, 2)  // New order item without ID
     )));
 
@@ -581,7 +584,7 @@ class OrderServiceImplTest {
             10,
             LocalDate.now().plusYears(1), //expiry date
             LocalDate.now(), //manufactured date
-            new BigDecimal(10.0)
+            new BigDecimal("10.0")
     );
 
     Result productDtoResult = new Result("Product retrieved successfully", true, productDto, StatusCode.SUCCESS);
@@ -593,7 +596,7 @@ class OrderServiceImplTest {
     doNothing().when(orderRepository).deleteOrderItemById(anyLong());
 
 
-    //mock web client behaviour
+    //mock web client behavior
     WebClient webClient = mock(WebClient.class);
     WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
     WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
@@ -624,11 +627,11 @@ class OrderServiceImplTest {
               //VERIFY NEW ORDER ITEM IS ADDED,
               // Verify new order item is added
               assertEquals(1, updatedOrder.getOrderItems().size());
-              OrderItem newItem = updatedOrder.getOrderItems().get(0);
+              OrderItem newItem = updatedOrder.getOrderItems().getFirst();
               assertEquals(productId, newItem.getProductId());
               assertEquals("PRODUCT1", newItem.getProductName());
               // Product price should be 10 (from mock)
-              assertEquals(new BigDecimal("10"), newItem.getProductPrice());
+              assertEquals(new BigDecimal("10.0"), newItem.getProductPrice());
               assertEquals(2, newItem.getProductQuantity());
 
               //verify the total amount is updated
@@ -645,17 +648,17 @@ class OrderServiceImplTest {
   }
 
   /**
-   * Test update order which also include sending event to Kafka and calling externalized services
+   * Test update orders that also include sending event to Kafka and calling externalized services
    */
   @Test
   void testUpdateOrderByCallingExternalizedServicesSuccess() {
 
     //given
     UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    Order existingOrder = orderList.get(0);
+    Order existingOrder = orderList.getFirst();
     var orderId = existingOrder.getOrderId();
-    /**
-     * Don't use immutable list, that is, ##List.of(
+    /*
+     * Don't use an immutable list, that is, ##List.of(
      *     new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
      * )##
      * here because we need to clear the existing order items.
@@ -666,7 +669,7 @@ class OrderServiceImplTest {
            new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
    )));
 
-    /**
+    /*
      * customerName, customerEmail, shippingAddress and OrderItems can be updated
      */
    //update order with the same ID
@@ -676,8 +679,8 @@ class OrderServiceImplTest {
     updateOrder.setCustomerEmail(existingOrder.getCustomerEmail()); //same customer email
     updateOrder.setShippingAddress(existingOrder.getShippingAddress()); //same shipping address
     //same list of order items
-    /**
-     * Don't use immutable list that is ##List.of(
+    /*
+     * Don't use an immutable list that is ##List.of(
      *     new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
      * )##
      * here because we need to clear the existing order items.
@@ -701,7 +704,7 @@ class OrderServiceImplTest {
     doNothing().when(orderRepository).deleteOrderItemById(anyLong()); //orderItemId = 1L but we don't care about it here
     when(productServiceClient.getProductById(productId)).thenReturn(Mono.just(productDto));
     when(inventoryServiceClient.deductInventory(productId, 5)).thenReturn(Mono.empty());
-    /**
+    /*
      * This line of code means that the order will be saved with the updated order items.
      * invocation -> invocation.getArgument(0): gets the first argument passed to the save method,
      * that is returned as the updated order.
@@ -723,7 +726,7 @@ class OrderServiceImplTest {
 
               // Verify order items remain the same
               assertEquals(1, updatedOrder.getOrderItems().size());
-              OrderItem orderItem = updatedOrder.getOrderItems().get(0);
+              OrderItem orderItem = updatedOrder.getOrderItems().getFirst();
               assertEquals(productId, orderItem.getProductId());
               assertEquals("PRODUCT1", orderItem.getProductName());
               assertEquals(new BigDecimal("10.00"), orderItem.getProductPrice());
@@ -748,7 +751,7 @@ class OrderServiceImplTest {
   void testUpdateOrderByCallingExternalizedServicesWhenOrderStatusDoesNotAllowRestore() {
     //given
     UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    Order existingOrder = orderList.get(0);
+    Order existingOrder = orderList.getFirst();
     var orderId = existingOrder.getOrderId();
     existingOrder.setOrderStatus("SHIPPED"); // Order status is SHIPPED, so restore should not be allowed
 
@@ -763,8 +766,8 @@ class OrderServiceImplTest {
     updateOrder.setCustomerEmail(existingOrder.getCustomerEmail()); //same customer email
     updateOrder.setShippingAddress(existingOrder.getShippingAddress()); //same shipping address
     //same list of order items
-    /**
-     * Don't use immutable list that is ##List.of(
+    /*
+     * Don't use an immutable list that is ##List.of(
      *     new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
      * )##
      * here because we need to clear the existing order items.
@@ -807,7 +810,7 @@ class OrderServiceImplTest {
   void testDeleteOrderByCallingExternalizedServicesSuccess() {
     //Given
     UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    Order existingOrder = orderList.get(0);
+    Order existingOrder = orderList.getFirst();
     var orderId = existingOrder.getOrderId();
     existingOrder.setOrderItems(new ArrayList<>(List.of(
             new OrderItem(1L, productId, "PRODUCT1", new BigDecimal("10.00"), 5)
@@ -830,7 +833,7 @@ class OrderServiceImplTest {
   void testDeleteOrderByCallingExternalizedServicesWhenOrderStatusDoesNotAllowDelete(){
     //Given
     UUID productId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    Order existingOrder = orderList.get(0);
+    Order existingOrder = orderList.getFirst();
     var orderId = existingOrder.getOrderId();
     existingOrder.setOrderStatus("SHIPPED"); // Order status is SHIPPED, so restore should not be allowed
     existingOrder.setOrderItems(new ArrayList<>(List.of(
@@ -857,7 +860,7 @@ class OrderServiceImplTest {
   void testBulkDeleteOrdersSuccess() {
     //Given
     var productId1 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-    var order1 = orderList.get(0);
+    var order1 = orderList.getFirst();
     order1.setOrderStatus("cANCelleD"); //
     var orderId1 = orderList.get(0).getOrderId();
 
@@ -876,8 +879,8 @@ class OrderServiceImplTest {
     //mocks
     when(orderRepository.findAllById(existingOrdersIds)).thenReturn(List.of(order1, order2));
     doNothing().when(orderRepository).deleteAll(List.of(order1, order2));
-    /**
-     * It better to use any(UUID.class) and anyInt() here to ensure that the method is
+    /*
+     * It is better to use any(UUID.class) and anyInt() here to ensure that the method is
      * called with any UUID and any integer value. This will avoid issue with
      * inventoryServiceClient giving error when restoring inventory because we are
      * deleting multiple orders.
@@ -914,8 +917,8 @@ class OrderServiceImplTest {
   @Test
   void cancelOrderSuccess() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
     //mock restore inventory call
@@ -939,8 +942,8 @@ class OrderServiceImplTest {
   @Test
   void cancelOrderWhenStatusIsAlreadyCancelled() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
     order.setOrderStatus("CANCELLED");
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
@@ -956,8 +959,8 @@ class OrderServiceImplTest {
   @Test
   void cancelOrderWhenStatusIsAlreadyShipped() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
     order.setOrderStatus("SHIPPED");
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
@@ -973,8 +976,8 @@ class OrderServiceImplTest {
   @Test
   void cancelOrderWhenOrderIsAlreadyDelivered() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
     order.setOrderStatus("DELIVERED");
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
@@ -999,8 +1002,8 @@ class OrderServiceImplTest {
   @Test
   void getOrderDtoById() {
     //Given
-    var orderId = orderList.get(0).getOrderId();
-    var order = orderList.get(0);
+    var orderId = orderList.getFirst().getOrderId();
+    var order = orderList.getFirst();
 
     given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 

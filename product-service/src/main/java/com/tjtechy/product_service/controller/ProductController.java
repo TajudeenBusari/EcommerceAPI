@@ -1,8 +1,8 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of product-service module of the Ecommerce Microservices project.
+ * This file is part of the product-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.product_service.controller;
 
@@ -50,7 +50,6 @@ public class ProductController {
 
   /**
    * Endpoint to get a product by its ID.
-   *
    * @param productId the UUID of the product to retrieve
    * @return a Result object containing the product details
    */
@@ -69,7 +68,6 @@ public class ProductController {
 
   /**
    * Endpoint to add a new product.
-   *
    * @param createProductDto the DTO containing the product details to create
    * @return a Result object containing the created product details
    */
@@ -87,7 +85,6 @@ public class ProductController {
   }
   /**
    * Endpoint to add a new product with inventory.
-   *
    * @param createProductDto the DTO containing the product details to create
    * @return a Result object containing the created product details
    */
@@ -120,7 +117,6 @@ public class ProductController {
 
   /**
    * Endpoint to update an existing product with inventory.
-   *
    * @param productId the UUID of the product to update
    * @param updateProductDto the DTO containing the updated product details
    * @return a Result object containing the updated product details
@@ -140,7 +136,6 @@ public class ProductController {
 
   /**
    * Endpoint to update an existing product with inventory using an externalized service.
-   *
    * @param productId the UUID of the product to update
    * @param updateProductDto the DTO containing the updated product details
    * @return a Result object containing the updated product details
@@ -161,7 +156,6 @@ public class ProductController {
 
   /**
    * Endpoint to update an existing product.
-   *
    * @param productId the UUID of the product to update
    * @param updateProductDto the DTO containing the updated product details
    * @return a Result object containing the updated product details
@@ -181,7 +175,6 @@ public class ProductController {
 
   /**
    * Endpoint to delete a product by its ID.
-   *
    * @param productId the UUID of the product to delete
    * @return a Result object indicating the success of the deletion
    */
@@ -197,7 +190,6 @@ public class ProductController {
 
   /**
    * Endpoint to clear all cached product data.
-   *
    * @return a Result object indicating the success of the cache clearing
    */
 @Operation(summary = "Clear Cache", description = "Clear all cached product data",
@@ -211,7 +203,6 @@ public class ProductController {
   }
   /**
    * Endpoint to bulk delete products by their IDs.
-   *
    * @param productIds the list of UUIDs of the products to delete
    * @return a Result object indicating the success of the bulk deletion
    */

@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the user-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.service.impl;
 
 import com.tjtechy.security.config.JwtProvider;
@@ -19,7 +25,6 @@ import userutils.entity.User;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -108,7 +113,7 @@ class AuthServiceTest {
   void createLoginInfoSuccess() {
 
     //given
-    given(userService.findUserByUsername("john_doe")).willReturn(Mono.just(users.get(0)));
+    given(userService.findUserByUsername("john_doe")).willReturn(Mono.just(users.getFirst()));
     given(passwordEncoder.matches("password123", "encodedPassword123")).willReturn(true);
     given(jwtProvider.createToken(any(Authentication.class))).willReturn("mockedJwtToken");
 
@@ -155,7 +160,7 @@ class AuthServiceTest {
   void createLoginInfoInvalidPassword(){
 
     //given
-    given(userService.findUserByUsername("john_doe")).willReturn(Mono.just(users.get(0)));
+    given(userService.findUserByUsername("john_doe")).willReturn(Mono.just(users.getFirst()));
     given(passwordEncoder.matches("wrongPassword", "encodedPassword123")).willReturn(false);
 
     //when

@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.order_service.entity.dto;
 
@@ -19,7 +19,7 @@ public record UpdateOrderDto(
                 @Email(message = "Invalid email address")
         String customerEmail,
 
-        /**
+        /*
          * Value must not be {@code null} or empty.
          * The user phone number validation pattern:
          * ^: start String

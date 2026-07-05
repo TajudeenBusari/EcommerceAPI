@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the order-service module of the EcommerceMicroservices project.
+ */
 package com.tjtechy.order_service.exception;
 
 
@@ -61,8 +67,6 @@ public class ExceptionHandlingAdvice {
    * the expected criteria. E.g., if order == null or order.getOrderItems().isEmpty()
    * or order.getOrderItems() == null.
    * Handles exceptions of type {@link IllegalArgumentException}.
-   * @param e
-   * @return
    */
 
   @ExceptionHandler(IllegalArgumentException.class)

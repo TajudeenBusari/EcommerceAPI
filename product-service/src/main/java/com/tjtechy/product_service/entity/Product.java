@@ -1,4 +1,4 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
@@ -10,8 +10,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.PastOrPresent;
+
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -20,7 +19,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "products")
-/**
+/*
  *int is a primitive type and cannot be null, so we use Integer.
  * Integer is an object wrapper for int and can be null.
  */
@@ -35,13 +34,13 @@ public class Product implements Serializable {
     @Column(nullable = false)
     private BigDecimal productPrice;
     @Column(nullable = false)
-    /**
+    /*
      * The difference between productQuantity and availableStock is that:
      * productQuantity is the total quantity of the product that was delivered to the store.
      * availableStock is the quantity of the product that is currently available
-     * for sale in the store. Some product may not be available for sale, for
+     * for sale in the store. Some products may not be available for sale, for
      * example, due to spoilage, damage, or other reasons.
-     * In future update, availableStock will be changed to initialStock.
+     * In a future update, availableStock will be changed to initialStock.
      * It will be compared to the availableStock in the inventory service
      * to know the current stock level of the product.
      */

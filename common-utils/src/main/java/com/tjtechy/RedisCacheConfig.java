@@ -1,8 +1,8 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of common-utils module of the Ecommerce Microservices project.
+ * This file is part of the common-utils module of the Ecommerce Microservices project.
  */
 package com.tjtechy;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.*;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -71,7 +72,7 @@ public class RedisCacheConfig {
     var objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule()); // Enables LocalDateTime serialization
     //objectMapper.registerModule(new Hibernate6Module()); // Enables Hibernate6Module. Handles Hibernate proxies
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL); // Excludes null values from serialization
+    objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL); // Excludes null values from serialization
     objectMapper.activateDefaultTyping(
         objectMapper.getPolymorphicTypeValidator(),
         ObjectMapper.DefaultTyping.NON_FINAL,

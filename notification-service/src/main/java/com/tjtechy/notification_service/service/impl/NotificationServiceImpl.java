@@ -1,9 +1,9 @@
 
-/**
- * Copyright © 2025  
- * @Author = TJTechy (Tajudeen Busari)  
- * @Version = 1.0  
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.  
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.service.impl;
@@ -24,13 +24,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
-public class NotificationServiceImpl implements NotificationService<Object> {
+public class NotificationServiceImpl implements NotificationService {
 
   private final NotificationRepository notificationRepository;
   private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
 
-  private final String timeZone;
   private final int retentionDays;
 
 
@@ -40,23 +39,15 @@ public class NotificationServiceImpl implements NotificationService<Object> {
                                  @Value("${app.scheduling.retention-days:30}") int retentionDays) {
 
     this.notificationRepository = notificationRepository;
-    this.timeZone = timeZone;
     this.retentionDays = retentionDays;
   }
 
-  /**
-   * @param event
-   * This is implementation of the listen method from the NotificationService interface.
+  /*
+   * This is an implementation of the listen method from the NotificationService interface.
    * It currently does not handle any events directly. Instead, specific event types like OrderPlacedEvent
    * and OrderCancelledEvent have their own dedicated methods for handling.
    */
-  @Override
-  public void listen(Object event) {
-  }
 
-  /**
-   * @return
-   */
   @Override
   @Cacheable(value = "notifications")
   public List<Notification> getAllNotifications() {
@@ -65,10 +56,6 @@ public class NotificationServiceImpl implements NotificationService<Object> {
     return notifications;
   }
 
-  /**
-   * @param id
-   * @return
-   */
   @Override
   @Cacheable(value = "notification", key = "#id")
   public Notification getNotificationById(Long id) {
@@ -79,9 +66,6 @@ public class NotificationServiceImpl implements NotificationService<Object> {
     return notification;
   }
 
-  /**
-   * @param id
-   */
   @Override
   public void removeNotification(Long id) {
     notificationRepository.findById(id).orElseThrow(() ->
@@ -94,7 +78,7 @@ public class NotificationServiceImpl implements NotificationService<Object> {
    */
   @Override
   @Transactional
-  /**
+  /*
    *
    * Transactional annotation ensures that the delete operation is executed within a transaction.
    * If any part of the operation fails, the transaction will be rolled back to maintain data integrity.
@@ -103,7 +87,7 @@ public class NotificationServiceImpl implements NotificationService<Object> {
    * Transaction is essential for bulk operations to ensure atomicity and consistency.
    * NOTE:For a single delete operation: deleteById or deleteAll(), it's not strictly necessary to use @Transactional
    * because these operations are typically atomic by themselves.
-   * Same logic applies to bulk save operations, bulk updates and single save, single update etc
+   * The same logic applies to bulk save operations, bulk updates and single save, single update etc
    * respectively.
    */
   public boolean bulkRemoveNotificationsBySentAtLessThanEqual() {
@@ -142,9 +126,6 @@ public class NotificationServiceImpl implements NotificationService<Object> {
     }
   }
 
-  /**
-   * @param ids
-   */
   @Override
   @Transactional
   public void bulkRemoveNotification(List<Long> ids) {

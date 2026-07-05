@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the user-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.service.impl;
 
 import com.tjtechy.modelNotFoundException.UserNotFoundException;
@@ -102,12 +108,12 @@ class UserServiceImplTest {
   @Test
   void createUserSuccess() {
     //Given
-    given(passwordEncoder.encode(users.get(0).getPassword())).willReturn("encodedPassword123");
-    given(userRepository.findByUserName(users.get(0).getUserName())).willReturn(Mono.empty());
-    given(userRepository.save(users.get(0))).willReturn(Mono.just(users.get(0)));
+    given(passwordEncoder.encode(users.getFirst().getPassword())).willReturn("encodedPassword123");
+    given(userRepository.findByUserName(users.getFirst().getUserName())).willReturn(Mono.empty());
+    given(userRepository.save(users.getFirst())).willReturn(Mono.just(users.getFirst()));
 
     //When
-    var createdUserMono = userService.createUser(users.get(0));
+    var createdUserMono = userService.createUser(users.getFirst());
 
     //Then
     /*
@@ -118,7 +124,7 @@ class UserServiceImplTest {
      * verifyComplete() verifies that the Mono completes successfully after emitting the expected item.
      */
     StepVerifier.create(createdUserMono)
-            .expectNext(users.get(0))
+            .expectNext(users.getFirst())
             .verifyComplete();
   }
 
@@ -134,7 +140,7 @@ class UserServiceImplTest {
     //Then
     StepVerifier.create(createdUserMono)
             .expectErrorSatisfies(throwable -> {
-              assertTrue(throwable instanceof IllegalArgumentException);
+              assertInstanceOf(IllegalArgumentException.class, throwable);
               assertEquals("Password must be at least 6 characters long", throwable.getMessage());
             }).verify();
 
@@ -161,14 +167,14 @@ class UserServiceImplTest {
   @Test
   void findUserByUsernameSuccess() {
     //Given
-    given(userRepository.findByUserName(users.get(0).getUserName())).willReturn(Mono.just(users.get(0)));
+    given(userRepository.findByUserName(users.getFirst().getUserName())).willReturn(Mono.just(users.getFirst()));
 
     //When
-    var foundUserMono = userService.findUserByUsername(users.get(0).getUserName());
+    var foundUserMono = userService.findUserByUsername(users.getFirst().getUserName());
 
     //Then
     StepVerifier.create(foundUserMono)
-            .expectNext(users.get(0))
+            .expectNext(users.getFirst())
             .verifyComplete();
   }
 
@@ -200,11 +206,11 @@ class UserServiceImplTest {
   @Test
   void deleteUserSuccess() {
     //Given
-    given(userRepository.findById(users.get(0).getUserId())).willReturn(Mono.just(users.get(0)));
-    given(userRepository.save(users.get(0))).willReturn(Mono.just(users.get(0)));
-    given(userRepository.delete(users.get(0))).willReturn(Mono.empty());
+    given(userRepository.findById(users.getFirst().getUserId())).willReturn(Mono.just(users.getFirst()));
+    given(userRepository.save(users.getFirst())).willReturn(Mono.just(users.getFirst()));
+    given(userRepository.delete(users.getFirst())).willReturn(Mono.empty());
     //When
-    var deleteUserMono = userService.deleteUser(users.get(0).getUserId());
+    var deleteUserMono = userService.deleteUser(users.getFirst().getUserId());
     //Then
     StepVerifier.create(deleteUserMono)
             .verifyComplete();

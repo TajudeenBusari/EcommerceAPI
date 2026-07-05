@@ -1,4 +1,4 @@
-package com.tjtechy.product_service.config;
+package com.tjtechy.client;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * This is the WebClient configuration class for the Product Service.
+ * This is the WebClient configuration class for clients.
  * It provides a load-balanced WebClient.Builder bean that can be used
  * to create WebClient instances for making HTTP requests to other services.
  * Without this configuration, the Product Service would not be able to
@@ -15,7 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * the Inventory Service to check and reserve inventory for the product being created.
  */
 @Configuration
-public class WebClientConfig {
+public class WebClientConfiguration {
 
   /**
    * This bean provides a load-balanced WebClient.Builder
@@ -27,8 +27,6 @@ public class WebClientConfig {
    * those calls can be monitored and traced, and the full request flow can be observed in the observability tools
    * like Jaeger.Without this ObservationRegistry, traces and spans are seen individually in each service
    * in Jaeger without correlation.
-   * @param registry
-   * @return
    */
   @Bean
   @LoadBalanced
@@ -36,11 +34,4 @@ public class WebClientConfig {
 
     return WebClient.builder().observationRegistry(registry);
   }
-
-  //default WebClient bean
-  @Bean
-  public WebClient webClient(WebClient.Builder builder) {
-    return builder.build();
-  }
-
 }

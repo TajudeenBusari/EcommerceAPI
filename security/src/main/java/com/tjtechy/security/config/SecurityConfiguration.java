@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of the security module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.security.config;
@@ -25,8 +24,7 @@ import org.springframework.security.config.Customizer;
 
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -70,10 +68,10 @@ public class SecurityConfiguration {
 //      * It is a one-way hashing function, meaning that once a password is hashed,
 //      * it cannot be reversed back to its original form. This makes it ideal for password storage,
 //      * as even if the database is compromised, the original passwords cannot be easily retrieved.
-//      * private key is used to encode and public key (for decoding) is used to very if it is ok.
+//      * a private key is used to encode, and a public key (for decoding) is used to very if it is ok.
 //      * public key can be distributed to a public key server or other services
 //      * that need to verify the authenticity of the JWT tokens issued by this service.
-//      * private is kept as secrete for example in auth service.
+//      * private is kept as secrete, for example, in auth service.
 //   */ NOTE: Already moved to PasswordConfig class to separate concerns.
 //  @Bean
 //  public PasswordEncoder passwordEncoder() {

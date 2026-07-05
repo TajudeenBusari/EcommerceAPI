@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
@@ -7,22 +7,24 @@
 
 package com.tjtechy.user_service.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tjtechy.Result;
-import com.tjtechy.user_service.config.AdminUserInitializer;
-import com.tjtechy.user_service.repository.UserRepository;
+
 import org.junit.jupiter.api.*;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration;
+import org.springframework.cloud.netflix.eureka.config.DiscoveryClientOptionalArgsConfiguration;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import userutils.dto.LoginRequestDto;
-import userutils.dto.LoginResponseDto;
+
 import userutils.dto.UserRegistrationDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
@@ -32,11 +34,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.testcontainers.containers.PostgreSQLContainer;
+//import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import userutils.entity.User;
 
 import java.util.Map;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 properties = {
@@ -49,7 +53,8 @@ properties = {
         "spring.cloud.loadbalancer.enabled=false", // Disable load balancer
         "spring.cloud.service-registry.auto-registration.enabled=false",
         "redis.enabled=false", //disable redis
-        "spring.cache.type=none", //disable caching
+        "spring.cache.type=none" //disable caching
+        //"spring.cloud.compatibility-verifier.enabled=false"
 })
 @AutoConfigureWebTestClient
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // Use actual database configuration
@@ -59,15 +64,17 @@ properties = {
         // Exclude auto-configurations that are not needed for integration tests
         EurekaClientAutoConfiguration.class,
         EurekaDiscoveryClientConfiguration.class,
+        SimpleDiscoveryClientAutoConfiguration.class,
+        DiscoveryClientOptionalArgsConfiguration.class,
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@Import(TestConfig.class) //TO INITIALIZE THE ADMIN USER IN THE DB
+@Import(TestConfig.class) //TO INITIALIZE THE ADMIN USER IN THE DB for CI TO PASS
 public class UserControllerIntegrationTest {
   @Autowired
   private WebTestClient webTestClient;
 
-  @Autowired
-  private ObjectMapper objectMapper;
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
@@ -85,7 +92,7 @@ public class UserControllerIntegrationTest {
 
 
   @Container
-  private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
+  private static final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:latest")
           .withDatabaseName("user_service_db")
           .withUsername("testuser")
           .withPassword("testpass");
@@ -116,6 +123,10 @@ public class UserControllerIntegrationTest {
             .expectBody(Result.class)
             .returnResult()
             .getResponseBody();
+    assert response != null;
+    assertThat(response.getData()).isInstanceOf(Map.class);
+
+    @SuppressWarnings("unchecked")
     Map<String, Object> data = (Map<String, Object>) response.getData();
     return (String) data.get("token");
   }
@@ -144,6 +155,7 @@ public class UserControllerIntegrationTest {
             .expectStatus().isOk()
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(true)
@@ -154,8 +166,12 @@ public class UserControllerIntegrationTest {
             .returnResult()
             .getResponseBody();
 
+    assert responseBody != null;
     var result = objectMapper.readValue(responseBody, Map.class);
-    return (Map<String, Object>) result.get("data");
+    assert result != null;
+    @SuppressWarnings("unchecked")
+    Map<String, Object> data = (Map<String, Object>) result.get("data");
+    return data;
   }
 
   @Test
@@ -194,6 +210,7 @@ public class UserControllerIntegrationTest {
             .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(false)
@@ -224,6 +241,7 @@ public class UserControllerIntegrationTest {
             .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(false)
@@ -259,6 +277,7 @@ public class UserControllerIntegrationTest {
             .expectStatus().isOk()
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(true)
@@ -284,6 +303,7 @@ public class UserControllerIntegrationTest {
             .expectStatus().isOk()
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(true)
@@ -300,12 +320,14 @@ public class UserControllerIntegrationTest {
     //then delete user by userId
     webTestClient.delete()
             .uri(baseUrl + "/user/" + userId)
+
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + loginInfo())
             .exchange()
             .expectStatus().isOk()
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(true)
@@ -336,6 +358,7 @@ public class UserControllerIntegrationTest {
             .expectStatus().isOk()
             .expectBody()
             .consumeWith(res -> {
+              assert res.getResponseBody() != null;
               String body = new String(res.getResponseBody());
               ObjectMapper mapper = new ObjectMapper();
               try {

@@ -1,10 +1,14 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.notification_service;
 
 import com.tjtechy.notification_service.config.FirebaseConfig;
 import com.tjtechy.notification_service.service.impl.TwilioSmsProvider;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;

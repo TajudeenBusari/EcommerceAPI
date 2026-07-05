@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of inventory-service module of the Ecommerce Microservices project.
+ * This file is part of the inventory-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.inventory_service.service.impl;
 
@@ -60,7 +60,7 @@ class InventoryServiceImplTest {
   @Test
   void testCreateInventorySuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findByProductId(inventory.getProductId())).thenReturn(Optional.empty());
     given(inventoryRepository.save(inventory)).willReturn(inventory);
 
@@ -76,7 +76,7 @@ class InventoryServiceImplTest {
   @Test
   void testCreateInventoryWhenProductIdIsNull(){
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     inventory.setProductId(null);
 
     //When
@@ -92,7 +92,7 @@ class InventoryServiceImplTest {
   @Test
   void testCreateInventoryWhenAvailableStockIsLessThanZero(){
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     inventory.setAvailableStock(-1);
     //When
     var exception = assertThrows(IllegalArgumentException.class, () -> {inventoryService.createInventory(inventory);});
@@ -104,7 +104,7 @@ class InventoryServiceImplTest {
   @Test
   void testGetInventoryByInventoryIdSuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findById(inventory.getInventoryId())).thenReturn(Optional.of(inventory));
 
     //When
@@ -120,7 +120,7 @@ class InventoryServiceImplTest {
   @Test
   void testGetInventoryByInventoryIdNotFound(){
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findById(inventory.getInventoryId())).thenReturn(Optional.empty());
 
     //When
@@ -135,7 +135,7 @@ class InventoryServiceImplTest {
   @Test
   void testGetInventoryByProductIdSuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findByProductId(inventory.getProductId())).thenReturn(Optional.of(inventory));
 
     //When
@@ -150,7 +150,7 @@ class InventoryServiceImplTest {
   @Test
   void testGetInventoryByProductIdNotFound(){
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findByProductId(inventory.getProductId())).thenReturn(Optional.empty());
 
     //When
@@ -177,7 +177,7 @@ class InventoryServiceImplTest {
   @Test
   void testUpdateInventorySuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
 
     //inventory that will be saved to the database
     var updatedInventory = new Inventory();
@@ -202,7 +202,7 @@ class InventoryServiceImplTest {
   @Test
   void testUpdateInventoryNotFound() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findById(inventory.getInventoryId())).thenReturn(Optional.empty());
 
     //When
@@ -218,7 +218,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeleteInventorySuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findById(inventory.getInventoryId())).thenReturn(Optional.of(inventory));
     //When
     inventoryService.deleteInventory(inventory.getInventoryId());
@@ -229,7 +229,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeleteInventoryNotFound() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     when(inventoryRepository.findById(inventory.getInventoryId())).thenReturn(Optional.empty());
     //When
     var exception = assertThrows(
@@ -281,7 +281,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeductInventorySuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var quantity = 5;
     inventory.setAvailableStock(15); //set a value greater than quantity
@@ -306,7 +306,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeductInventoryNotFound() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var quantity = 5;
 
@@ -319,7 +319,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeductInventoryWithInsufficientStock() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var quantity = 20; //greater than available stock
     inventory.setAvailableStock(15); //set a value less than quantity
@@ -335,13 +335,13 @@ class InventoryServiceImplTest {
   @Test
   void testDeductInventoryReactiveSuccess() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var quantity = 5;
     inventory.setAvailableStock(15); //set a value greater than quantity
     inventory.setReservedQuantity(1); //set the initial reserved quantity
 
-    /**IMPORTANT NOTE:
+    /*IMPORTANT NOTE:
      * In your unit test, both findByProductId and save should return
      * plain Java objects (Optional<Inventory> and Inventory), not Monos
      * because in the implementation class, we are wrapping synchronous
@@ -365,7 +365,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeductInventoryReactiveWhenProductNotFound() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var quantity = 5;
     when(inventoryRepository.findByProductId(productId)).thenReturn(Optional.empty());
@@ -384,7 +384,7 @@ class InventoryServiceImplTest {
   @Test
   void testDeductInventoryReactiveWhenInsufficientStock() {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var quantity = 20; //greater than available stock
     inventory.setAvailableStock(15); //set a value less than quantity

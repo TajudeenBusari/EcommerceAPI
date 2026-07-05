@@ -1,12 +1,14 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of inventory-service module of the Ecommerce Microservices project.
+ * This file is part of the inventory-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.inventory_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.javafaker.Faker;
 import com.tjtechy.*;
 import com.tjtechy.inventory_service.exception.ExceptionHandlingAdvice;
@@ -20,8 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+//import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+//import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.MediaType;
@@ -43,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = InventoryController.class)
 @AutoConfigureMockMvc
-/**
+/*
  * So @ContextConfiguration(classes = {...}) forces Spring to load only what you need,
  * overriding the default component scan or @SpringBootApplication class
  * In @WebMvcTest, adding @ContextConfiguration(classes = {InventoryController.class}) helps you:
@@ -61,8 +66,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 })
 @Import(ExceptionHandlingAdvice.class) // Import the ExceptionHandlingAdvice class to handle exceptions in the controller tests
+@AutoConfigureWebTestClient
 
-/**
+/*
  * Use @WebMvcTest(YourController.class) for clean controller unit tests.
  * Add @ContextConfiguration(classes = {...}) only if you want to fully control what beans are loaded and avoid config scanning pitfalls.
  * Avoid @SpringBootTest unless you're writing a full integration test.
@@ -79,8 +85,22 @@ class InventoryControllerTest {
   @MockitoBean
   private RedisConnectionFactory redisConnectionFactory;
 
-  @Autowired
-  ObjectMapper objectMapper;
+  /**
+   * ObjectMapper instance to handle JSON serialization and deserialization.
+   * By default, Jackson does not handle Java 8+ time classes(LocalDate, LocalDateTime, Instant, etc.),
+   * JavaTimeModule comes fromjackson-datatype-jsr310 dependency and adds support for these types,
+   * so the .registerModule(new JavaTimeModule()) line registers this module with the ObjectMapper instance.
+   * The .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) ensures that
+   * dates are serialized in a readable format(<"expiryDate": "2025-09-03">) instead of as
+   * numeric timestamps (<"expiryDate":"1725408000000">).
+   * .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) prevents errors(InvalidDefinitionException)
+   * during serialization of an object with no properties. Disabling ensures Jackson output to be {}
+   *
+   */
+  private final ObjectMapper objectMapper = new ObjectMapper()
+          .registerModule(new JavaTimeModule())
+          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+          .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
   @Autowired
   private MockMvc mockMvc;
@@ -142,7 +162,7 @@ class InventoryControllerTest {
     var json = objectMapper.writeValueAsString(createInventoryDto);
 
     //mock the inventoryService.createInventory method
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     inventory.setProductId(createInventoryDto.productId());
     inventory.setAvailableStock(createInventoryDto.availableStock());
     inventory.setReservedQuantity(createInventoryDto.reservedQuantity());
@@ -163,7 +183,7 @@ class InventoryControllerTest {
   @Test
   void testGetInventoryByInventoryId() throws Exception {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var inventoryId = inventory.getInventoryId();
     var inventoryDto = new InventoryDto(
             inventory.getInventoryId(),
@@ -208,16 +228,16 @@ class InventoryControllerTest {
   @Test
   void testGetAllInventorySuccess() throws Exception {
     //Given
-    /**
+    /*
      *This step is to ensure that the inventoryDtoList and inventoryList
-     * at index 0 are same for the to pass at validation
+     * at index 0 are the same for the to pass at validation
      *
      */
     inventoryDtoList.set(0, new InventoryDto(
-            inventoryList.get(0).getInventoryId(),
-            inventoryList.get(0).getProductId(),
-            inventoryList.get(0).getReservedQuantity(),
-            inventoryList.get(0).getAvailableStock()
+            inventoryList.getFirst().getInventoryId(),
+            inventoryList.getFirst().getProductId(),
+            inventoryList.getFirst().getReservedQuantity(),
+            inventoryList.getFirst().getAvailableStock()
             ));
 
     //mock the inventoryService.getAllInventory method
@@ -229,15 +249,15 @@ class InventoryControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.message").value("All inventories retrieved successfully"))
             .andExpect(jsonPath("$.flag").value(true))
-            .andExpect(jsonPath("$.data[0].inventoryId").value(inventoryDtoList.get(0).inventoryId()))
-            .andExpect(jsonPath("$.data[0].productId").value(inventoryDtoList.get(0).productId().toString()))
-            .andExpect(jsonPath("$.data[0].reservedQuantity").value(inventoryDtoList.get(0).reservedQuantity()));
+            .andExpect(jsonPath("$.data[0].inventoryId").value(inventoryDtoList.getFirst().inventoryId()))
+            .andExpect(jsonPath("$.data[0].productId").value(inventoryDtoList.getFirst().productId().toString()))
+            .andExpect(jsonPath("$.data[0].reservedQuantity").value(inventoryDtoList.getFirst().reservedQuantity()));
   }
 
   @Test
   void testGetInventoryByProductId() throws Exception {
     //Given
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     var productId = inventory.getProductId();
     var inventoryDto = new InventoryDto(
             inventory.getInventoryId(),
@@ -275,7 +295,7 @@ class InventoryControllerTest {
   @Test
   void testUpdateInventorySuccess() throws Exception {
     //Given
-    var updatedInventory = inventoryList.get(0);
+    var updatedInventory = inventoryList.getFirst();
     var inventoryId = updatedInventory.getInventoryId();
     var updateInventoryDto = new UpdateInventoryDto(
             updatedInventory.getProductId(),
@@ -306,7 +326,7 @@ class InventoryControllerTest {
   @Test
   void testDeleteInventorySuccess() throws Exception {
     //Given
-    var inventoryId = inventoryList.get(0).getInventoryId();
+    var inventoryId = inventoryList.getFirst().getInventoryId();
 
     //mock the inventoryService.deleteInventory method
     doNothing().when(inventoryService).deleteInventory(inventoryId);
@@ -366,7 +386,7 @@ class InventoryControllerTest {
             UUID.randomUUID(),
             5
     );
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     inventory.setProductId(deductInventoryDto.productId());
     inventory.setReservedQuantity(deductInventoryDto.quantity());
     //mock the inventoryService.deductInventory method
@@ -382,7 +402,7 @@ class InventoryControllerTest {
   /**
    * For reactive endpoint testing, we use WebTestClient.
    * The WebTestClient is a non-blocking, reactive client for testing web applications
-   * which is part of the Spring WebFlux module.
+   * that is part of the Spring WebFlux module.
    */
   @Test
   void testDeductInventoryReactiveSuccess() throws Exception {
@@ -393,7 +413,7 @@ class InventoryControllerTest {
     );
 
     var json = objectMapper.writeValueAsString(deductInventoryDto);
-    var inventory = inventoryList.get(0);
+    var inventory = inventoryList.getFirst();
     inventory.setProductId(deductInventoryDto.productId());
     inventory.setReservedQuantity(deductInventoryDto.quantity());
 

@@ -1,10 +1,11 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of inventory-service module of the Ecommerce Microservices project.
+ * This file is part of the inventory-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.inventory_service;
+
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,8 +27,10 @@ import org.springframework.test.context.TestPropertySource;
         "redis.enabled=false", //disable redis
         "spring.cache.type=none", //disable caching
 })
+//@Import(TestConfig.class)
 class InventoryServiceApplicationTest {
   @Test
+
   void contextLoads() {
     // This test will simply check if the Spring application context loads successfully
   }
