@@ -23,12 +23,12 @@ spring:
       enabled: false
     instance:
       hostname: localhost
-  redis:
-    enabled: false
+redis:
+  enabled: false
   #jackson serialization
-    jackson:
-        serialization:
-        write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false #This ensures that dates are serialized as ISO-8601 formatted strings instead of Unix timestamps.
 api:
   endpoint:
       base-url: /api/v1

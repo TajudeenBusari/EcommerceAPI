@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of product service module of the EcommerceMicroservices project.
+ * This file is part of product-service module of the EcommerceMicroservices project.
  */
 package com.tjtechy.product_service.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +18,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+//import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+//import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -52,7 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "eureka.client.enabled=false",
         "spring.cloud.config.enabled=false"
 })
-/**
+/*
  * So @ContextConfiguration(classes = {...}) forces Spring to load only what you need,
  * overriding the default component scan or @SpringBootApplication class
  * In @WebMvcTest, adding @ContextConfiguration(classes = {ProductController.class}) helps you:
@@ -144,8 +146,8 @@ class ProductControllerTest {
     @DisplayName("Test for getProductById() GET /api/v1/product/{productId} success")
     void testGetProductByIdSuccess() throws Exception {
         //given
-        UUID productId = productList.get(0).getProductId();
-        given(productService.getProductById(productId)).willReturn(productList.get(0));
+        UUID productId = productList.getFirst().getProductId();
+        given(productService.getProductById(productId)).willReturn(productList.getFirst());
 
         //when and then
         mockMvc.perform(get(baseUrl + "/product/" + productId)
@@ -311,7 +313,7 @@ class ProductControllerTest {
     @DisplayName("Test for updateProduct() PUT /api/v1/product/{productId} success")
     void testUpdateProductSuccess() throws Exception {
         //given
-        UUID productId = productList.get(0).getProductId();
+        UUID productId = productList.getFirst().getProductId();
 
         var updateRequest = new UpdateProductDto(
                 "Product 1 updated",
@@ -336,7 +338,7 @@ class ProductControllerTest {
                 LocalDate.of(2021, 9, 5));
 
 
-        /**
+        /*
          * it is important to use eq() when comparing the productId because the productId is a UUID
          * The eq() method is used in the given() statement in the controller test because UUIDs are
          * complex objects, and when using Mockito to match arguments, exact object equality
@@ -368,7 +370,7 @@ class ProductControllerTest {
     @DisplayName("Test for deleteProduct() DELETE /api/v1/product/{productId} success")
     void deleteProductSuccess() throws Exception {
         //given
-        UUID productId = productList.get(0).getProductId();
+        UUID productId = productList.getFirst().getProductId();
         doNothing().when(productService).deleteProduct(productId);
         //when and then
         mockMvc.perform(delete(baseUrl + "/product/" + productId)
@@ -452,7 +454,7 @@ class ProductControllerTest {
     @DisplayName("Test for updateProductWithInventory() PUT /api/v1/product/{productId}/with-inventory success")
     void testUpdateProductWithInventorySuccess() throws Exception {
         //given
-        UUID productId = productList.get(0).getProductId();
+        UUID productId = productList.getFirst().getProductId();
 
         var updateRequest = new UpdateProductDto(
                 "Product 1 updated",
@@ -476,7 +478,7 @@ class ProductControllerTest {
                 LocalDate.of(2021, 9, 5),
                 LocalDate.of(2021, 9, 5));
 
-        /**
+        /*
          * it is important to use eq() when comparing the productId because the productId is a UUID
          * The eq() method is used in the given() statement in the controller test because UUIDs are
          * complex objects, and when using Mockito to match arguments, exact object equality
@@ -529,7 +531,7 @@ class ProductControllerTest {
     void testBulkDeleteProductsWhenSomeIdsNotFound() throws Exception {
         //given
         var missingProductId = UUID.randomUUID();
-        List<UUID> productIds = Arrays.asList(productList.get(0).getProductId(), missingProductId);
+        List<UUID> productIds = Arrays.asList(productList.getFirst().getProductId(), missingProductId);
 
         //simulate service throwing exception
         doThrow(new ProductNotFoundException(List.of(missingProductId))).when(productService).bulkDeleteProducts(productIds);
@@ -551,7 +553,7 @@ class ProductControllerTest {
     @DisplayName("Test for deleteProductWithInventory() DELETE /api/v1/product/delete/with-inventory/{productId} success")
     void testDeleteProductWithInventorySuccess() throws Exception {
         //given
-        UUID productId = productList.get(0).getProductId();
+        UUID productId = productList.getFirst().getProductId();
         doNothing().when(productService).deleteProductWithInventory(productId);
         //when and then
         mockMvc.perform(delete(baseUrl + "/product/delete/with-inventory/" + productId)

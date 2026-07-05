@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the user-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,8 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+//import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+//import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+//import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -26,7 +35,6 @@ import userutils.entity.User;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -96,6 +104,7 @@ class AuthControllerTest {
             .jsonPath("$.data.token").isEqualTo("testToken");
     //print the response body for debugging
     var responseBody = result.returnResult().getResponseBody();
+    assert responseBody != null;
     String responseString = new String(responseBody);
     System.out.println("Response Body: " + responseString);
   }
@@ -119,6 +128,7 @@ class AuthControllerTest {
             .jsonPath("$.flag").isEqualTo(false)
             .jsonPath("$.message").isEqualTo("username or password is incorrect");
     var responseBody = result.returnResult().getResponseBody();
+    assert responseBody != null;
     String responseString = new String(responseBody);
     System.out.println("Response Body: " + responseString);
   }

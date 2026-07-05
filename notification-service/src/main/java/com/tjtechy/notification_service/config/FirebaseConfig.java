@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.config;
@@ -50,7 +49,7 @@ public class FirebaseConfig {
     }
 
     //works in docker container, BUT I HAVE NOT TESTED IT LOCALLY
-    /**
+    /*
      * After I deleted the image, container, removed all unused volumes and networks
      * and rebuilt the project, it worked perfectly.
      * The error of mark/reset vanished.

@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.order_service.service.impl;
 
@@ -91,8 +91,6 @@ public class OrderServiceImpl implements OrderService {
    * For example, if the order creation fails, the transaction will be rolled back
    * A good example is if saving fails after deduction from Inventory, the
    * Inventory deduction should be reversed.
-   * @param order
-   * @return
    */
   @Deprecated //Will be removed in future versions
   @Transactional
@@ -102,7 +100,7 @@ public class OrderServiceImpl implements OrderService {
 
     //ToDo: Implement Mono or Flux for reactive programming for better performance
     //1. Validate order
-    /**Throw the IllegalArgumentException if the order is invalid,
+    /*Throw the IllegalArgumentException if the order is invalid,
      * The MethodArgumentNotValidException does not need to be
      * stated here because it is handled by the controller with
      * @Valid annotation
@@ -161,12 +159,10 @@ public class OrderServiceImpl implements OrderService {
       var itemTotal = productDto.productPrice().multiply(BigDecimal.valueOf(quantity));
       totalAmount = totalAmount.add(itemTotal);
 
-//      System.out.println("Product Price: " + itemTotal);
-//      System.out.println("Product Quantity: " + quantity);
       logger.info("PRODUCT PRICE: {}", itemTotal);
       logger.info("PRODUCT QUANTITY: {}", quantity);
 
-      /**
+      /*
        * set the order for the order item
        * //DONE: This logic is already been implemented in the order class
        *  //orderItem.setOrder(order);
@@ -195,8 +191,6 @@ public class OrderServiceImpl implements OrderService {
    * Use Transactional context to ensure that the operation is atomic
    * The method is implemented using reactive programming to create order,
    * avoid blocking and returns a Mono
-   * @param order
-   * @return
    */
   @Override
   @Transactional
@@ -215,7 +209,7 @@ public class OrderServiceImpl implements OrderService {
                       .retrieve()
                       .bodyToMono(Result.class)
                       .map(productResponse -> {
-                        if (productResponse == null || productResponse.getData() == null) {
+                        if (productResponse.getData() == null) {
                           throw new ProductNotFoundException(productId);
                         }
                         // Convert LinkedHashMap to ProductDto manually
@@ -230,7 +224,7 @@ public class OrderServiceImpl implements OrderService {
                         }
                         //b. check if product quantity is available
 
-                        ///changed to availableStock
+                        //changed to availableStock
                         if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
@@ -247,7 +241,7 @@ public class OrderServiceImpl implements OrderService {
                                 .retrieve()
                                 .bodyToMono(Result.class)
                                 .flatMap(inventoryResponse -> {
-                                  if (inventoryResponse == null || !inventoryResponse.isFlag()) {
+                                  if (!inventoryResponse.isFlag()) {
                                     return Mono.error(new IllegalArgumentException("Failed to deduct inventory"));
                                   }
 
@@ -284,8 +278,6 @@ public class OrderServiceImpl implements OrderService {
    * This method is used to create an order by calling externalized services like
    * Get Product and Deduct Inventory in the common-utils module.
    * The order service is the client of the product and inventory services.
-   * @param order
-   * @return
    */
   @Override
   @Transactional
@@ -303,7 +295,7 @@ public class OrderServiceImpl implements OrderService {
                           return Mono.error(new ProductNotFoundException(productId));
                         }
                         //b. check if product quantity is available
-                        ///changed to availableStock
+                        //changed to availableStock
                         if (productDto.availableStock() < quantity) {
                           return Mono.error(new InsufficientStockQuantityException(productId));
                         }
@@ -356,8 +348,6 @@ public class OrderServiceImpl implements OrderService {
 
   /**
    * Retrieve an order by its ID
-   * @param orderId
-   * @return
    * This is not being cached because the order entity it is
    * returning is giving issue during serialization in Redis.
    * The method will be removed from the class because
@@ -373,7 +363,6 @@ public class OrderServiceImpl implements OrderService {
 
   /**
    * Retrieve all orders
-   * @return
    */
   @Override
   @Cacheable(value = "orders")
@@ -398,8 +387,6 @@ public class OrderServiceImpl implements OrderService {
   /**The method findOrderByEmail is a custom method created in the
    * OrderRepository interface
    * This method Retrieves all orders by customer email
-   * @param customerEmail
-   * @return
    */
   @Override
   @Cacheable(value = "orders", key = "#customerEmail")
@@ -451,9 +438,6 @@ public class OrderServiceImpl implements OrderService {
    *  //normal user can cancel an order(handle by cancel order endpoint), but cannot update the status to SHIPPED or DELIVERED
    *  //only admin can update the status to SHIPPED or DELIVERED
    *  //if order status is updated from placed to shipped or delivered, it will not restore inventory
-   * @param orderId
-   * @param orderStatus
-   * @return
    */
   @Override
   @CachePut(value = "order", key = "#orderId")
@@ -473,7 +457,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     //Define valid transition states
-    /**
+    /*
      * This map means that:
      * - From "PLACED" status, you can transition to "SHIPPED" or "CANCELLED"
      * - From "SHIPPED" status, you can transition to "DELIVERED"
@@ -519,9 +503,6 @@ public class OrderServiceImpl implements OrderService {
    * This method is missing logic to restore inventory for old items and deduct from inventory for new items.,
    * The complete logic has been implemented in the updateOrderByCallingExternalizedServices method.
    * This is left here for backward compatibility and will be removed in future versions.
-   * @param orderId
-   * @param updateOrder
-   * @return
    */
   //TODO: update this code to restock inventory, deduct from inventory and update order items
   @Override
@@ -561,7 +542,7 @@ public class OrderServiceImpl implements OrderService {
                                 .retrieve()
                                 .bodyToMono(Result.class)
                                 .map(result -> {
-                                  if(result == null || result.getData() == null){
+                                  if(result.getData() == null){
                                     throw new ProductNotFoundException(productId);
                                   }
                                   // Convert LinkedHashMap to ProductDto manually
@@ -577,7 +558,7 @@ public class OrderServiceImpl implements OrderService {
 //                                  if (productDto.productQuantity() < quantity) {
 //                                    return Mono.error(new InsufficientStockQuantityException(productId));
 //                                  }
-                                  ///changed to availableStock
+                                  //changed to availableStock
                                   if (productDto.availableStock() < quantity) {
                                     return Mono.error(new InsufficientStockQuantityException(productId));
                                   }
@@ -630,9 +611,6 @@ public class OrderServiceImpl implements OrderService {
    * The method is implemented to call externalized services like
    * Get Product, Deduct Inventory and restock inventory in the common-utils module.
    * The order service is the client of the product and inventory services.
-   * @param orderId
-   * @param updateOrder
-   * @return
    */
   @Override
   @CachePut(value = "order", key = "#orderId")
@@ -645,7 +623,7 @@ public class OrderServiceImpl implements OrderService {
             .flatMap(existingOrder -> {
               System.out.println("Updating Order: " + existingOrder);
 
-              /**
+              /*
                * //skip inventory restoration for order if //existingOrder Status is CANCELLED, SHIPPED or DELIVERED
                * //“Restore inventory only if the current order status is not CANCELLED, SHIPPED, or DELIVERED.”
                */
@@ -701,7 +679,7 @@ public class OrderServiceImpl implements OrderService {
 //                                                    if (productDto.productQuantity() < quantity) {
 //                                                      return Mono.error(new InsufficientStockQuantityException(productId));
 //                                                    }
-                                                    ///changed to availableStock
+                                                    //changed to availableStock
                                                     if (productDto.availableStock() < quantity) {
                                                       return Mono.error(new InsufficientStockQuantityException(productId));
                                                     }
@@ -754,9 +732,10 @@ public class OrderServiceImpl implements OrderService {
                     .subscribeOn(Schedulers.boundedElastic())
                     //publish order updated event to Kafka topic on successful save
                     .doOnSuccess(savedOrder ->{
+                      assert savedOrder != null;
                       OrderUpdatedEvent event = new OrderUpdatedEvent(
                               savedOrder.getOrderId(),
-                              ///the three channels: email, push notification and sms
+                              //the three channels: email, push notification and sms
                               savedOrder.getCustomerEmail(),
                               "dummyToken",
                               savedOrder.getCustomerPhone(),
@@ -778,7 +757,6 @@ public class OrderServiceImpl implements OrderService {
    * Use Transactional context to ensure that the operation is atomic.
    * This prevents partial deletion of the order.
    * When order is deleted, it will restore inventory for all order items
-   * @param orderId
    */
   @Transactional
   @Override
@@ -847,7 +825,6 @@ public class OrderServiceImpl implements OrderService {
    * Bulk delete orders by their IDs.
    * This method will delete all orders with the given IDs
    * If any order ID is not found, it will throw OrderNotFoundException
-   * @param orderIds
    */
   @Override
   public void bulkDeleteOrders(List<Long> orderIds) {
@@ -910,7 +887,6 @@ public class OrderServiceImpl implements OrderService {
   /**
    * Cancel an order by its ID
    * This method will soft-delete the order by setting its status to "CANCELLED"
-   * @param orderId
    */
   @Override
   @Transactional
@@ -986,12 +962,10 @@ public class OrderServiceImpl implements OrderService {
     return orderDto;
   }
 
-  /**
-   * @param orderId
-   */
+
   @Override
   public void forcedDeleteOrder(Long orderId) {
-    /**
+    /*
      * //This method is strictly for Admin use only
      * //It will delete the order without restoring inventory
      * //This method should be used with caution

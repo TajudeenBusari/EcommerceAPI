@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.service.impl;
@@ -43,13 +42,7 @@ public class EmailNotificationService implements ChannelNotificationService {
   }
 
 
-  /**
-   * @param recipient
-   * @param subject
-   * @param messageBody
-   * @param orderId
-   * @throws Exception
-   */
+
   @Override
   public void processNotification(String recipient, String subject, String messageBody, Long orderId) {
     var notification = new Notification(
@@ -74,9 +67,7 @@ public class EmailNotificationService implements ChannelNotificationService {
     notificationRepository.save(notification);
   }
 
-  /**
-   * @return
-   */
+
   @Override
   public Notification.Channel getChannel() {
     return Notification.Channel.EMAIL;
@@ -84,11 +75,6 @@ public class EmailNotificationService implements ChannelNotificationService {
 
   /**
    * Helper method to send email using JavaMailSender
-   * @param to
-   * @param subject
-   * @param messageBody
-   * @param orderId
-   * @throws MessagingException
    */
   public void sendEmail(String to, String subject, String messageBody, Long orderId) throws MessagingException {
     MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -117,7 +103,6 @@ public class EmailNotificationService implements ChannelNotificationService {
    * Listens to order placed events from Kafka topic and processes email notification.
    * he groupId is set to email-notification-group to ensure to differentiate from other notification services,
    * e.g., push notification service. The default value is defined in application.yml: notification-service-group
-   * @param event
    *
    */
   @KafkaListener(topics = "${spring.kafka.topics.order-placed}", groupId = "email-notification-group")
@@ -131,7 +116,6 @@ public class EmailNotificationService implements ChannelNotificationService {
    * Listens to order canceled events from Kafka topic and processes email notification
    * The groupId is set to email-notification-group to ensure to differentiate from other notification services,
    * e.g., push notification service. The default value is defined in application.yml: notification-service-group
-   * @param event
    */
   @KafkaListener(topics= "${spring.kafka.topics.order-cancelled}", groupId = "email-notification-group")
   public void listenToOrderCancelled(OrderCancelledEvent event){
@@ -144,7 +128,6 @@ public class EmailNotificationService implements ChannelNotificationService {
    * Listens to order deleted events from Kafka topic and processes email notification
    * The groupId is set to email-notification-group to ensure to differentiate from other notification services,
    * e.g., push notification service. The default value is defined in application.yml: notification-service-group
-   * @param event
    */
   @KafkaListener(topics= "${spring.kafka.topics.order-deleted}", groupId = "email-notification-group")
   public void listenToOrderDeleted(OrderDeletedEvent event){
@@ -157,7 +140,6 @@ public class EmailNotificationService implements ChannelNotificationService {
    * Listens to order updated events from Kafka topic and processes email notification
    * The groupId is set to email-notification-group to ensure to differentiate from other notification services,
    * e.g., push notification service. The default value is defined in application.yml: notification-service-group
-   * @param event
    */
   @KafkaListener(topics= "${spring.kafka.topics.order-updated}", groupId = "email-notification-group")
   public void listenToOrderUpdated(OrderUpdatedEvent event){

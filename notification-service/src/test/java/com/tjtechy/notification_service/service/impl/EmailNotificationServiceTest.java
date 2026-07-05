@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.notification_service.service.impl;
 
 import com.tjtechy.events.orderEvent.*;
@@ -57,7 +63,7 @@ class EmailNotificationServiceTest {
 
   @BeforeEach
   void setUp() {
-    notifications = new ArrayList<>(); //// Initialize to avoid NullPointerException
+    notifications = new ArrayList<>(); // Initialize to avoid NullPointerException
     var notification1 = new Notification(
             1L,
             101L,
@@ -84,13 +90,12 @@ class EmailNotificationServiceTest {
   /**
    * Tests the processNotification method for successful email sending.
    * Verifies that the notification status is updated to SUCCESS after sending the email.
-   * @throws MessagingException
    */
   @Test
   void processNotificationSuccess() throws MessagingException {
 
     //Given
-    var notification = notifications.get(0);
+    var notification = notifications.getFirst();
     var recipient = notification.getRecipient();
     var subject = "Order Placed";
     var messageBody = notification.getMessage();
@@ -117,7 +122,6 @@ class EmailNotificationServiceTest {
   /**
    * Tests the processNotification method for failed email sending.
    * Verifies that the notification status is updated to FAILED after a MessagingException is thrown.
-   * @throws MessagingException
    */
   @Test
   void processNotificationFailed() throws MessagingException {
@@ -155,7 +159,7 @@ class EmailNotificationServiceTest {
     // Given
     var event = new OrderPlacedEvent(
             1L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "123456",
             LocalDate.now(),
@@ -164,7 +168,7 @@ class EmailNotificationServiceTest {
     );
 
     doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
 
     // When
     emailNotificationService.listenToOrderPlaced(event);
@@ -176,7 +180,6 @@ class EmailNotificationServiceTest {
   /**
    *Tests the listenToOrderPlaced method for failed email sending.
    * Verifies that the notification status is updated to FAILED after a MessagingException is thrown.
-   * @throws MessagingException
    */
   @Test
   void listenToOrderPlacedFailed() throws MessagingException {
@@ -210,7 +213,7 @@ class EmailNotificationServiceTest {
     // Given
     var event = new OrderCancelledEvent(
             1L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "123456",
             LocalDate.now(),
@@ -219,7 +222,7 @@ class EmailNotificationServiceTest {
     );
 
     doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
 
     // When
     emailNotificationService.listenToOrderCancelled(event);
@@ -231,7 +234,6 @@ class EmailNotificationServiceTest {
   /**
    *Tests the listenToOrderCancelled method for failed email sending.
    * Verifies that the notification status is updated to FAILED after a MessagingException is thrown.
-   * @throws MessagingException
    */
   @Test
   void listenToOrderCancelledFailed() throws MessagingException {
@@ -263,7 +265,7 @@ class EmailNotificationServiceTest {
     //Given
     var event = new OrderDeletedEvent(
             2L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "654321",
             Reason.ADMIN_ACTION,
@@ -271,7 +273,7 @@ class EmailNotificationServiceTest {
             LocalDate.now()
     );
     doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
     // When
     emailNotificationService.listenToOrderDeleted(event);
     // Then
@@ -283,7 +285,7 @@ class EmailNotificationServiceTest {
     //Given
     var event = new OrderDeletedEvent(
             1L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "654321",
             Reason.ADMIN_ACTION,
@@ -291,7 +293,7 @@ class EmailNotificationServiceTest {
             LocalDate.now());
     doThrow(new MessagingException("Simulated email sending failure"))
             .when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
     // When
     emailNotificationService.listenToOrderDeleted(event);
     // Then
@@ -303,7 +305,7 @@ class EmailNotificationServiceTest {
     //Given
     var event = new OrderUpdatedEvent(
             1L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "654321",
             ActionBy.ADMIN,
@@ -311,7 +313,7 @@ class EmailNotificationServiceTest {
             LocalDate.now());
 
     doNothing().when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
     // When
     emailNotificationService.listenToOrderUpdated(event);
     // Then
@@ -323,7 +325,7 @@ class EmailNotificationServiceTest {
     //Given
     var event = new OrderUpdatedEvent(
             1L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "654321",
             ActionBy.ADMIN,
@@ -331,7 +333,7 @@ class EmailNotificationServiceTest {
             LocalDate.now());
     doThrow(new MessagingException("Simulated email sending failure"))
             .when(emailNotificationService).sendEmail(anyString(), anyString(), anyString(), anyLong());
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
     //When
     emailNotificationService.listenToOrderUpdated(event);
     //Then
@@ -345,7 +347,7 @@ class EmailNotificationServiceTest {
   @Test
   void testSendEmailSuccess() throws MessagingException {
     // Given
-    var notification = notifications.get(0);
+    var notification = notifications.getFirst();
     var to = notification.getRecipient();
     var subject = "Test Subject";
     var messageBody = "Test Message Body";

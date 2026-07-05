@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the security module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.security.config;
 
 import org.springframework.context.annotation.Bean;

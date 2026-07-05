@@ -1,10 +1,14 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the order-service module of the EcommerceMicroservices project.
+ */
+
 package com.tjtechy.order_service.controller;
-
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
-import com.tjtechy.Result;
 import com.tjtechy.actuator.Meter;
 import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.OrderItem;
@@ -20,17 +24,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.cloud.config.client.ConfigServerBootstrapper;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
+
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
+import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -43,7 +49,6 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,6 +61,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.cloud.config.enabled=false",
                 "eureka.client.enabled=false",
                 "spring.redis.enabled=false",
+                "spring.cloud.config.enabled=false" // Disable Spring Cloud Config for tests
         }
 )
 @ImportAutoConfiguration(exclude = {
@@ -84,6 +90,9 @@ class OrderControllerTest {
   ObjectMapper objectMapper;
 
   @Autowired
+  private WebApplicationContext webApplicationContext;
+
+
   private WebTestClient webTestClient; // Use WebTestClient for reactive testing
 
   @Autowired
@@ -96,17 +105,20 @@ class OrderControllerTest {
 
   @BeforeEach
   void setUp() {
+    this.webTestClient = MockMvcWebTestClient
+            .bindToApplicationContext(webApplicationContext)
+            .build();
 
     // Create a list of order items
     List<OrderItem> orderItem1 = Arrays.asList(
-            new OrderItem(1L, UUID.randomUUID(), "PRODUCT1", new BigDecimal(100.00), 10),
-            new OrderItem(2L, UUID.randomUUID(), "PRODUCT2", new BigDecimal(200.00), 20),
-            new OrderItem(3L, UUID.randomUUID(), "PRODUCT3", new BigDecimal(300.00), 30)
+            new OrderItem(1L, UUID.randomUUID(), "PRODUCT1", new BigDecimal("100.00"), 10),
+            new OrderItem(2L, UUID.randomUUID(), "PRODUCT2", new BigDecimal("200.00"), 20),
+            new OrderItem(3L, UUID.randomUUID(), "PRODUCT3", new BigDecimal("300.00"), 30)
     );
     List<OrderItem> orderItem2 = Arrays.asList(
-            new OrderItem(4L, UUID.randomUUID(), "PRODUCT4", new BigDecimal(400.00), 40),
-            new OrderItem(5L, UUID.randomUUID(), "PRODUCT5", new BigDecimal(500.00), 50),
-            new OrderItem(6L, UUID.randomUUID(), "PRODUCT6", new BigDecimal(600.00), 60));
+            new OrderItem(4L, UUID.randomUUID(), "PRODUCT4", new BigDecimal("400.00"), 40),
+            new OrderItem(5L, UUID.randomUUID(), "PRODUCT5", new BigDecimal("500.00"), 50),
+            new OrderItem(6L, UUID.randomUUID(), "PRODUCT6", new BigDecimal("600.00"), 60));
 
     orders = Arrays.asList(
             new Order(
@@ -115,7 +127,7 @@ class OrderControllerTest {
                     "order1@email.com",
                     "+1234567890",
                     "order 1 address",
-                    new BigDecimal(100.0),
+                    new BigDecimal("100.0"),
                     LocalDate.of(2025, 10, 10),
                     "PLACED",
                     orderItem1),
@@ -125,7 +137,7 @@ class OrderControllerTest {
                     "order2@email.com",
                     "+1987654321",
                     "order 2 address",
-                    new BigDecimal(200.0),
+                    new BigDecimal("200.0"),
                     LocalDate.of(2025, 10, 11),
                     "PLACED",
                     orderItem2)
@@ -469,7 +481,7 @@ class OrderControllerTest {
   @Test
   void cancelOrderSuccess() throws Exception {
     // Given
-    var orderId = orders.get(0).getOrderId();
+    var orderId = orders.getFirst().getOrderId();
 
     // Mock the service method
     doNothing().when(orderService).cancelOrder(orderId);
@@ -528,7 +540,7 @@ class OrderControllerTest {
   @Test
   void updateOrderStatusSuccess() throws Exception {
     // Given
-    var order = orders.get(0);
+    var order = orders.getFirst();
     var orderId = order.getOrderId();
     var updatedOrder = new Order();
     updatedOrder.setOrderId(orderId);
@@ -565,7 +577,7 @@ class OrderControllerTest {
 
     var json = objectMapper.writeValueAsString(updateOrderDto);
 
-    var order = orders.get(0);
+    var order = orders.getFirst();
     var orderId = order.getOrderId();
 
 
@@ -604,7 +616,7 @@ class OrderControllerTest {
 
     var json = objectMapper.writeValueAsString(updateOrderDto);
 
-    var order = orders.get(0);
+    var order = orders.getFirst();
     var orderId = order.getOrderId();
     //mock service method
     when(orderService.updateOrderByCallingExternalizedServices(eq(orderId), any(Order.class))).thenReturn(Mono.just(order));

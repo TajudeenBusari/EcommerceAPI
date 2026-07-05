@@ -1,4 +1,4 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
@@ -15,12 +15,11 @@ import org.springframework.cloud.config.server.EnableConfigServer;
 @EnableDiscoveryClient
 @EnableConfigServer
 public class  ConfigServerApplication {
-  public static void main(String[] args) {
-
+   static void main(String[] args) {
     SpringApplication.run(ConfigServerApplication.class, args);
   }
 }
-/**
+/*
  * Use mvn clean package to build the project in the terminal
  * in case of any error.
  * mvn clean install -DskipTests

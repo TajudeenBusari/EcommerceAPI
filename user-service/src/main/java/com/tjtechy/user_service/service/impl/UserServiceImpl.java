@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of the user-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.user_service.service.impl;
@@ -11,6 +10,7 @@ package com.tjtechy.user_service.service.impl;
 import com.tjtechy.UsernameAlreadyExistsException;
 import com.tjtechy.modelNotFoundException.UserNotFoundException;
 import com.tjtechy.security.config.MyUserPrincipal;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.scheduler.Schedulers;
@@ -19,7 +19,6 @@ import com.tjtechy.user_service.repository.UserRepository;
 import com.tjtechy.user_service.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +31,9 @@ import java.util.UUID;
 @Transactional
 public class UserServiceImpl implements UserService, ReactiveUserDetailsService {
   private final UserRepository userRepository;
-  ///PasswordEncoder bean is configured in the security module,
-  /// without the bean, application will fail to start.
+
+  ///PasswordEncoder bean is configured in the security module;
+  /// without the bean, the application will fail to start.
   private final PasswordEncoder passwordEncoder;
   private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
@@ -67,10 +67,10 @@ public class UserServiceImpl implements UserService, ReactiveUserDetailsService 
   }
 
   /**
-   * Business logic to find user by username, with logging and caching.
+   * Business logic to find a user by username, with logging and caching.
    */
   @Override
-  @Cacheable(value = "usersByUsername", key = "#username", unless = "#result == null")
+  //@Cacheable(value = "usersByUsername", key = "#username", unless = "#result == null")
   public Mono<User> findUserByUsername(String username) {
     return userRepository.findByUserName(username)
             /*
@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService, ReactiveUserDetailsService 
    * interface for Spring Security authentication.
    */
   @Override
-  public Mono<UserDetails> findByUsername(String username) {
+  public Mono<UserDetails> findByUsername(@NonNull String username) {
 
     return findUserByUsername(username)
             .switchIfEmpty(Mono.error(new RuntimeException("User not found with username: " + username))) //handle the UsernameNotFoundException in the RestControllerAdvice class
@@ -116,20 +116,13 @@ public class UserServiceImpl implements UserService, ReactiveUserDetailsService 
     return null;
   }
 
-  /**
-   * @param id
-   * @param user
-   * @return
-   */
+
   @Override
   public Mono<User> updateUser(UUID id, User user) {
     return null;
   }
 
-  /**
-   * @param id
-   * @return
-   */
+
   @Override
   public Mono<Void> deleteUser(UUID id) {
     //first find the user by id else throw error
@@ -154,19 +147,13 @@ public class UserServiceImpl implements UserService, ReactiveUserDetailsService 
             });
   }
 
-  /**
-   * @param ids
-   * @return
-   */
+
   @Override
   public Mono<Void> deleteAllUsersByIds(Iterable<UUID> ids) {
     return null;
   }
 
-  /**
-   * @param users
-   * @return
-   */
+
   @Override
   public Flux<User> updateAllUsers(Flux<User> users) {
     return null;

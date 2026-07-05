@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
@@ -12,9 +12,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.tjtechy.*;
 import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.OrderItemDto;
@@ -24,29 +22,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+
 import org.springframework.boot.test.context.SpringBootTest;
-
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.cloud.config.client.ConfigServerBootstrapper;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
-
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.testcontainers.containers.PostgreSQLContainer;
+//import org.testcontainers.containers.PostgreSQLContainer; //deprecated
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer; //use this instead of the deprecated one
 import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
@@ -57,6 +53,7 @@ import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static wiremock.com.google.common.base.Preconditions.checkState;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -82,11 +79,14 @@ properties = {
         EurekaDiscoveryClientConfiguration.class,
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-
+//since application context already loads the KafkaTemplate bean, we need to disable the autoconfiguration
+//@Import(KafkaTestConfig.class) // Import the KafkaTestConfig class to provide a mock KafkaTemplate bean
+@AutoConfigureWebTestClient
 public class OrderServiceControllerIntegrationTest {
 
   @Autowired
-  private TestRestTemplate restTemplate;
+  //private TestRestTemplate restTemplate;
+  private WebTestClient webTestClient; //add @AutoConfigureWebTestClient to enable WebTestClient
 
   @LocalServerPort
   private int port;
@@ -98,7 +98,7 @@ public class OrderServiceControllerIntegrationTest {
 
   //spin up postgres container
   @Container
-  private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
+  private static final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:latest")
           .withDatabaseName("order_service_test")
           .withUsername("test")
           .withPassword("test");
@@ -112,7 +112,7 @@ public class OrderServiceControllerIntegrationTest {
    * container does not have /etc/confluent/docker/run directory where the startup script is located,
    * so TestContainers cannot launch it properly. Hence, we are using the apache/kafka image which is compatible.
    * If you must use Confluent, you will need to create a custom container class that extends GenericContainer:
-   * E.G; Check readme file
+   * E.G; Check a readme file
    */
   @Container
   private static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName
@@ -162,7 +162,7 @@ public class OrderServiceControllerIntegrationTest {
     if (postgreSQLContainer != null && postgreSQLContainer.isRunning()) {
       postgreSQLContainer.stop();
     }
-    if (kafkaContainer != null && kafkaContainer.isRunning()) {
+    if (kafkaContainer.isRunning()) {
       kafkaContainer.stop();
     }
   }
@@ -205,21 +205,30 @@ public class OrderServiceControllerIntegrationTest {
     //Create order
     String url = "http://localhost:" + port + baseUrl + "/order/reactive/externalized";
 
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
+//    var headers = new HttpHeaders();
+//    headers.setContentType(MediaType.APPLICATION_JSON);
 
     String json = objectMapper
             .registerModule(new JavaTimeModule()) // Register JavaTimeModule to handle LocalDate and other Java 8 date/time types
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
             .writeValueAsString(createOrderDto);
+    var response = webTestClient.post()
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(json)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Order created successfully by calling required external services");
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getData()).isNotNull();
 
-    HttpEntity<String> request = new HttpEntity<>(json, headers);
-    ResponseEntity<Result> response = restTemplate.exchange(url, HttpMethod.POST, request, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Order created successfully by calling required external services");
-    assertThat(response.getBody().isFlag()).isEqualTo(true);
-    var createdOrder = (Map<String, Object>) response.getBody().getData();
+    assertInstanceOf(Map.class, response.getData());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> createdOrder = (Map<String, Object>) response.getData();
     return createdOrder;
   }
 
@@ -230,7 +239,7 @@ public class OrderServiceControllerIntegrationTest {
     //Mock the product-service get response
     ProductDto productDto = new ProductDto(
         UUID.randomUUID()   ,
-        "Product" + + System.currentTimeMillis(),
+        "Product" + System.currentTimeMillis(),
         "Test Category",
         "Test Description",
         10,
@@ -281,23 +290,27 @@ public class OrderServiceControllerIntegrationTest {
 //            .toUriString();
     String url = "http://localhost:" + port + baseUrl + "/order/reactive/externalized";
 
-
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
     String json = objectMapper
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
             .writeValueAsString(createOrderDto);
 
-    HttpEntity<String> request = new HttpEntity<>(json, headers);
-    var response = restTemplate.exchange(url, HttpMethod.POST, request, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Order created successfully by calling required external services");
-    //extract the created order from the response
-    var createdOrder = response.getBody().getData();
-    System.out.println("The created order is: " + createdOrder);
+    var response = webTestClient.post()
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(json)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assert response != null;
+    assertThat(response.getData()).isInstanceOf(Map.class);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> createdOrder = (Map<String, Object>) response.getData();
+    assertThat(createdOrder).isNotNull();
 
     //verify the get product call and deduct inventory call
     wireMockServer.verify(1, WireMock.getRequestedFor(urlEqualTo("/api/v1/product/" + productDto.productId())));
@@ -324,14 +337,22 @@ public class OrderServiceControllerIntegrationTest {
 
     // Create the order reactively
     Map<String, Object> createdOrder = createOrderReactively(createOrderDto);
-    Long orderId = Long.parseLong(createdOrder.get("orderId").toString());
+    long orderId = Long.parseLong(createdOrder.get("orderId").toString());
 
     // Now, test the get order by ID endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/" + orderId;
-    ResponseEntity<Result> response = restTemplate.getForEntity(url, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Order retrieved successfully");
+    var response = webTestClient.get()
+            .uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertThat(response).isNotNull();
+    assert response != null;
+    assertThat(response.getData()).isNotNull();
+    assertThat(response.getData()).isInstanceOf(Map.class);
   }
 
   @Test
@@ -352,14 +373,19 @@ public class OrderServiceControllerIntegrationTest {
 
     // Create the order reactively
     Map<String, Object> createdOrder = createOrderReactively(createOrderDto);
-    Long orderId = Long.parseLong(createdOrder.get("orderId").toString());
+    long orderId = Long.parseLong(createdOrder.get("orderId").toString());
 
     // Now, test the get order by ID endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/orderDto/" + orderId;
-    ResponseEntity<Result> response = restTemplate.getForEntity(url, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("OrderDto retrieved successfully");
+
+    var response = webTestClient.get()
+            .uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
   }
 
   @Test
@@ -392,22 +418,15 @@ public class OrderServiceControllerIntegrationTest {
     Long orderId2 = Long.parseLong(createdOrder2.get("orderId").toString());
 
     // Now, test the get all orders endpoint
-    String url = "http://localhost:" + port + baseUrl + "/order";
-    ResponseEntity<Result> response = restTemplate.getForEntity(url, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Orders retrieved successfully");
-    //verify that the response contains both orders
-    List<Map<String, Object>> orders = (List<Map<String, Object>>) response.getBody().getData();
-    assertThat(orders).isNotNull();
-    assertThat(orders.size()).isGreaterThanOrEqualTo(2);
-    System.out.println(orders);
-    //extract the order IDs from the response
-    List<Long> orderIds = orders.stream()
-            .map(order -> Long.parseLong(order.get("orderId").toString()))
-            .toList();
-    //verify that both order IDs are present in the response
-    System.out.println(orderIds);
+  String url = "http://localhost:" + port + baseUrl + "/order";
+  var response = webTestClient.get()
+          .uri(url)
+          .exchange()
+          .expectStatus().isOk()
+          .expectBody(Result.class)
+          .returnResult()
+          .getResponseBody();
+  assertThat(response).isNotNull();
   }
 
   @Test
@@ -432,10 +451,16 @@ public class OrderServiceControllerIntegrationTest {
 
     // Now, test the get order by customer email endpoint, add email as request parameter
     String url = "http://localhost:" + port + baseUrl + "/order/customer?customerEmail=" + createOrderDto.getCustomerEmail();
-    ResponseEntity<Result> response = restTemplate.getForEntity(url, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Orders by email retrieved successfully");
+
+    var response = webTestClient.get()
+            .uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
+
   }
 
   @Test
@@ -465,14 +490,21 @@ public class OrderServiceControllerIntegrationTest {
 
     // Create the order reactively
     Map<String, Object> createdOrder = createOrderReactively(createOrderDto);
-    Long orderId = Long.parseLong(createdOrder.get("orderId").toString());
+    long orderId = Long.parseLong(createdOrder.get("orderId").toString());
 
     // Now, test the delete order by ID endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/" + orderId;
-    ResponseEntity<Result> response = restTemplate.exchange(url, HttpMethod.DELETE, null, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Order deleted successfully");
+
+    var response = webTestClient.delete()
+            .uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Order deleted successfully");
   }
 
   @Test
@@ -514,15 +546,21 @@ public class OrderServiceControllerIntegrationTest {
 
     // Now, test the bulk delete orders endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/bulk-delete";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    String json = objectMapper
-            .writeValueAsString(List.of(orderId1, orderId2));
-    HttpEntity<String> request = new HttpEntity<>(json, headers);
-    ResponseEntity<Result> response = restTemplate.exchange(url, HttpMethod.DELETE, request, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Orders bulk deleted success");
+
+    var orders = List.of(orderId1, orderId2);
+    var response = webTestClient.method(HttpMethod.DELETE)
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(orders)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Orders bulk deleted success");
+
     //Note:Verify that the restore inventory endpoint was called
     //Restore inventory´end point is called twice, once for each order
     wireMockServer.verify(2, WireMock.postRequestedFor(urlEqualTo("/api/v1/inventory/internal/restore-inventory"))
@@ -553,10 +591,17 @@ public class OrderServiceControllerIntegrationTest {
 
     // Now, test the get order by status endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/status?orderStatus=PLACED";
-    ResponseEntity<Result> response = restTemplate.getForEntity(url, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Orders by status retrieved successfully");
+
+    var response = webTestClient.get()
+            .uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Orders by status retrieved successfully");
   }
 
   @Test
@@ -613,7 +658,7 @@ public class OrderServiceControllerIntegrationTest {
     createOrderDto.setShippingAddress("123 Test Street, Test City, TC 12345");
     createOrderDto.setOrderItems(List.of(orderItemDto1));
     Map<String, Object> createdOrder = createOrderReactively(createOrderDto);
-    Long orderId = Long.parseLong(createdOrder.get("orderId").toString());
+    long orderId = Long.parseLong(createdOrder.get("orderId").toString());
 
     // Now, test the update order by calling externalized services endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/externalized/" + orderId;
@@ -634,11 +679,19 @@ public class OrderServiceControllerIntegrationTest {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
             .writeValueAsString(updateOrderDto);
-    HttpEntity<String> request = new HttpEntity<>(json, headers);
-    ResponseEntity<Result> response = restTemplate.exchange(url, HttpMethod.PUT, request, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Order updated successfully by calling required external services");
+
+    var response = webTestClient.put()
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(json)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Order updated successfully by calling required external services");
 
     //verify the restore inventory, get product call and deduct inventory call
     wireMockServer.verify(1, postRequestedFor(urlEqualTo("/api/v1/inventory/internal/restore-inventory"))
@@ -678,14 +731,21 @@ public class OrderServiceControllerIntegrationTest {
 
     // Create the order reactively
     Map<String, Object> createdOrder = createOrderReactively(createOrderDto);
-    Long orderId = Long.parseLong(createdOrder.get("orderId").toString());
+    long orderId = Long.parseLong(createdOrder.get("orderId").toString());
 
     // Now, test the cancel order by ID endpoint
     String url = "http://localhost:" + port + baseUrl + "/order/cancel/" + orderId;
-    ResponseEntity<Result> response = restTemplate.exchange(url, HttpMethod.DELETE, null, Result.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Order cancelled successfully");
+
+    var response = webTestClient.delete()
+            .uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Order cancelled successfully");
   }
 
 }

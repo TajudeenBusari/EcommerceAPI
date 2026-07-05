@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.order_service.mapper;
 
@@ -10,7 +10,6 @@ import com.tjtechy.order_service.entity.Order;
 import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.OrderDto;
 import com.tjtechy.order_service.entity.dto.UpdateOrderDto;
-import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;

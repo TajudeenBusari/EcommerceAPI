@@ -12,7 +12,7 @@ spring:
     #key converts message keys (e.g order ID) from a string
     #value converts message values (e.g order details-JSON PAYLOAD) from a string
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer #Serializer for the key
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer #Serializer for the value

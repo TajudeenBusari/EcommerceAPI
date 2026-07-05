@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of order-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.order_service.kafka;
@@ -21,6 +20,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrderEventProducer {
   private static final Logger logger = LoggerFactory.getLogger(OrderEventProducer.class);
+
   private final KafkaTemplate<String, Object> kafkaTemplate;
   private final KafkaTopicsProperties kafkaTopicsProperties;
 
@@ -32,9 +32,6 @@ public class OrderEventProducer {
 
   /**
    * Asynchronous event sending to avoid blocking the main thread
-   * @param topic
-   * @param event
-   * @param <T>
    */
   private <T> void sendOrderEvent(String topic, T event){
     kafkaTemplate.send(topic, event)
@@ -54,10 +51,7 @@ public class OrderEventProducer {
   }
 
   /**
-   * Synchronous send to ensure order of events are maintained
-   * @param topic
-   * @param event
-   * @param <T>
+   * Synchronously send to ensure order of events are maintained
    */
   private <T> void sendOrderEventSyncChronous(String topic, T event){
     try{
@@ -77,7 +71,6 @@ public class OrderEventProducer {
               e);
     }
   }
-
 
   /**
    * Sends OrderPlacedEvent to the appropriate Kafka topic

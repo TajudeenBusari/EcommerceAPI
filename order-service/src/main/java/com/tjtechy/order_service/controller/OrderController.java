@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the EcommerceMicroservices project.
  */
 package com.tjtechy.order_service.controller;
 
@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.service.annotation.GetExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -42,8 +41,6 @@ public class OrderController {
    * Cannot efficiently handle multiple external service calls
    * (e.g., calling product service for each item in the order) and will be
    * deprecated in the next version.
-   * @param createOrderDto
-   * @return
    */
   @Operation(summary = "Create a new order",
   description = "This endpoint creates a new order based on the provided CreateOrderDto. " +
@@ -73,8 +70,6 @@ public class OrderController {
    * Efficient when calling external services or APIs, E.g., product service etc.
    * Returns a reactive stream, freeing up the thread to handle other requests.
    * The createOrder is processed inside the map method.
-   * @param createOrderDto
-   * @return
    */
   @Operation(summary = "Create a new order reactively",
           description = "This endpoint creates a new order reactively based on the provided CreateOrderDto. " +
@@ -104,8 +99,6 @@ public class OrderController {
    * Efficient when calling external services or APIs, E.g., product service etc.
    * Returns a reactive stream, freeing up the thread to handle other requests.
    * The createOrder is processed inside the map method.
-   * @param createOrderDto
-   * @return
    */
   @Operation(summary = "Create a new order reactively by calling externalized services",
           description = "This endpoint creates a new order reactively by calling externalized services" +
@@ -118,7 +111,7 @@ public class OrderController {
     //extract productIds from createOrderDto
     createOrderDto.getOrderItems().forEach(orderItem -> {
       var productId = orderItem.getProductId().toString();
-      //increment the counter metric for each productId
+      //increment the counter-metric for each productId
       meterRegistry.incrementCounter("orders.requests.by.product.id.total", "productId", productId);
     });
 
@@ -137,10 +130,8 @@ public class OrderController {
 
   /**
    * This is deprecated and will be removed in the next version
-   * because caching logic is not implemented as result of serialization issues
+   * because caching logic is not implemented as a result of serialization issues
    * Use {@link #getOrderDtoById(Long)} instead
-   * @param orderId
-   * @return
    */
   @Operation(summary = "Get order by ID",
           description = "This endpoint retrieves an order by its ID. " +
@@ -159,8 +150,6 @@ public class OrderController {
 
   /**
    * This is the new method to get order by id
-   * @param orderId
-   * @return
    */
   @Operation(summary = "Get order by ID",
           description = "This endpoint retrieves an order by its ID. " +
@@ -177,7 +166,6 @@ public class OrderController {
 
   /**
    * This is the method to get all orders
-   * @return
    */
   @Operation(summary = "Get all orders",
           description = "This endpoint retrieves all orders in the system.",
@@ -194,8 +182,6 @@ public class OrderController {
 
   /**
    * This is the method to get orders by customer email
-   * @param customerEmail
-   * @return
    */
   @Operation(summary = "Get orders by customer email",
           description = "This endpoint retrieves all orders associated with a specific customer email.",
@@ -213,8 +199,6 @@ public class OrderController {
 
   /**
    * This is the method to delete order
-   * @param orderId
-   * @return
    */
   @Operation(summary = "Delete an order by ID",
           description = "This endpoint deletes an order by its ID.",
@@ -231,7 +215,6 @@ public class OrderController {
 
   /**
    * This is the method to get all orders without cancelled ones
-   * @return
    */
   @Operation(summary = "Get all orders without cancelled ones",
           description = "This endpoint retrieves all orders excluding those that are cancelled.",
@@ -248,8 +231,6 @@ public class OrderController {
 
   /**
    * This is the method to cancel order
-   * @param orderId
-   * @return
    */
   @Operation(summary = "Cancel an order by ID",
           description = "This endpoint cancels an order by its ID.",
@@ -266,8 +247,6 @@ public class OrderController {
 
   /**
    * This is the method to bulk delete orders
-   * @param orderIds
-   * @return
    */
   @Operation(summary = "Bulk delete orders",
           description = "This endpoint allows bulk deletion of orders based on a list of order IDs.",
@@ -284,8 +263,6 @@ public class OrderController {
 
   /**
    * This is the method to get orders by status
-   * @param orderStatus
-   * @return
    */
   @Operation(summary = "Get orders by status",
           description = "This endpoint retrieves all orders with a specific status.",
@@ -300,9 +277,6 @@ public class OrderController {
 
   /**
    * This is the method to update order status
-   * @param orderId
-   * @param orderStatus
-   * @return
    */
   @Operation(summary = "Update order status",
           description = "This endpoint updates the status of an order by its ID.",
@@ -327,9 +301,6 @@ public class OrderController {
 
   /**
    * This is the method to update order
-   * @param orderId
-   * @param updateOrderDto
-   * @return
    */
   @Operation(summary = "Update an order",
           description = "This endpoint updates an existing order based on the provided UpdateOrderDto.",
@@ -374,7 +345,6 @@ public class OrderController {
 
   /**
    * This is the method to clear all cache
-   * @return
    */
   @Operation(summary = "Clear all cache",
           description = "This endpoint clears all cached data related to orders.",
@@ -394,9 +364,6 @@ public class OrderController {
    * ToDo: In the future, it will be secured, only accessible by Admin users and
    * the name and timestamp of the user who performed the action will be logged
    * Bulk delete will not be implemented for this method to discourage misuse
-   *
-   * @param orderId
-   * @return
    */
   @DeleteMapping
   ("/forced-delete/{orderId}")

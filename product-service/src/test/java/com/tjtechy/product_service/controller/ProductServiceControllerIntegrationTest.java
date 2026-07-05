@@ -1,5 +1,10 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the product-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.product_service.controller;
-
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -19,20 +24,25 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
 import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -71,12 +81,11 @@ import static org.awaitility.Awaitility.await;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS) // Add this
 @ActiveProfiles("test")
 @Tag("ProductServiceControllerIntegrationTest")
-
-
+@AutoConfigureWebTestClient
 public class ProductServiceControllerIntegrationTest {
 
   @Autowired
-  private TestRestTemplate restTemplate;
+  private WebTestClient webTestClient;
 
   @LocalServerPort
   private int port;
@@ -84,14 +93,10 @@ public class ProductServiceControllerIntegrationTest {
   @Autowired
   private ObjectMapper objectMapper;
 
-
-  //private final ObjectMapper objectMapper = new ObjectMapper();
-
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
 
-  @Value("${inventory-service.base-url}")
-  private String inventoryServiceBaseUrl;
+
 
   private static final String CREATE_INVENTORY_SERVICE_URL = "/api/v1/inventory/internal/create";
   private static final String GET_INVENTORY_BY_PRODUCT_URL = "/api/v1/inventory/internal/product";
@@ -99,7 +104,7 @@ public class ProductServiceControllerIntegrationTest {
   private static final String DELETE_INVENTORY_URL = "/api/v1/inventory";
 
   @Container
-  public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:15.0")
+  public static final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:15.0")
           .withDatabaseName("productdb")
           .withUsername("postgres")
           .withPassword("postgres");
@@ -148,8 +153,7 @@ public class ProductServiceControllerIntegrationTest {
     wireMockServer.resetAll();
   }
 
-  //helper method to create product with inventory
-  /**
+  /**helper method to create product with inventory
    * This helper method will be used for when inventory service is not available.
    */
   private Map<String, Object> createProductWithInventory() throws Exception {
@@ -167,16 +171,25 @@ public class ProductServiceControllerIntegrationTest {
             "expiryDate", "2027-02-20"
     );
 
-    //using restTemplate to call a rest call
     //if you must use this to create a product, you must stub the inventory creation first
     var url = "http://localhost:" + port + baseUrl + "/product/with-inventory/externalized";
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(createProductDto), headers);
-    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    Map<String, Object> savedProduct = (Map<String, Object>) responseBody.get("data");
+
+    var response = webTestClient
+            .post()
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(createProductDto)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getData()).isInstanceOf(Map.class);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> savedProduct = (Map<String, Object>) response.getData();
     var productId = UUID.fromString((String) savedProduct.get("productId"));
     assertThat(savedProduct.get("productId")).isEqualTo(productId.toString());
     assertThat(savedProduct.get("productName")).isEqualTo(uniqueProductName);
@@ -189,8 +202,6 @@ public class ProductServiceControllerIntegrationTest {
 
   /**
    * Used for just creating a product without inventory.
-   * @return
-   * @throws Exception
    */
   private Map<String, Object> createProductWithoutInventory() throws Exception {
     var uniqueProductName = "product-" + System.currentTimeMillis();
@@ -208,14 +219,23 @@ public class ProductServiceControllerIntegrationTest {
 
     //using restTemplate to call a rest call
     var url = "http://localhost:" + port + baseUrl + "/product";
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(createProductDto), headers);
-    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    //parse the response body
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    Map<String, Object> savedProduct = (Map<String, Object>) responseBody.get("data");
+
+    var response = webTestClient
+            .post()
+            .uri(url)
+            .bodyValue(createProductDto)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assert response != null;
+    assertThat(response.getData()).isInstanceOf(Map.class);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> savedProduct = (Map<String, Object>) response.getData();
     var productId = UUID.fromString((String) savedProduct.get("productId"));
     assertThat(savedProduct.get("productId")).isEqualTo(productId.toString());
 
@@ -225,8 +245,6 @@ public class ProductServiceControllerIntegrationTest {
 
   /**
    * This method will be used to test the product creation with inventory
-   * @return
-   * @throws Exception
    */
   private Map<String, Object> createProductAndInventoryWithInventoryExternalized() throws Exception {
 
@@ -269,19 +287,28 @@ public class ProductServiceControllerIntegrationTest {
             "expiryDate", "2027-02-20"
     );
 
-    /**
+    /*
      * Using restTemplate to call a rest call
      *if you must use this to create a product, you must stub the inventory creation first because
      *the product creation will call the inventory service to create inventory
      */
     var url = "http://localhost:" + port + baseUrl + "/product/with-inventory/externalized";
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(createProductDto), headers);
-    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    Map<String, Object> savedProduct = (Map<String, Object>) responseBody.get("data");
+
+    var response = webTestClient
+            .post()
+            .uri(url)
+            .bodyValue(createProductDto)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getData()).isInstanceOf(Map.class);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> savedProduct = (Map<String, Object>) response.getData();
     var productId = UUID.fromString((String) savedProduct.get("productId"));
     assertThat(savedProduct.get("productId")).isEqualTo(productId.toString());
     assertThat(savedProduct.get("productName")).isEqualTo(uniqueProductName);
@@ -318,7 +345,7 @@ public class ProductServiceControllerIntegrationTest {
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   public void contextLoads() {
 
-    assertThat(restTemplate).isNotNull();
+    assertThat(webTestClient).isNotNull();
   }
 
   @Test
@@ -380,7 +407,7 @@ public class ProductServiceControllerIntegrationTest {
             "productPrice", 199.99
     );
 
-    /**
+    /*
      * stubbing the get inventory by product id endpoint will also require us to
      * create
      */
@@ -413,13 +440,28 @@ public class ProductServiceControllerIntegrationTest {
 
     //now trigger the product update
     var url = "http://localhost:" + port + baseUrl + "/product/" + productId + "/with-inventory/externalized";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(updateProductDto), headers);
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("flag")).isEqualTo(true);
+
+    var response = webTestClient
+            .put()
+            .uri(url)
+            .bodyValue(updateProductDto)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assert response != null;
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getMessage()).isEqualTo("Update One Success Using Externalized");
+    assertThat(response.getData()).isNotNull();
+
+    Map<String, Object> responseBody = (Map<String, Object>) response.getData();
+    System.out.println(responseBody);
+    assertThat(responseBody.get("productId")).isEqualTo(productId.toString());
+    assertThat(responseBody.get("productName")).isEqualTo(updatedProductName);
+
 
     await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
       WireMock.verify(WireMock.getRequestedFor(WireMock.urlEqualTo(GET_INVENTORY_BY_PRODUCT_URL + "/" + tempProductId)));
@@ -464,13 +506,21 @@ public class ProductServiceControllerIntegrationTest {
 
     // Now delete the product
     var url = "http://localhost:" + port + baseUrl + "/product/" + productId;
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, null, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    // Verify that the product was deleted successfully
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("flag")).isEqualTo(true);
-    assertThat(responseBody.get("message")).isEqualTo("Delete One Success");
+    var response = webTestClient
+            .delete()
+            .uri(url)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assert response != null;
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getMessage()).isEqualTo("Delete One Success");
+    assertThat(response.getData()).isNull();
   }
 
   @Test
@@ -488,16 +538,24 @@ public class ProductServiceControllerIntegrationTest {
 
     // Now bulk delete the products
     var url = "http://localhost:" + port + baseUrl + "/product/bulk-delete";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(List.of(productId1.toString(), productId2.toString())), headers);
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    List<String> productIds = List.of(productId1.toString(), productId2.toString());
+    var response = webTestClient.method(HttpMethod.DELETE)
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(productIds)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
 
-    // Verify that the products were deleted successfully
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("flag")).isEqualTo(true);
-    assertThat(responseBody.get("message")).isEqualTo("Bulk Delete Success");
+    assert response != null;
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getMessage()).isEqualTo("Bulk Delete Success");
+    assertThat(response.getData()).isNull();
+
+
   }
 
   @Test
@@ -526,17 +584,21 @@ public class ProductServiceControllerIntegrationTest {
 
     // Now delete the product with inventory
     var url = "http://localhost:" + port + baseUrl + "/product/delete/with-inventory/externalized/" + productId;
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, null, String.class);
-    if (response.getStatusCode() != HttpStatus.OK) {
-      System.out.println("Error response: " + response.getBody());
-    }
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
+    var response = webTestClient
+            .delete()
+            .uri(url)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getMessage()).isEqualTo("Delete One Success Using Externalized");
+    assertThat(response.getData()).isNull();
 
-    // Verify that the product was deleted successfully
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("flag")).isEqualTo(true);
-    assertThat(responseBody.get("message")).isEqualTo("Delete One Success Using Externalized");
 
     // Verify WireMock interactions
     await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -581,13 +643,22 @@ public class ProductServiceControllerIntegrationTest {
     var url = "http://localhost:" + port + baseUrl + "/product/bulk-delete/with-inventory/externalized";
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(List.of(productId1.toString(), productId2.toString())), headers);
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    // Verify that the products were deleted successfully
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("flag")).isEqualTo(true);
-    assertThat(responseBody.get("message")).isEqualTo("Bulk Delete With Inventories Using Externalized Success");
+    List<String> productIds = List.of(productId1.toString(), productId2.toString());
+    var response = webTestClient.method(HttpMethod.DELETE)
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(productIds)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    //assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assert response != null;
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getMessage()).isEqualTo("Bulk Delete With Inventories Using Externalized Success");
+
 
     // Verify WireMock interactions
     await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -613,16 +684,23 @@ public class ProductServiceControllerIntegrationTest {
 
     // Now bulk delete the products
     var url = "http://localhost:" + port + baseUrl + "/product/bulk-delete";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    HttpEntity<String> request = new HttpEntity<>(objectMapper.writeValueAsString(List.of(productId1.toString(), productId2.toString())), headers);
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    // Verify that the products were deleted successfully
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("flag")).isEqualTo(true);
-    assertThat(responseBody.get("message")).isEqualTo("Bulk Delete Success");
+    List<String> productIds = List.of(productId1.toString(), productId2.toString());
+
+    var response = webTestClient.method(HttpMethod.DELETE)
+            .uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(productIds)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assert response != null;
+    assertThat(response.isFlag()).isEqualTo(true);
+    assertThat(response.getMessage()).isEqualTo("Bulk Delete Success");
   }
 
   @Test
@@ -637,12 +715,21 @@ public class ProductServiceControllerIntegrationTest {
 
     // Now get all products
     var url = "http://localhost:" + port + baseUrl + "/product";
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, null, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    var response = webTestClient.get()
+            .uri(url)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
 
     // Verify that the response contains the created product
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    List<Map<String, Object>> products = (List<Map<String, Object>>) responseBody.get("data");
+    assert response != null;
+
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> products = (List<Map<String, Object>>) response.getData();
     assertThat(products).isNotNull();
     assertThat(products.stream().anyMatch(product -> product.get("productId").equals(savedProduct.get("productId")))).isTrue();
   }

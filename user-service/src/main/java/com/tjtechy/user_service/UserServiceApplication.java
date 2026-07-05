@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the user-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service;
 
 import com.tjtechy.RedisCacheConfig;
@@ -20,7 +26,7 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties(AdminProperties.class)
 public class UserServiceApplication {
 
-	public static void main(String[] args) {
+	static void main(String[] args) {
 
 		SpringApplication.run(UserServiceApplication.class, args);
 	}

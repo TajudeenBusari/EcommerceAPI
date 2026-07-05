@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of inventory-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.inventory_service.exception;
 
 import com.tjtechy.Result;
@@ -14,7 +20,6 @@ public class ExceptionHandlingAdvice {
 
   /**
    * Handles exceptions of type {@link InventoryNotFoundException}.
-   * @param exception
    * @return Result {@link Result}
    */
   @ExceptionHandler(InventoryNotFoundException.class)
@@ -27,7 +32,6 @@ public class ExceptionHandlingAdvice {
    * Handles exceptions of type {@link ProductNotFoundException}.
    * This needs to be handled here to have a good error format for when product is not found
    * for the findInventoryByProductId method
-   * @param exception
    * @return Result {@link Result}
    */
   @ExceptionHandler(ProductNotFoundException.class)
@@ -40,7 +44,6 @@ public class ExceptionHandlingAdvice {
    * Handles exceptions of type {@link IllegalArgumentException}.
    * This is a general runtime exception that occurs when a method receives an invalid argument
    * that it cannot handle. It is part of Java core exception and extends {@link RuntimeException}.
-   * @param exception
    * @return Result {@link Result}
    */
   @ExceptionHandler(IllegalArgumentException.class)

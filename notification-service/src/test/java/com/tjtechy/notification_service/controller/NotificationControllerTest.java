@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.notification_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,8 +15,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+//import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+//import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -49,7 +57,7 @@ class NotificationControllerTest {
 
   private List<Notification> notificationList;
 
-  ObjectMapper mapper = new ObjectMapper();
+  public final ObjectMapper mapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() {
@@ -120,11 +128,11 @@ class NotificationControllerTest {
   @Test
   void getNotificationByIdSuccess() throws Exception {
     //Given
-    when(notificationService.getNotificationById(notificationList.get(0).getNotificationId()))
-            .thenReturn(notificationList.get(0));
+    when(notificationService.getNotificationById(notificationList.getFirst().getNotificationId()))
+            .thenReturn(notificationList.getFirst());
 
     //When and //Then
-    mockMvc.perform(get(baseUrl + "/notification/{notificationId}", notificationList.get(0).getNotificationId()))
+    mockMvc.perform(get(baseUrl + "/notification/{notificationId}", notificationList.getFirst().getNotificationId()))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notification fetched successfully"))
             .andExpect(jsonPath("$.data.notificationId").value(1))
@@ -135,9 +143,9 @@ class NotificationControllerTest {
   @Test
   void removeNotificationByIdSuccess() throws Exception {
     //Given
-    doNothing().when(notificationService).removeNotification(notificationList.get(0).getNotificationId());
+    doNothing().when(notificationService).removeNotification(notificationList.getFirst().getNotificationId());
     //When and //Then
-    mockMvc.perform(delete(baseUrl + "/notification/{notificationId}", notificationList.get(0).getNotificationId()))
+    mockMvc.perform(delete(baseUrl + "/notification/{notificationId}", notificationList.getFirst().getNotificationId()))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notification removed successfully"))
             .andExpect(jsonPath("$.code").value(200));

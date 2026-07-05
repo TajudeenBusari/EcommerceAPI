@@ -1,10 +1,11 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of order-service module of the Ecommerce Microservices project.
+ * This file is part of the order-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.order_service;
+
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +28,7 @@ import org.springframework.test.context.TestPropertySource;
 				"spring.kafka.admin.auto-create=false", // Prevent auto-creation of topics
 				"spring.kafka.consumer.auto-offset-reset=none", // Prevent consumer from auto-starting
 })
+//@Import(KafkaTestConfig.class) // Import the KafkaTestConfig for testing
 class OrderServiceApplicationTests {
 
 	@Test

@@ -26,8 +26,10 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>17</java.version>
-		<spring-cloud.version>2024.0.0</spring-cloud.version>
+		<java.version>25</java.version>
+		<springdoc.version>3.0.3</springdoc.version>
+<!--		<spring-cloud.version>2024.0.0</spring-cloud.version>-->
+		<testcontainers.version>2.0.5</testcontainers.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -50,18 +52,21 @@
 <!--				</exclusion>-->
 <!--			</exclusions>-->
 		</dependency>
+
+		<!--dependency to load env variable from https://github.com/paulschwarz/spring-dotenv?utm_source=chatgpt.com
+		 Source: https://mvnrepository.com/artifact/me.paulschwarz/springboot4-dotenv -->
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>springboot4-dotenv</artifactId>
+			<version>5.1.0</version>
 			<optional>true</optional>
 		</dependency>
 
-		<!--dependency to load env variable from https://github.com/paulschwarz/spring-dotenv?utm_source=chatgpt.com-->
-		<dependency>
-			<groupId>me.paulschwarz</groupId>
-			<artifactId>spring-dotenv</artifactId>
-			<version>3.0.0</version>
-		</dependency>
+<!--		<dependency>no longer used in spring boot 4.1.0-->
+<!--			<groupId>io.github.cdimascio</groupId>-->
+<!--			<artifactId>dotenv-java</artifactId>-->
+<!--			<version>3.2.0</version>-->
+<!--		</dependency>-->
 
 		<!-- Spring Boot Actuator (Optional - Useful for Monitoring)
 		already available in the parent pom.xml (ECommerceMicroservices)-->
@@ -83,11 +88,6 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
         -->
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.18.2</version>
-		</dependency>
 
 		<dependency>
 			<groupId>jakarta.validation</groupId>
@@ -159,11 +159,18 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.18.2</version>
+<!--			<version>2.18.2</version>-->
 		</dependency>
+
+<!--		<dependency>-->
+<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
+<!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
+<!--			<version>2.18.2</version>-->
+<!--		</dependency>-->
 
 		<!--Firebase dependency for push notification-->
 		<dependency>
@@ -193,7 +200,7 @@
 
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>kafka</artifactId>
+			<artifactId>testcontainers-kafka</artifactId>
 			<scope>test</scope>
 		</dependency>
 
@@ -206,7 +213,25 @@
 		<!-- PostgreSQL Test Container -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-jdbc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 
@@ -214,42 +239,36 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.8.9</version>
+			<version>${springdoc.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
-			<version>2.8.9</version>
+			<version>${springdoc.version}</version>
 		</dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
 
-    </dependencies>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.testcontainers</groupId>
-				<artifactId>testcontainers-bom</artifactId>
-				<version>2.0.5</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
 			<dependency>
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
 				<version>2.20.0</version>
 			</dependency>
+<!--			<dependency>-->
+<!--				<groupId>me.paulschwarz</groupId>-->
+<!--				<artifactId>spring-dotenv-bom</artifactId>-->
+<!--				<version>$version</version>-->
+<!--				<type>pom</type>-->
+<!--				<scope>import</scope>-->
+<!--			</dependency>-->
 		</dependencies>
 	</dependencyManagement>
 

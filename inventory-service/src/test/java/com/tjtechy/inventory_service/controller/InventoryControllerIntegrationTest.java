@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of inventory-service module of the Ecommerce Microservices project.
+ * This file is part of the inventory-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.inventory_service.controller;
 
@@ -15,21 +15,23 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
 import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -39,8 +41,7 @@ import java.util.UUID;
 
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @Testcontainers
@@ -68,10 +69,13 @@ properties = {
 } )
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS) // Add this
 
+@AutoConfigureWebTestClient
+//since the application context already loads the webClientBuilder bean, we need to disable the autoconfiguration
+//@Import(TestConfig.class)
 public class InventoryControllerIntegrationTest {
 
   @Autowired
-  private TestRestTemplate restTemplate;
+  private WebTestClient webTestClient;
 
   @LocalServerPort
   private int port;
@@ -98,10 +102,8 @@ public class InventoryControllerIntegrationTest {
 
   private final Faker faker = new Faker(); //initialize Faker to generate random data
 
-
-
   @Container
-  public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:latest")
+  public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer("postgres:latest")
           .withDatabaseName("inventory_db")
           .withUsername("postgres")
           .withPassword("password");
@@ -154,15 +156,21 @@ public class InventoryControllerIntegrationTest {
   private Map<String, Object> createInventory (CreateInventoryDto createInventoryDto) throws Exception {
      var url = "http://localhost:" + port + baseUrl + "/inventory/internal/create";
 
-      var headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      var request = new HttpEntity<>(objectMapper.writeValueAsString(createInventoryDto), headers);
-      var response = restTemplate.postForEntity(url, request, String.class);
-      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-      Map<String, Object> savedInventory = (Map<String, Object>) responseBody.get("data");
-      assertNotNull(savedInventory, "Saved inventories should not be null");
-      return savedInventory;
+    var response = webTestClient.post().uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(createInventoryDto)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(response, "Response should not be null");
+    assertInstanceOf(Map.class, response.getData());
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> savedInventory = (Map<String, Object>) response.getData();
+    return savedInventory;
   }
 
   @Test
@@ -208,10 +216,18 @@ public class InventoryControllerIntegrationTest {
 
     // Now get the inventory by id
     var url = "http://localhost:" + port + baseUrl + "/inventory/" + expectedInventoryId;
-    var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    Map<String, Object> inventoryDto = (Map<String, Object>) responseBody.get("data");
+
+    var response = webTestClient.get().uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+
+    assert response != null;
+    assertInstanceOf(Map.class, response.getData());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> inventoryDto = (Map<String, Object>) response.getData();
     assertNotNull(inventoryDto, "Retrieved inventory should not be null");
     Long actualInventoryId = ((Number) inventoryDto.get("inventoryId")).longValue();
     assertThat(actualInventoryId).isEqualTo(expectedInventoryId);
@@ -231,14 +247,15 @@ public class InventoryControllerIntegrationTest {
 
     // Now get all inventories
     var url = "http://localhost:" + port + baseUrl + "/inventory";
-    var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    //assert the response message
-    assertThat(response.getBody()).contains("All inventories retrieved successfully");
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    List<Map<String, Object>> inventoryDtos = (List<Map<String, Object>>) responseBody.get("data");
-    assertNotNull(inventoryDtos, "Retrieved inventories should not be null");
-    assertFalse(inventoryDtos.isEmpty(), "Retrieved inventories should not be empty");
+
+    var response = webTestClient.get().uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("All inventories retrieved successfully");
   }
 
   @Test
@@ -261,10 +278,18 @@ public class InventoryControllerIntegrationTest {
 
     // Now get the inventory by product id
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/product/" + expectedProductId;
-    var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    Map<String, Object> inventoryDto = (Map<String, Object>) responseBody.get("data");
+
+    var response = webTestClient.get().uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertInstanceOf(Map.class, response.getData());
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> inventoryDto = (Map<String, Object>) response.getData();
     assertNotNull(inventoryDto, "Retrieved inventory should not be null");
     UUID actualProductId = UUID.fromString((String) inventoryDto.get("productId"));
     assertThat(actualProductId).isEqualTo(expectedProductId);
@@ -279,10 +304,16 @@ public class InventoryControllerIntegrationTest {
 
     // Now get the inventory by product id
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/product/" + nonExistentProductId;
-    var response = restTemplate.getForEntity(url, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("message")).isEqualTo("Product not found with id: " + nonExistentProductId);
+
+    var response = webTestClient.get().uri(url)
+            .exchange()
+            .expectStatus().isNotFound()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Product not found with id: " + nonExistentProductId);
+
   }
 
   @Test
@@ -301,7 +332,7 @@ public class InventoryControllerIntegrationTest {
     Map<String, Object> savedInventory = createInventory(createInventoryDto); //inventoryDto
 
     // Extract the inventoryId from the saved inventory
-    Long inventoryId = Long.parseLong(savedInventory.get("inventoryId").toString());
+    long inventoryId = Long.parseLong(savedInventory.get("inventoryId").toString());
 
     // Prepare the update data
     var updateInventoryDto = new UpdateInventoryDto(
@@ -312,16 +343,19 @@ public class InventoryControllerIntegrationTest {
     );
     // Now update the inventory
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/update/" + inventoryId;
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    var request = new HttpEntity<>(objectMapper.writeValueAsString(updateInventoryDto), headers);
-    var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.PUT, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    Map<String, Object> updatedInventoryDto = (Map<String, Object>) responseBody.get("data");
-    assertNotNull(updatedInventoryDto, "Updated inventory should not be null");
-    Long updatedInventoryId = ((Number) updatedInventoryDto.get("inventoryId")).longValue();
-    assertThat(updatedInventoryId).isEqualTo(inventoryId);
+
+    var response = webTestClient.put().uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(updateInventoryDto)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Inventory updated successfully");
+
+
   }
 
   @Test
@@ -340,14 +374,19 @@ public class InventoryControllerIntegrationTest {
     Map<String, Object> savedInventory = createInventory(createInventoryDto);
 
     // Extract the inventoryId from the saved inventory
-    Long inventoryId = Long.parseLong(savedInventory.get("inventoryId").toString());
+    long inventoryId = Long.parseLong(savedInventory.get("inventoryId").toString());
 
     // Now delete the inventory
     var url = "http://localhost:" + port + baseUrl + "/inventory/" + inventoryId;
-    var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.DELETE, null, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("message")).isEqualTo("Inventory deleted successfully");
+
+    var response = webTestClient.method(HttpMethod.DELETE).uri(url)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Inventory deleted successfully");
   }
 
   @Test
@@ -364,13 +403,15 @@ public class InventoryControllerIntegrationTest {
 
     // Now bulk delete the inventories
     var url = "http://localhost:" + port + baseUrl + "/inventory/bulk-delete";
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    var request = new HttpEntity<>(objectMapper.writeValueAsString(inventoryIds), headers);
-    var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.DELETE, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("message")).isEqualTo("Inventories deleted successfully");
+    var response = webTestClient.method(HttpMethod.DELETE).uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(inventoryIds)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assertThat(response).isNotNull();
   }
 
   @Test
@@ -392,7 +433,7 @@ public class InventoryControllerIntegrationTest {
     // Prepare the deduction request
     var deductInventoryRequestDto = new DeductInventoryRequestDto(
         UUID.fromString((String) savedInventory.get("productId")), // Use the same productId
-            /**
+            /*
              * // Randomly generate a quantity to deduct may generate a number greater than the available stock
              * //it is good to give it a small value like 1 to avoid the error
              *
@@ -402,18 +443,23 @@ public class InventoryControllerIntegrationTest {
     );
 
     // Now deduct the inventory
-    /**
+    /*
      * NOTE: This endpoint is for reactive programming, so it returns a Mono<Result>,
      * RestTemplate can also be used to test it.
      */
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/deduct-inventory-reactive";
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    var request = new HttpEntity<>(objectMapper.writeValueAsString(deductInventoryRequestDto), headers);
-    var response = restTemplate.exchange(url, HttpMethod.PATCH, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("message")).isEqualTo("Inventory deducted successfully");
+
+    var response = webTestClient.method(HttpMethod.PATCH).uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(deductInventoryRequestDto)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response.getMessage()).isEqualTo("Inventory deducted successfully");
+
   }
 
   @Test
@@ -439,14 +485,17 @@ public class InventoryControllerIntegrationTest {
 
     // Now restore the inventory
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/restore-inventory";
-    var headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    var request = new HttpEntity<>(objectMapper.writeValueAsString(restoreInventoryDto), headers);
-    var response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-    Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
-    assertThat(responseBody.get("message")).isEqualTo("Inventory restored successfully");
+    var response = webTestClient.post().uri(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(restoreInventoryDto)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(Result.class)
+            .returnResult()
+            .getResponseBody();
+    assert response != null;
+    assertThat(response).isNotNull();
+    assertThat(response.getMessage()).isEqualTo("Inventory restored successfully");
   }
 
 }

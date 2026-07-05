@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of product-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.product_service.config;
@@ -19,8 +18,6 @@ import org.springframework.context.annotation.Profile;
 public class TracingConfig {
   /**
    * Create OtlpHttpSpanExporter bean
-   * @param url
-   * @return
    */
   @Bean
   public OtlpHttpSpanExporter otlpHttpSpanExporter(@Value("${tracing.url}") String url) {

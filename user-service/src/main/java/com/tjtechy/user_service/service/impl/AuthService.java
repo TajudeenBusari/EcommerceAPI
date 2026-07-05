@@ -1,16 +1,14 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of Security module of the EcommerceMicroservices project.
+ * This file is part of the user-service module of the EcommerceMicroservices project.
  */
 package com.tjtechy.user_service.service.impl;
 
 
 import com.tjtechy.security.config.JwtProvider;
 import com.tjtechy.security.config.MyUserPrincipal;
-import com.tjtechy.user_service.config.AdminProperties;
 import com.tjtechy.user_service.service.UserService;
 import org.slf4j.Logger;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -24,8 +22,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import userutils.mapper.UserMapper;
 
-import java.util.HashMap;
-import java.util.Map;
+
 
 @Service
 public class AuthService {

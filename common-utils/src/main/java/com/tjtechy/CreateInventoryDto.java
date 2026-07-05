@@ -28,7 +28,7 @@ public record CreateInventoryDto(
         @NotNull(message = "Manufactured date is required")
         LocalDate manufacturedDate,
 
-        /**
+        /*
          * //Done: add the product expiry date to this record because it should
          * not be possible to add inventory for an expired product
          * It should not be possible to add inventory for an expired product.

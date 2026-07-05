@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the order-service module of the EcommerceMicroservices project.
+ */
 package com.tjtechy.order_service.repository;
 
 import com.tjtechy.order_service.entity.Order;
@@ -7,7 +13,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -15,12 +20,9 @@ import java.util.List;
 /**
  * public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
  *     Flux<Order> findByCustomerEmail(String customerEmail);
- *
  *     Flux<Order> findByOrderStatusNot(String orderStatus);
- *
  *     Flux<Order> findByOrderStatusIgnoreCase(String orderStatus);
  * }
- *
  * This aligns with the reactive programming paradigm and ensures better scalability and performance.
  *  * However, if migrating is not feasible in the short term,
  *  * wrapping blocking calls (Option 2) is a temporary workaround
@@ -31,14 +33,8 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-//  @EntityGraph(attributePaths = {"orderItems", "orderItems.order"})
-//  Optional<Order> findById(Long orderId);
-  //Mono<Order> findByIdMono(Long orderId);
-
   /**
    * Retrieve all orders by customer email
-   * @param customerEmail
-   * @return
    */
   List<Order>findByCustomerEmail(String customerEmail);
 
@@ -49,16 +45,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * based on the method name.
    * StatusNot is a keyword that tells Spring Data JPA to exclude
    * orders with the specified status.
-   * @param orderStatus
-   * @return
    */
   List<Order>findByOrderStatusNot(String orderStatus);
 
   /**
    * Retrieve all orders by status
    * Ignore case ensures that the query is case-insensitive
-   * @param orderStatus
-   * @return
    */
   List<Order> findByOrderStatusIgnoreCase(String orderStatus);
 

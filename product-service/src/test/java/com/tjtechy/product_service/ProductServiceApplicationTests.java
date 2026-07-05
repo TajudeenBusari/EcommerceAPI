@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of Product Service module of the EcommerceMicroservices project.
+ * This file is part of the Product Service module of the EcommerceMicroservices project.
  */
 package com.tjtechy.product_service;
 

@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.notification_service.service.impl;
 
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -149,7 +155,7 @@ class PushNotificationServiceTest {
     );
 
     //mock
-    /**
+    /*
      * Spy is used to partially mock the PushNotificationService object. It allows us to mock
      * specific methods (like processNotification) while keeping the rest of the behavior intact.
      * Here, we mock processNotification to do nothing when called,

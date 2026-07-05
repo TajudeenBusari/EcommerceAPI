@@ -1,8 +1,8 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of product-service module of the Ecommerce Microservices project.
+ * This file is part of the product-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.product_service.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,7 +76,7 @@ public class ProductServiceImpl implements ProductService {
     public List<Product> getAllProducts() {
       logger.info("*******Fetching products from database*******");
       var products = productRepository.findAll();
-    /**
+    /*
      * Log the number of products fetched
      * log.info is used and other log levels can be used.
      * E.g., log.debug, log.error, log.warn etc.
@@ -175,11 +175,11 @@ public class ProductServiceImpl implements ProductService {
               .bodyToMono(Result.class)
               //fire and forget-->non-blocking
               .subscribe(response -> {
-                if (response != null && response.isFlag()) {
+                if (response.isFlag()) {
                   logger.info("*******Inventory created successfully for product {}*******", savedProduct.getProductId());
               } else {
                   logger.warn("*******Inventory creation returned a failure response for product {}: {}*******",
-                          savedProduct.getProductId(), response != null ? response.getMessage() : "No message");
+                          savedProduct.getProductId(), response.getMessage());
                 }
               }, error -> {
                 logger.error("*******Error occurred while creating inventory for product {}: {}*******",
@@ -206,14 +206,7 @@ public class ProductServiceImpl implements ProductService {
   public Product saveProductWithInventoryUsingExternalizedService(Product product) {
 
     //first check if the productQuantity is equal to the availableStock, else set availableStock to productQuantity
-//    if (product.getProductQuantity() != null && product.getAvailableStock() == null) {
-//      product.setAvailableStock(product.getProductQuantity());
-//    } else if (product.getAvailableStock() != null && product.getProductQuantity() == null) {
-//      product.setProductQuantity(product.getAvailableStock());
-//    } else if (product.getProductQuantity() != null && product.getAvailableStock() != null
-//            && !product.getProductQuantity().equals(product.getAvailableStock())) {
-//      product.setAvailableStock(product.getProductQuantity());
-//    }
+
     ensureProductQuantityAndAvailableStockAreInSync(product);
 
     //1.save the product to the database
@@ -235,7 +228,7 @@ public class ProductServiceImpl implements ProductService {
             savedProduct.getProductId(),
             savedProduct.getAvailableStock(),
             1,
-            /**
+            /*
              * //the order of arrangement of these two dates parameters is important
              * //arrange it in a way that it appears in the CreateInventoryDto record
              * Because both uses LocalDate type, the compiler will not be able to differentiate
@@ -289,8 +282,6 @@ public class ProductServiceImpl implements ProductService {
    * Then, it updates the inventory with the new available stock and reserved quantity.
    * By default, when the product is updated, the available stock is set to 1.
    * If the product with the specified ID is not found in the database, a 404 Not Found is thrown.
-   * @param productId
-   * @param product
    * @return updated product {@link Product} entity.
    */
   @Override
@@ -318,7 +309,7 @@ public class ProductServiceImpl implements ProductService {
               .retrieve()
               .bodyToMono(Result.class)
               .flatMap(result -> {
-                if(result != null && result.isFlag() && result.getData() != null) {
+                if(result.isFlag() && result.getData() != null) {
                   //extract inventoryId from the response
                   var objectMapper = new ObjectMapper();
                   var inventoryDto = objectMapper.convertValue(result.getData(), InventoryDto.class);
@@ -346,11 +337,11 @@ public class ProductServiceImpl implements ProductService {
                   return Mono.error(new RuntimeException("Inventory not found for productId: " + productId));
                 }
               }).subscribe(response -> {
-      if (response != null && response.isFlag()) {
+      if (response.isFlag()) {
         logger.info("*******Inventory updated successfully for product {}*******", updatedProduct.getProductId());
       } else {
         logger.warn("*******Inventory update returned a failure response for product {}: {}*******",
-                updatedProduct.getProductId(), response != null ? response.getMessage() : "No message");
+                updatedProduct.getProductId(), response.getMessage());
       }
     }, error -> {
       logger.error("*******Error occurred while updating inventory for product {}: {}*******",
@@ -389,11 +380,11 @@ public class ProductServiceImpl implements ProductService {
               return inventoryServiceClient.updateInventory(inventoryId, updateInventoryDto);
             })
             .subscribe(response -> {
-              if (response != null && response.isFlag()) {
+              if (response.isFlag()) {
                 logger.info("*******Inventory is updated successfully for product {}*******", updatedProduct.getProductId());
               } else {
                 logger.warn("*******Inventory update returns a failure response for product {}: {}*******",
-                        updatedProduct.getProductId(), response != null ? response.getMessage() : "No message");
+                        updatedProduct.getProductId(), response.getMessage());
               }
             }, error -> {
               logger.error("*******Error occurred while updating inventory for a product {}: {}*******",
@@ -491,7 +482,7 @@ public class ProductServiceImpl implements ProductService {
             .retrieve()
             .bodyToMono(Result.class)
             .flatMap(result -> {
-              if(result != null && result.isFlag() && result.getData() != null) {
+              if(result.isFlag() && result.getData() != null) {
                 var objectMapper = new ObjectMapper();
                 var inventoryDto = objectMapper.convertValue(result.getData(), InventoryDto.class);
                 var inventoryId = inventoryDto.inventoryId();
@@ -551,7 +542,7 @@ public class ProductServiceImpl implements ProductService {
                         productId, response != null ? response.getMessage() : "No message");
               }
             })
-    .doFinally(signal -> {;
+    .doFinally(signal -> {
               // whatever happens, delete the product from the database
               productRepository.deleteById(productId);
               logger.info("*******Product {} delete is successful *******", productId);
@@ -593,7 +584,7 @@ public class ProductServiceImpl implements ProductService {
               .retrieve()
               .bodyToMono(Result.class)
               .flatMap(result -> {
-                if(result != null && result.isFlag() && result.getData() != null) {
+                if(result.isFlag() && result.getData() != null) {
                   var objectMapper = new ObjectMapper();
                   var inventoryDto = objectMapper.convertValue(result.getData(), InventoryDto.class);
                   var inventoryId = inventoryDto.inventoryId();

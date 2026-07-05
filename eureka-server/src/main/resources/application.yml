@@ -3,10 +3,12 @@ server:
 spring:
   application:
     name: eureka-server
-    #disble jarkata.validationNoProviderFoundException showing in the logs
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
+#  autoconfigure:
+#    exclude: org.springframework.boot.autoconfigure.aop.AopAutoConfiguration
+  #disble jarkata.validationNoProviderFoundException showing in the logs
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
 
 eureka:
   client:
@@ -17,7 +19,7 @@ eureka:
       defaultZone: "http://localhost:${server.port}/eureka"
   server:
     wait-time-in-ms-when-sync-empty: 0 #TIME TO WAIT WHEN SYNC IS EMPTY
-    enable-self-preservation: false #DISABLE SELF PRESERVATION MODE
+    enable-self-preservation: false #DISABLE SELF-PRESERVATION MODE
 
 logging:
   level:
@@ -38,6 +40,8 @@ management:
   endpoint:
     health:
       show-details: always #show details in the health endpoint
+#      probes:
+#        enabled: true
   env:
     show-values: always #show values in the env endpoint
   configprops:

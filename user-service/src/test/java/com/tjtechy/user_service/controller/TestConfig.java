@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the user-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.controller;
 
 
@@ -12,19 +18,16 @@ import userutils.entity.User;
 @TestConfiguration
 public class TestConfig {
 
-//  @Bean
-//  public AdminUserInitializer adminUserInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder, AdminProperties adminProperties) {
-//    return new AdminUserInitializer(userRepository, passwordEncoder, adminProperties);
-//  }
   @Bean
   public CommandLineRunner commandLineRunner(UserRepository userRepository, PasswordEncoder passwordEncoder) {
     return args -> {
       userRepository.findByUserName("admin")
+              .doOnNext(existingUser -> System.out.println("======Test Admin user already exists with username: admin======="))
               //
               .switchIfEmpty(Mono.defer(()->{
                 //if not found, create a new admin user
                 User adminUser = new User();
-                adminUser.setUserName("admin");
+                adminUser.setUserName("admintest");
                 adminUser.setFirstName("AdminUserTest");
                 adminUser.setLastName("AdministratorTest");
                 adminUser.setEmail("test@email.com");
@@ -33,7 +36,9 @@ public class TestConfig {
                 adminUser.setPhoneNumber("1234567890");
                 adminUser.setPassword(passwordEncoder.encode("Admin@123"));
                 return userRepository.save(adminUser);
-              })).doOnSuccess(savedAdmin -> System.out.println("======Test Admin user created with username: admin======="))
+              }))
+              .doOnError(error -> System.out.println("======Test Admin user creation failed=======: " + error.getMessage() + "======"))
+              .doOnSuccess(savedAdmin -> System.out.println("======Test Admin user created with username: admin======="))
               .block();
 
     };

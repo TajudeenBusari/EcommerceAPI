@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of the User Service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.user_service.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;

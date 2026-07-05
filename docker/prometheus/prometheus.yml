@@ -60,7 +60,7 @@ scrape_configs:
       - targets: ['api-gateway:8080']
       - targets: ['host.docker.internal:8080']
     relabel_configs:
-      - source_labels:
+      - source_labels: ['__address__']
         regex: 'host\.docker\.internal:8080'
         replacement: 'api-gateway:8080'
         target_label: instance

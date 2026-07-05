@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of the notification-service module of the Ecommerce Microservices project.
+ * This file is part of notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.entity;
@@ -21,7 +20,7 @@ public class Notification {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long notificationId;
   private Long orderId;
-  //private Long userId;
+
   private String message;
   private String recipient;
   private LocalDate sentAt;

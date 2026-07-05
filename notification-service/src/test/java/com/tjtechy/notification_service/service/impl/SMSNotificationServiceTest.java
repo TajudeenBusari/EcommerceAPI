@@ -1,3 +1,9 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.notification_service.service.impl;
 
 import com.tjtechy.events.orderEvent.*;
@@ -39,7 +45,7 @@ class SMSNotificationServiceTest {
 
   @BeforeEach
   void setUp() {
-    notifications = new ArrayList<>(); //// Initialize to avoid NullPointerException
+    notifications = new ArrayList<>(); // Initialize to avoid NullPointerException
     var notification1 = new Notification(
             1L,
             101L,
@@ -158,12 +164,12 @@ class SMSNotificationServiceTest {
     );
 
     //MOCK
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
     //When
     smsNotificationService.listenToOrderPlaced(event);
     //Then
     verify(notificationRepository, times(2)).save(any(Notification.class));
-    assertEquals(Notification.Status.SUCCESS, notifications.get(0).getStatus());
+    assertEquals(Notification.Status.SUCCESS, notifications.getFirst().getStatus());
 
   }
 
@@ -193,7 +199,7 @@ class SMSNotificationServiceTest {
     //Given
     var event = new OrderUpdatedEvent(
             203L,
-            notifications.get(0).getRecipient(),
+            notifications.getFirst().getRecipient(),
             "dummyToken",
             "+1234567890",
             ActionBy.ADMIN,
@@ -201,12 +207,12 @@ class SMSNotificationServiceTest {
             LocalDate.now()
     );
     //MOCK
-    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.get(0));
+    when(notificationRepository.save(any(Notification.class))).thenReturn(notifications.getFirst());
     //When
     smsNotificationService.listenToOrderUpdated(event);
     //Then
     verify(notificationRepository, times(2)).save(any(Notification.class));
-    assertEquals(Notification.Status.SUCCESS, notifications.get(0).getStatus());
+    assertEquals(Notification.Status.SUCCESS, notifications.getFirst().getStatus());
 
   }
 

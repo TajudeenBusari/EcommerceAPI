@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of Notification Service module of the Ecommerce Microservices project.
+ * This file is part of the notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.controller;
@@ -43,8 +42,6 @@ public class NotificationController {
   }
 
   /**
-   * @param notificationId
-   * @return
    * The method is not exposed to the public, can only be accessed by the Admin.
    * This endpoint fetches a single notification by its ID.
    * It returns a Result object containing the notification details if found.
@@ -61,7 +58,6 @@ public class NotificationController {
   }
 
   /**
-   * @param notificationId
    * @return
    * The method is not exposed to the public, can only be accessed by the Admin.
    * It returns a Result object indicating the success of the operation.
@@ -78,7 +74,6 @@ public class NotificationController {
 
   /**
    * This is strictly for Admin use only. Meant to bulk delete notifications that are older than 30 days.
-   * @return
    */
   @Operation(summary = "Bulk delete notifications older than or equal to 30 days (Admin only)",
           description = "Remove all notifications that are older than or equal to 30 days. This endpoint is restricted to admin users.",
@@ -96,8 +91,6 @@ public class NotificationController {
 
   /**
    * This is strictly for Admin use only. Meant to bulk delete notifications by id irrespective of their sent date.
-   * @param notificationIds
-   * @return
    */
   @Operation(summary = "Bulk delete notifications by IDs (Admin only)",
           description = "Remove multiple notifications using their IDs. This endpoint is restricted to admin users.",

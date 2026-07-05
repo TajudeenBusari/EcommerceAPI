@@ -1,8 +1,8 @@
-/**
+/*
  * Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of inventory-service module of the Ecommerce Microservices project.
+ * This file is part of the inventory-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy;
 
@@ -17,10 +17,10 @@ import java.util.UUID;
  * productId here and that in the product service
  * will not be established by @OneToOne or @ManyToOne annotations.
  * When a product is created in the product service, the inventory service
- * subscribes to for example, ProductCreatedEvent and creates the inventory
+ * subscribes to, for example, ProductCreatedEvent and creates the inventory
  * via (messaging) event OR is called directly via REST API to create the initial
  * stock for the productId.
- * When order is created, order-service calls the inventory-service with the
+ * When an order is created, order-service calls the inventory-service with the
  * productId to check/update the available stock.
  * IF WE ARE IN MONOLITHIC ARCHITECTURE, WE CAN USE @OneToOne or @ManyToOne
  * like this:
@@ -32,7 +32,7 @@ import java.util.UUID;
  * IN SUMMARY:
  * 1.When product is added, product-service triggers POST /api/v1/inventory
  * Or USE KAFKA: product-service emits a ProductCreatedEvent
- * and inventory-service listens and create initial stock.
+ * and inventory-service listens and creates initial stock.
  * 2. There is no JPA relationship annotation like @ManyToOne or @OneToOne between them.
  */
 @Entity

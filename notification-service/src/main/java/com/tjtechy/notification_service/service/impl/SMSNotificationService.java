@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.service.impl;
@@ -42,13 +41,6 @@ public class SMSNotificationService implements ChannelNotificationService {
   }
 
 
-  /**
-   * @param to
-   * @param subject
-   * @param messageBody
-   * @param orderId
-   * @throws Exception
-   */
   @Override
   public void processNotification(String to, String subject, String messageBody, Long orderId) {
     var notification = new Notification(
@@ -71,9 +63,6 @@ public class SMSNotificationService implements ChannelNotificationService {
     notificationRepository.save(notification);
   }
 
-  /**
-   * @return
-   */
   @Override
   public Notification.Channel getChannel() {
     return Notification.Channel.SMS;

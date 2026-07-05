@@ -1,8 +1,8 @@
-/**
+/*
  *Copyright © 2025
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of product-service module of the Ecommerce Microservices project.
+ * This file is part of the product-service module of the Ecommerce Microservices project.
  */
 package com.tjtechy.product_service.entity.dto;
 
@@ -43,7 +43,7 @@ public record CreateProductDto(
 
 ) {
 }
-/**
+/*
  * sample request body to add a product
  {
  "productName": "product1",

@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of the notification module of the Ecommerce Microservices project.
+ * This file is part of the notification-service module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.notification_service.controller;
@@ -17,8 +16,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
 import org.springframework.test.annotation.DirtiesContext;
@@ -27,16 +26,19 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
+
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -87,7 +89,7 @@ public class NotificationControllerIntegrationTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Container
-  private static final PostgreSQLContainer<?> POSTGRE_SQL_CONTAINER =  new PostgreSQLContainer<>("postgres:latest")
+  private static final PostgreSQLContainer POSTGRE_SQL_CONTAINER =  new PostgreSQLContainer("postgres:latest")
           .withDatabaseName("notificationdb")
           .withUsername("test")
           .withPassword("test");
@@ -120,7 +122,7 @@ public class NotificationControllerIntegrationTest {
     if (POSTGRE_SQL_CONTAINER != null && POSTGRE_SQL_CONTAINER.isRunning()) {
       POSTGRE_SQL_CONTAINER.stop();
     }
-    if (KAFKA_CONTAINER != null && KAFKA_CONTAINER.isRunning()) {
+    if (KAFKA_CONTAINER.isRunning()) {
       KAFKA_CONTAINER.stop();
     }
   }
@@ -176,6 +178,12 @@ public class NotificationControllerIntegrationTest {
   }
 
   @Test
+  @DisplayName("Check Context Loads to confirm that the notification repository showing Could not autowire. No beans of 'NotificationRepository' type found. is a false positive")
+  void contextLoads(){
+    assertThat(notificationRepository).isNotNull();
+  }
+
+  @Test
   @DisplayName("Check Get all Notifications Success (GET /api/v1/notification)")
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testGetNotificationsSuccess() throws Exception {
@@ -193,7 +201,7 @@ public class NotificationControllerIntegrationTest {
   @DisplayName("Check Get Notification by ID Success (GET /api/v1/notification/{notificationId})")
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testGetNotificationByIdSuccess() throws Exception {
-    var notification = notificationList.get(0); // Get the first notification
+    var notification = notificationList.getFirst(); // Get the first notification
     var result = mockMvc.perform(get(baseUrl + "/notification/{notificationId}", notification.getNotificationId()))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notification fetched successfully"))
@@ -212,7 +220,7 @@ public class NotificationControllerIntegrationTest {
   @DisplayName("Check Delete Notification by ID Success (DELETE /api/v1/notification/{notificationId})")
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testRemoveNotificationByIdSuccess() throws Exception {
-    var notification = notificationList.get(0); // Get the first notification
+    var notification = notificationList.getFirst(); // Get the first notification
     var result = mockMvc.perform(delete(baseUrl + "/notification/{notificationId}", notification.getNotificationId()))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notification removed successfully"));

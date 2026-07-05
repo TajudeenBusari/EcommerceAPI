@@ -1,9 +1,8 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of User Service module of the EcommerceMicroservices project.
+ * This file is part of security module of the EcommerceMicroservices project.
  */
 package com.tjtechy.security.config;
 
@@ -20,8 +19,8 @@ import java.util.Collection;
 /***
  * Ideally, this class should be in the user service module since it depends on the User entity,
  * but we need it in the security module to implement UserDetails and use it in the authentication process.
- * Moreover, if it placed in the shared-domain module, we will need to add spring security dependency to the shared-domain
- * module which is not ideal because the shared-domain module should be independent of any specific framework or library.
+ * Moreover, if it is placed in the shared-domain module, we will need to add spring security dependency to the shared-domain
+ * module, which is not ideal because the shared-domain module should be independent of any specific framework or library.
  */
 public class MyUserPrincipal implements UserDetails {
     private final User user;

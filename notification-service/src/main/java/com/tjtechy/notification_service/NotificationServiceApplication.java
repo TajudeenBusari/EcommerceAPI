@@ -1,15 +1,21 @@
+/*
+ * Copyright © 2025
+ * @Author = TJTechy (Tajudeen Busari)
+ * @Version = 1.0
+ * This file is part of notification-service module of the Ecommerce Microservices project.
+ */
 package com.tjtechy.notification_service;
 
 import com.tjtechy.RedisCacheConfig;
+
 import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -22,7 +28,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 public class NotificationServiceApplication {
 
-	public static void main(String[] args) {
+	static void main(String[] args) {
 
 		SpringApplication.run(NotificationServiceApplication.class, args);
 	}
@@ -33,11 +39,20 @@ public class NotificationServiceApplication {
 		.forEach((requestMappingInfo, handlerMethod) ->
 						System.out.println("[Controller]" + requestMappingInfo + " -> " + handlerMethod));
 	}
+
+//	//temporarily log the mailtrap credentials
+//	@Value("${spring.mail.username}")
+//	private String mailUsername;
+//
+//	@PostConstruct
+//	public void logMailtrapCredentials() {
+//		System.out.println("===========Mailtrap username=========: " + mailUsername);
+//	}
 }
 
-/**
+/*
  * @SpringBootApplication(scanBasePackages = "com.tjtechy") causes trouble because
- * it includes @ComponentScan which scans all packages under com.tjtechy by default.
+ * it includes @ComponentScan, which scans all packages under com.tjtechy by default.
  * when you set scanBasePackages to "com.tjtechy", it tries to register all beans under
  * com.tjtechy, including beans that are not relevant to this service. This can lead to issues like
  * the one you encountered with InventoryServiceClient, which is not defined in the notification-service module.
@@ -45,7 +60,7 @@ public class NotificationServiceApplication {
  * that are relevant to the notification-service module, such as "com.tjtechy.notification_service".
  * Alternatively, you can exclude specific classes or packages from component scanning
  * using the excludeFilters attribute of @ComponentScan.
- * For example:
+ * For example,
  * @ComponentScan(basePackages = "com.tjtechy", excludeFilters = {
  * @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = InventoryServiceClient.class)
  * })

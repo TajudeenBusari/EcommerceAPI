@@ -3,7 +3,7 @@
  *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of EcommerceMicroservices module of the Ecommerce Microservices project.
+ * This file is part of the common-utils module of the Ecommerce Microservices project.
  */
 
 package com.tjtechy.client;
@@ -11,10 +11,10 @@ package com.tjtechy.client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.tjtechy.*;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -26,26 +26,31 @@ import java.time.Duration;
 import java.util.UUID;
 
 @Component
-@RequiredArgsConstructor
 public class InventoryServiceClient {
 
-  private final WebClient.Builder clientBuilder;
+  private final WebClient webClient;
   private static final Logger logger = LoggerFactory.getLogger(InventoryServiceClient.class);
+  private final String inventoryServiceUrl;
+  private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
 
   /**
    * The base URL for the Inventory Service.
-   * This is typically set in the application.yml of the service calling
+   * This is typically set in the application.yml of the service called
    * the Inventory Service.
    * It should point to the base URL of the Inventory Service API.
    * x-service-url is used by external clients to access the x-Service.
    * api.endpoint.base-url is used by the service itself to access its own endpoints.
    */
-  //@Value("${api.endpoint.base-url}")
-  @Value("${inventory-service.base-url}")
-  private String inventoryServiceUrl;
+
+  public InventoryServiceClient(WebClient.Builder webClientBuilder, @Value("${inventory-service.base-url}") String inventoryServiceUrl) {
+    this.inventoryServiceUrl = inventoryServiceUrl;
+    this.webClient = webClientBuilder.baseUrl(inventoryServiceUrl).build();
+
+  }
 
 
-  private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
 
   /**
    * Deducts inventory for a given product by the specified quantity.
@@ -58,7 +63,7 @@ public class InventoryServiceClient {
     var deductInventoryRequestDto = new DeductInventoryRequestDto(productId, quantity);
     //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/deduct-inventory-reactive";
     var url = inventoryServiceUrl + "/inventory/internal/deduct-inventory-reactive";
-    return clientBuilder.build()
+    return webClient
             .patch()
             .uri(url)
             .contentType(MediaType.APPLICATION_JSON)
@@ -85,7 +90,7 @@ public class InventoryServiceClient {
 
 
     var savedProductId = createInventoryDto.productId();
-    clientBuilder.build()
+    webClient
             .post()
             .uri(url)
             .contentType(MediaType.APPLICATION_JSON)
@@ -123,7 +128,7 @@ public class InventoryServiceClient {
     var restoreInventoryDto = new RestoreInventoryDto(productId, quantityToRestore);
 //    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/restore-inventory";
     var url = inventoryServiceUrl + "/inventory/internal/restore-inventory";
-    return clientBuilder.build()
+    return webClient
             .post()
             .uri(url)
             .contentType(MediaType.APPLICATION_JSON)
@@ -147,7 +152,7 @@ public class InventoryServiceClient {
     }
 //    var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/product/" + productId;
     var url = inventoryServiceUrl + "/inventory/internal/product/" + productId;
-    return clientBuilder.build()
+    return webClient
             .get()
             .uri(url)
             .retrieve()
@@ -167,7 +172,7 @@ public class InventoryServiceClient {
     //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/internal/update/" + inventoryId;
     var url = inventoryServiceUrl + "/inventory/internal/update/" + inventoryId;
 
-    return clientBuilder.build()
+    return webClient
             .put()
             .uri(url)
             .contentType(MediaType.APPLICATION_JSON)
@@ -182,7 +187,7 @@ public class InventoryServiceClient {
     }
     //var url = "http://inventory-service" + inventoryServiceUrl + "/inventory/" + inventoryId;
     var url = inventoryServiceUrl + "/inventory/" + inventoryId;
-    return clientBuilder.build()
+    return webClient
             .delete()
             .uri(url)
             .retrieve()

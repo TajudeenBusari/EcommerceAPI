@@ -1,14 +1,13 @@
-/**
+/*
  * Copyright © 2025
- *
  * @Author = TJTechy (Tajudeen Busari)
  * @Version = 1.0
- * This file is part of Security module of the EcommerceMicroservices project.
+ * This file is part of the security module of the EcommerceMicroservices project.
  */
 package com.tjtechy.security.config;
 
-
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -48,7 +47,7 @@ public class JwtProvider {
         String authorities = authentication
                 .getAuthorities()
                 .stream()
-                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(" ")); //must be space delimited
 
         JwtClaimsSet claims = JwtClaimsSet
