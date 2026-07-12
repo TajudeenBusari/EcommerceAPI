@@ -6,7 +6,6 @@
  */
 package com.tjtechy.user_service.service.impl;
 
-import com.tjtechy.security.config.JwtProvider;
 import com.tjtechy.user_service.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

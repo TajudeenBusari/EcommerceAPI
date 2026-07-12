@@ -71,3 +71,8 @@ The standard security flow to generate and validate JWTs is as follows:
 | 6️⃣  | API Gateway                                                 | Validates JWT, sets authentication in context                  |
 | 7️⃣  | Gateway → Order Service                                     | Adds user info to request header                               |
 | 8️⃣  | Order Service                                               | Processes request knowing the authenticated user               |
+
+### Because each service will share this security module (dependency will be added to each service), JwtProvider (which has JwtEncoder object) will not be added here. 
+### Instead, it will be added to the user/auth service because they are both responsible for issuing JWTs.
+### In other words, we don't want to add a dependency of a module that has generating Jwt to any down stream module because we will need to provide a bean
+### of JwtEncoder to the JwtProvider.

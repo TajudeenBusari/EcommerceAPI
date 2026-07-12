@@ -5,7 +5,7 @@
  * This file is part of the security module of the Ecommerce Microservices project.
  */
 
-package com.tjtechy.security.config;
+package com.tjtechy.security_webflux.config;
 
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -34,9 +34,6 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import reactor.core.publisher.Mono;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -44,53 +41,43 @@ import java.security.interfaces.RSAPublicKey;
 @EnableWebFluxSecurity
 @ConditionalOnProperty(name="app.security.enabled", havingValue = "true", matchIfMissing = true) //helps to disable security in tests or when not needed by setting app.security.enabled=false in application.properties
 public class SecurityConfiguration {
-    private final RSAPublicKey publicKey;
-    private final RSAPrivateKey privateKey;
+
+  private final RSAPublicKey publicKey;
+  private final RSAPrivateKey privateKey;
 
     @Value("${api.endpoint.base-url}")
     private String baseUrl;
 
-    public SecurityConfiguration() throws NoSuchAlgorithmException {
+  public SecurityConfiguration(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
 
-      //generate a public and private key pair to digitally sign the JWT tokens.
-      // In production, you should use a secure way to store and manage these keys, such as using a secrets manager or environment variables.
-      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-      keyPairGenerator.initialize(2048); //2048 bits key size
-      KeyPair keyPair = keyPairGenerator.generateKeyPair();
-      this.publicKey = (RSAPublicKey) keyPair.getPublic();
-      this.privateKey = (RSAPrivateKey) keyPair.getPrivate();
-    }
+    this.publicKey = publicKey;
+    this.privateKey = privateKey;
+  }
 
-//    /**
-//      * Password encoder bean using BCrypt hashing algorithm.
-//      * note: BCrypt is a strong hashing algorithm that is widely used for securely storing passwords.
-//      * This bean is needed when using the PasswordEncoder interface in the application.
-//      * It is a one-way hashing function, meaning that once a password is hashed,
-//      * it cannot be reversed back to its original form. This makes it ideal for password storage,
-//      * as even if the database is compromised, the original passwords cannot be easily retrieved.
-//      * a private key is used to encode, and a public key (for decoding) is used to very if it is ok.
-//      * public key can be distributed to a public key server or other services
-//      * that need to verify the authenticity of the JWT tokens issued by this service.
-//      * private is kept as secrete, for example, in auth service.
-//   */ NOTE: Already moved to PasswordConfig class to separate concerns.
-//  @Bean
-//  public PasswordEncoder passwordEncoder() {
-//
-//    return new BCryptPasswordEncoder(12); //12 is the strength parameter
-//  }
+  /**
+   * JWK Set bean
+   * @return JWKSet
+   * This bean will also be injected into the JWKSetController.
+   */
+  @Bean
+  public JWKSet jwkSet(){
+    RSAKey rsaKey = new RSAKey
+            .Builder(this.publicKey)
+            .privateKey(this.privateKey)
+            .keyID("tjtechy-key")
+            .build();
+    return new JWKSet(rsaKey);
+  }
 
   /**
    * JWT Encoder bean
    * @return JwtEncoder
    */
   @Bean
-  public JwtEncoder jwtEncoder(){
-    JWK jwk = new RSAKey
-            .Builder(this.publicKey)
-            .privateKey(this.privateKey)
-            .build();
-    JWKSource<SecurityContext> jwkSet = new ImmutableJWKSet<>(new JWKSet(jwk));
-    return new NimbusJwtEncoder(jwkSet);
+  public JwtEncoder jwtEncoder(JWKSet jwkSet){
+
+    JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(jwkSet);
+    return new NimbusJwtEncoder(jwkSource);
   }
 
   /**
@@ -138,13 +125,16 @@ public class SecurityConfiguration {
   public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
     return http
             .authorizeExchange(exchanges -> exchanges
+                    //user-service/auth-service endpoints security rules
                     .pathMatchers(HttpMethod.POST, baseUrl + "/auth/login").permitAll()
+                    .pathMatchers(HttpMethod.GET, "/oauth2/jwks").permitAll() //allow unauthenticated access to the JWK Set endpoint for JWT verification
                     .pathMatchers(HttpMethod.POST, baseUrl + "/user/register").hasAnyAuthority("ROLE_ADMIN")
                     .pathMatchers(HttpMethod.GET, baseUrl + "/user").hasAnyAuthority("ROLE_ADMIN")
                     .pathMatchers(HttpMethod.GET, baseUrl + "/user/**").hasAnyAuthority("ROLE_ADMIN") //TODO:to be updated with AuthorizationManager to allow users to access their own user info but not other users' info
                     .pathMatchers(HttpMethod.PUT, baseUrl + "/user/**").hasAnyAuthority("ROLE_ADMIN") //TODO:to be updated with AuthorizationManager to allow users to update their own user info but not other users' info
                     .pathMatchers(HttpMethod.DELETE, baseUrl + "/user/**").hasAnyAuthority("ROLE_ADMIN")
                     .pathMatchers(HttpMethod.PATCH, baseUrl + "/user/**").hasAnyAuthority("ROLE_ADMIN") //TODO:to be updated with AuthorizationManager to allow users to update their own user info but not other users' info
+
 
                     //permit swagger endpoints
                     .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() //allow unauthenticated access to swagger endpoints for API documentation

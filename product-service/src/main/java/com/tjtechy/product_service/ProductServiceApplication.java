@@ -16,7 +16,11 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Import;
 
 @EnableCaching
-@SpringBootApplication(scanBasePackages = "com.tjtechy") //	This is to scan the common-utils package for the ProductDto class and RedisCacheConfig class
+@SpringBootApplication(scanBasePackages = {
+				"com.tjtechy", //This is to scan the common-utils package for the ProductDto class and RedisCacheConfig class
+				"com.tjtechy.security_webmvc", //This is to scan the security-webmvc package for the JwtEncoder bean and other security-related beans
+				"com.tjtechy.product_service" //This is to scan the product-service package for the ProductServiceApplication class and other beans in product-service module
+})
 @EnableDiscoveryClient
 @Import(RedisCacheConfig.class)
 //@EnableJpaRepositories(basePackages = "com.tjtechy.product_service.repository")

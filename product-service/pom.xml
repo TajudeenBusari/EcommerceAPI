@@ -221,15 +221,20 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Embedded Redis for Testing -->
-		<!--This is causing issue when starting embedded redis server, that is why I switched to
-		com.github.kstyrc-->
-<!--		<dependency>-->
-<!--			<groupId>it.ozimov</groupId>-->
-<!--			<artifactId>embedded-redis</artifactId>-->
-<!--			<version>0.7.2</version>-->
-<!--			<scope>test</scope>-->
-<!--		</dependency>-->
+		<!-- dependency for security testing -->
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>test-helper</artifactId>
+			<version>0.0.1</version>
+			<scope>test</scope> <!-- Ensures code is never packaged into production jars, only used for test and its is not available at runtime -->
+		</dependency>
+
+		<!-- Security dependency for production -->
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>security-webmvc</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.github.kstyrc/embedded-redis -->
 		<dependency>
@@ -239,19 +244,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Add Jetty 11 backend explicitly -->
-<!--		<dependency>-->
-<!--			<groupId>org.wiremock</groupId>-->
-<!--			<artifactId>wiremock-jetty12</artifactId>-->
-<!--			<version>3.13.2</version>-->
-<!--			<scope>test</scope>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>org.wiremock</groupId>-->
-<!--			<artifactId>wiremock</artifactId>-->
-<!--			<version>3.13.2</version>-->
-<!--			<scope>test</scope>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>org.wiremock</groupId>
 			<artifactId>wiremock-standalone</artifactId>
@@ -277,7 +269,9 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 
+
 	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>

@@ -95,5 +95,8 @@ info:
     author: Tajudeen Busari (tjtechy)
     link:
       github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/user-service
+rsa:
+  public-key: classpath:certs/public.pem
+  private-key: classpath:certs/private.pem
 
 
