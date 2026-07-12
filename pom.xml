@@ -29,8 +29,11 @@
         <module>inventory-service</module>
         <module>notification-service</module>
         <module>user-service</module>
-        <module>security</module>
+        <module>security-common</module>
         <module>shared-domain</module>
+        <module>security-webflux</module>
+        <module>security-webmvc</module>
+        <module>test-helper</module>
     </modules>
 
     <!-- Specify the Java version and Spring Cloud version. Check the latest version of Spring Cloud at

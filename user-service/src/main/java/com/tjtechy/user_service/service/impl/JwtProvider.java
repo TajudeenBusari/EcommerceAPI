@@ -4,8 +4,9 @@
  * @Version = 1.0
  * This file is part of the security module of the EcommerceMicroservices project.
  */
-package com.tjtechy.security.config;
+package com.tjtechy.user_service.service.impl;
 
+import com.tjtechy.security.config.MyUserPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;

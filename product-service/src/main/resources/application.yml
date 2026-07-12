@@ -1,10 +1,15 @@
-debug: true # Enable debug logging for troubleshooting
+debug: false # Enable debug logging for troubleshooting
 
 server:
   port: 8083
 spring:
   application:
     name: product-service # This name is used in WebClient URI
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8086/oauth2/jwks} # Use environment variable for JWK Set URI, default to localhost if not set
 inventory-service:
     base-url: http://inventory-service/api/v1 # This is the base URL for the Inventory Service, which is used in WebClient calls
 product-service:
@@ -55,12 +60,19 @@ logging:
   file:
     name: ./logs/product-service/app.log # Log file path
 
+  #debug why spring security is not working in product-service
+  #CHANGE TO DEBUG if you want to see spring security logs
+  level:
+    org.springframework.security: INFO
+
 app:
   security:
-    enabled: false
+    enabled: true
+
   openapi:
     serviceUrl: http://localhost:8083
     gatewayUrl: ${GATEWAY_URL:http://localhost:8080} # Use environment variable for gateway URL, default to localhost if not set
+
 
 info:
   app:

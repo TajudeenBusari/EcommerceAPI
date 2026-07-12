@@ -26,7 +26,7 @@ import org.springframework.test.context.TestPropertySource;
         "spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
         "spring.datasource.username=testuser",
         "spring.datasource.password=testpassword",
-        "redis.enabled=false", //disable redis
+        "spring.redis.enabled=false", //disable redis
         "spring.profiles.active=test"
 })
 public class ProductServiceApplicationTests {

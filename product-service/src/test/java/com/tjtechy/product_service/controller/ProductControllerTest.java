@@ -45,14 +45,17 @@ import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@WebMvcTest(ProductController.class)
+@WebMvcTest(controllers = ProductController.class
+
+)
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "api.endpoint.base-url=/api/v1",
         "spring.cache.type=none",
         "spring.redis.enabled=false",
         "eureka.client.enabled=false",
-        "spring.cloud.config.enabled=false"
+        "spring.cloud.config.enabled=false",
+        "app.security.enabled=false"
 })
 /*
  * So @ContextConfiguration(classes = {...}) forces Spring to load only what you need,
@@ -62,8 +65,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Prevent JPA and Redis config from being loaded
  * Speed up your tests and avoid irrelevant bean creation errors
  */
+
 @ContextConfiguration(classes = {ProductController.class})
-@Import(ExceptionHandlingAdvice.class)//Import the ExceptionHandlingAdvice class to handle exceptions in the controller tests
+@Import({ExceptionHandlingAdvice.class, TestSecurityConfig.class})//Import the ExceptionHandlingAdvice class to handle exceptions in the controller tests and Import the TestSecurity config to disable security
 class ProductControllerTest {
 
     @MockitoBean

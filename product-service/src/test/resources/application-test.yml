@@ -8,6 +8,15 @@ spring:
       max-lifetime: 300000
       connection-timeout: 15000
       validation-timeout: 3000
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          #since the test-helper module will be added to the product-service pom.xml, the key location in the test-helper will
+          #be found in the classpath of the product-service module. So we can use classpath:cert/public-test.pem to locate the public key for JWT verification.
+          #Spring searches the entire classpath for the file.
+          #In the real application.yml file, jwt:jwk-set-uri is configured to point to the public key location.
+          public-key-location: classpath:cert/public-test.pem
 
   jpa:
     hibernate:
@@ -41,3 +50,7 @@ logging:
   level:
     org.apache.catalina.loader.WebappClassLoaderBase: ERROR
     com.zaxxer.hikari: ERROR #only show errors from Hikari
+    org.springframework.security: TRACE
+    org.springframework.security.oauth2: TRACE
+
+

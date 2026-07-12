@@ -196,9 +196,20 @@
 			<version>0.0.1</version>
 		</dependency>
 
+		<!--Renamed to security-common-->
+<!--		<dependency>-->
+<!--			<groupId>com.tjtechy</groupId>-->
+<!--			<artifactId>security</artifactId>-->
+<!--			<version>0.0.1</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--			<groupId>com.tjtechy</groupId>-->
+<!--			<artifactId>security-common</artifactId>-->
+<!--			<version>0.0.1</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>com.tjtechy</groupId>
-			<artifactId>security</artifactId>
+			<artifactId>security-webflux</artifactId>
 			<version>0.0.1</version>
 		</dependency>
 

@@ -40,7 +40,7 @@ import java.time.Duration;
  */
 @Configuration
 @AutoConfigureBefore(RedisAutoConfiguration.class)
-@ConditionalOnProperty(name ="redis.enabled", havingValue = "true", matchIfMissing = true) //disable Redis cache if redis.enabled is false, useful for integration tests
+@ConditionalOnProperty(name ="spring.redis.enabled", havingValue = "true", matchIfMissing = true) //disable Redis cache if redis.enabled is false, useful for integration tests
 public class RedisCacheConfig {
 
   private static final Logger logger = LoggerFactory.getLogger(RedisCacheConfig.class);

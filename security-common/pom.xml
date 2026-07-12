@@ -11,15 +11,16 @@
     </parent>
 
     <groupId>com.tjtechy</groupId>
-    <artifactId>security</artifactId>
+    <artifactId>security-common</artifactId>
     <version>0.0.1</version>
     <packaging>jar</packaging> <!-- ✅ package as jar-->
-    <name>security</name>
-    <description>Security Module for ECommerce Microservices</description>
+    <name>security-common</name>
+    <description>Security Module for ECommerce Microservices Shared across services</description>
 
     <properties>
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.2</spring-cloud.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <!-- Spring Cloud Dependency Management -->
@@ -55,33 +56,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>com.tjtechy</groupId>-->
-<!--            <artifactId>common-utils</artifactId>-->
-<!--            <version>0.0.1</version>-->
-<!--            &lt;!&ndash; Exclude unwanted transitive dependencies from common-utils: We don't need any related-->
-<!--             data related ones that bring in jpa/jdbc etc. If they are present, application will not-->
-<!--             start because it will try to connect to a DB. We don't need any DB in this project for now&ndash;&gt;-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.springframework.boot</groupId>-->
-<!--                    <artifactId>spring-boot-starter-data-r2dbc</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.springframework.boot</groupId>-->
-<!--                    <artifactId>spring-boot-starter-data-jpa</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.springframework.boot</groupId>-->
-<!--                    <artifactId>spring-boot-starter-jdbc</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.springframework.boot</groupId>-->
-<!--                    <artifactId>spring-boot-starter-data-redis</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>com.TJTechy</groupId>

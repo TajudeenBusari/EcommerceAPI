@@ -52,7 +52,7 @@ properties = {
         "eureka.client.registerWithEureka=false",
         "spring.cloud.loadbalancer.enabled=false", // Disable load balancer
         "spring.cloud.service-registry.auto-registration.enabled=false",
-        "redis.enabled=false", //disable redis
+        "spring.redis.enabled=false", //disable redis
         "spring.cache.type=none" //disable caching
         //"spring.cloud.compatibility-verifier.enabled=false"
 })

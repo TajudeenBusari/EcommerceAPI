@@ -18,6 +18,8 @@ import com.tjtechy.InventoryDto;
 import com.tjtechy.Result;
 import com.tjtechy.UpdateInventoryDto;
 import com.tjtechy.client.InventoryServiceClient;
+import com.tjtechy.test_helper.config.TestConfiguration;
+import com.tjtechy.test_helper.security.TestJwtGenerator;
 import org.junit.jupiter.api.*;
 
 import org.slf4j.LoggerFactory;
@@ -34,8 +36,11 @@ import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTest
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
 
+import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -69,7 +74,7 @@ import static org.awaitility.Awaitility.await;
                 "eureka.client.registerWithEureka=false",
                 "spring.cloud.loadbalancer.enabled=false", // Disable load balancer
                 "spring.cloud.service-registry.auto-registration.enabled=false",
-                "redis.enabled=false", //disable redis
+                "spring.redis.enabled=false", //disable redis
                 "spring.cache.type=none", //disable caching
         })
 @EnableAutoConfiguration(exclude ={
@@ -82,6 +87,7 @@ import static org.awaitility.Awaitility.await;
 @ActiveProfiles("test")
 @Tag("ProductServiceControllerIntegrationTest")
 @AutoConfigureWebTestClient
+@Import(TestConfiguration.class) //from the test-helper package
 public class ProductServiceControllerIntegrationTest {
 
   @Autowired
@@ -95,6 +101,11 @@ public class ProductServiceControllerIntegrationTest {
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
+
+  @Autowired
+  private TestJwtGenerator testJwtGenerator; //from the test-helper package
+
+  private String adminToken;
 
 
 
@@ -117,6 +128,9 @@ public class ProductServiceControllerIntegrationTest {
     wireMockServer.start();
     WireMock.configureFor("localhost", wireMockServer.port());
   }
+
+  @Autowired
+  private JwtDecoder jwtDecoder;
 
   @DynamicPropertySource
   static void setProperties(DynamicPropertyRegistry registry) {
@@ -151,6 +165,7 @@ public class ProductServiceControllerIntegrationTest {
   void resetWireMock() {
     // Reset the WireMock server before each test
     wireMockServer.resetAll();
+    adminToken = testJwtGenerator.adminToken();
   }
 
   /**helper method to create product with inventory
@@ -177,6 +192,7 @@ public class ProductServiceControllerIntegrationTest {
     var response = webTestClient
             .post()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(createProductDto)
             .exchange()
@@ -223,6 +239,7 @@ public class ProductServiceControllerIntegrationTest {
     var response = webTestClient
             .post()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .bodyValue(createProductDto)
             .exchange()
             .expectStatus()
@@ -288,7 +305,7 @@ public class ProductServiceControllerIntegrationTest {
     );
 
     /*
-     * Using restTemplate to call a rest call
+     * Using restTemplate to call a rest call,
      *if you must use this to create a product, you must stub the inventory creation first because
      *the product creation will call the inventory service to create inventory
      */
@@ -297,6 +314,7 @@ public class ProductServiceControllerIntegrationTest {
     var response = webTestClient
             .post()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .bodyValue(createProductDto)
             .exchange()
             .expectStatus()
@@ -317,6 +335,13 @@ public class ProductServiceControllerIntegrationTest {
 
     return savedProduct;
     }
+
+  @Test
+  @DisplayName("Test to decode JWT token")
+  void shouldDecodeJwtToken() {
+    Jwt jwt = jwtDecoder.decode(adminToken);
+    System.out.println(jwt.getClaims());
+  }
 
   @Test
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
@@ -444,6 +469,7 @@ public class ProductServiceControllerIntegrationTest {
     var response = webTestClient
             .put()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .bodyValue(updateProductDto)
             .exchange()
             .expectStatus()
@@ -510,6 +536,7 @@ public class ProductServiceControllerIntegrationTest {
     var response = webTestClient
             .delete()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus()
             .isOk()
@@ -541,6 +568,7 @@ public class ProductServiceControllerIntegrationTest {
     List<String> productIds = List.of(productId1.toString(), productId2.toString());
     var response = webTestClient.method(HttpMethod.DELETE)
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(productIds)
             .exchange()
@@ -588,6 +616,7 @@ public class ProductServiceControllerIntegrationTest {
     var response = webTestClient
             .delete()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus()
             .isOk()
@@ -646,6 +675,7 @@ public class ProductServiceControllerIntegrationTest {
     List<String> productIds = List.of(productId1.toString(), productId2.toString());
     var response = webTestClient.method(HttpMethod.DELETE)
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(productIds)
             .exchange()
@@ -689,6 +719,7 @@ public class ProductServiceControllerIntegrationTest {
 
     var response = webTestClient.method(HttpMethod.DELETE)
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(productIds)
             .exchange()

@@ -783,7 +783,7 @@ networks:
 volumes:
   postgres-data:
 
-#docker compose up -d redis zookeeper kafka schema-registry kafka-ui ecommerce-jaeger prometheus loki promtail grafana
+#docker compose up -d redis zookeeper kafka schema-registry kafka-ui ecommerce-jaeger prometheus loki promtail grafana eureka-server config-server
 #schema Registry: http://localhost:8081
 #
 #Kafka UI: http://localhost:8085
