@@ -14,9 +14,17 @@ import com.tjtechy.modelNotFoundException.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestControllerAdvice
 public class ExceptionHandlingAdvice {
@@ -35,7 +43,7 @@ public class ExceptionHandlingAdvice {
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public Result handleOtherExceptions(Exception ex) {
-    return new Result("A server internal error occurs", false, ex.getMessage(), StatusCode.INTERNAL_SERVER_ERROR);
+    return new Result("A server internal error occurs: " + ex.getMessage(), false, StatusCode.INTERNAL_SERVER_ERROR);
   }
 
   @ExceptionHandler({UsernameNotFoundException.class, BadCredentialsException.class})
@@ -49,4 +57,60 @@ public class ExceptionHandlingAdvice {
   public Result handleUsernameAlreadyExistsException(Exception ex) {
     return new Result(ex.getMessage(), false, StatusCode.BAD_REQUEST);
   }
+
+  /**Used by WebFlux as against MethodArgumentNotValidException used in WebMvc
+   * Handles exceptions of type {@link WebExchangeBindException}.
+   * This method catches {@link WebExchangeBindException} which occurs when
+   * request body parameters in controller fail validation annotations
+   * (e.g., {@code @NotNull, @Size, @Min}).
+   * The method extracts validation error details and returns them in a structured format.
+   * Each field that caused the error is mapped to its corresponding validation message.
+   * This is different from {@link IllegalArgumentException}
+   * which is thrown when a method receives an invalid argument.
+   * @param e The exception that contains validation errors.
+   * @return {@link Result} object containing error messages mapped to invalid fields.
+   * @see WebExchangeBindException
+   * @see FieldError
+   */
+  @ExceptionHandler(WebExchangeBindException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public Result handleInvalidDataException(WebExchangeBindException e) {
+    List<ObjectError> fieldErrors = e.getAllErrors();
+    Map<String, String> map = new HashMap<>(fieldErrors.size());
+    fieldErrors.forEach(error -> {
+      String key = ((FieldError) error).getField();
+      String value = error.getDefaultMessage();
+      map.put(key, value);
+    });
+
+    return new Result("Provided arguments are invalid, see data for details", false, map, StatusCode.BAD_REQUEST);
+  }
+
+//  /**
+//   * Handles exceptions of type {@link MethodArgumentNotValidException}.
+//   * This method catches {@link MethodArgumentNotValidException} which occurs when
+//   * request body parameters in controller fail validation annotations
+//   * (e.g., {@code @NotNull, @Size, @Min}).
+//   * The method extracts validation error details and returns them in a structured format.
+//   * Each field that caused the error is mapped to its corresponding validation message.
+//   * This is different from {@link IllegalArgumentException}
+//   * which is thrown when a method receives an invalid argument.
+//   * @param e The exception that contains validation errors.
+//   * @return {@link Result} object containing error messages mapped to invalid fields.
+//   * @see MethodArgumentNotValidException
+//   * @see FieldError
+//   */
+//  @ExceptionHandler(MethodArgumentNotValidException.class)
+//  @ResponseStatus(HttpStatus.BAD_REQUEST)
+//  public Result handleInvalidDataException(MethodArgumentNotValidException e) {
+//    List<ObjectError> fieldErrors = e.getAllErrors();
+//    Map<String, String> map = new HashMap<>(fieldErrors.size());
+//    fieldErrors.forEach(error -> {
+//      String key = ((FieldError) error).getField();
+//      String value = error.getDefaultMessage();
+//      map.put(key, value);
+//    });
+//
+//    return new Result("Provided arguments are invalid, see data for details", false, map, StatusCode.BAD_REQUEST);
+//  }
 }

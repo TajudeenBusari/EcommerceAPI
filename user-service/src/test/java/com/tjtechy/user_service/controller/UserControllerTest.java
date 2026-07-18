@@ -9,8 +9,11 @@ package com.tjtechy.user_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
+import com.tjtechy.Result;
+import com.tjtechy.user_service.exception.ExceptionHandlingAdvice;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.test.context.ContextConfiguration;
 import userutils.entity.User;
 import userutils.dto.UserRegistrationDto;
 import com.tjtechy.user_service.service.UserService;
@@ -53,8 +56,17 @@ import static org.mockito.Mockito.when;
         EurekaClientAutoConfiguration.class,
 
 })
+/*
+ * @ContextConfiguration(classes = {...}) forces Spring to load only what you need,
+ * overriding the default component scan or @SpringBootApplication class
+ * In @WebFluxTest, adding the annotation helps you:
+ * Isolate the controller
+ * Prevent Redis config from being loaded
+ * Speed up test
+ */
+@ContextConfiguration(classes = {UserController.class})
 @AutoConfigureWebTestClient
-@Import(TestSecurityConfig.class) //to disable security (csrf) for testing
+@Import({TestSecurityConfig.class, ExceptionHandlingAdvice.class}) //to disable security (csrf) for testing
 class UserControllerTest {
   /**
    * This is used instead of MockMvc for testing WebFlux controllers.
@@ -192,17 +204,21 @@ class UserControllerTest {
             true
     );
     var json = objectMapper.writeValueAsString(registrationRequestDto);
-    when(userService.createUser(any(User.class))).thenThrow(new RuntimeException("Error creating user with username: invalid_user: Password must be at least 6 characters long"));
+    //Because of the validation on the password param, the controller is not even called. So need to mock the
+    //UserService. And error will be client error and not server error
+    //when(userService.createUser(any(User.class))).thenThrow(new RuntimeException("Error creating user with username: invalid_user: Password must be at least 6 characters long"));
     //when and then
-    webTestClient.post()
+    var result = webTestClient.post()
             .uri(baseUrl + "/user/register")
             .bodyValue(json)
             .header("Content-Type", "application/json")
             .exchange()
-            .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
+            .expectStatus().isBadRequest()// Expecting client error due to invalid password
             .expectBody()
+            //.expectBody(Result.class).returnResult();
+    //System.out.println("=============RESULT===== " + result);
             .jsonPath("$.flag").isEqualTo(false)
-            .jsonPath("$.message").isEqualTo("A server internal error occurs");
+            .jsonPath("$.message").isEqualTo("Provided arguments are invalid, see data for details");
   }
 
   @Test
@@ -220,17 +236,18 @@ class UserControllerTest {
             true
     );
     var json = objectMapper.writeValueAsString(registrationRequestDto);
-    when(userService.createUser(any(User.class))).thenThrow(new RuntimeException("Error creating user with username: bad_email_user: Email format is invalid"));
+    //UserService is never called
+    //when(userService.createUser(any(User.class))).thenThrow(new RuntimeException("Error creating user with username: bad_email_user: Email format is invalid"));
     //when and then
     webTestClient.post()
             .uri(baseUrl + "/user/register")
             .bodyValue(json)
             .header("Content-Type", "application/json")
             .exchange()
-            .expectStatus().is5xxServerError() // Expecting server error due to invalid email, not client error
+            .expectStatus().isBadRequest() // Expecting client error due to invalid email
             .expectBody()
             .jsonPath("$.flag").isEqualTo(false)
-            .jsonPath("$.message").isEqualTo("A server internal error occurs");
+            .jsonPath("$.message").isEqualTo("Provided arguments are invalid, see data for details");
   }
 
   @Test

@@ -31,6 +31,7 @@ import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.MediaType;
 
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -52,7 +53,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(OrderController.class) //Recommended for unit testing for controllers
+@WebMvcTest(controllers = OrderController.class) //Recommended for unit testing for controllers
 @AutoConfigureMockMvc
 @TestPropertySource(
         properties = {
@@ -70,6 +71,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         EurekaClientAutoConfiguration.class,
         ConfigServerBootstrapper.class
 })
+/*
+ * So @ContextConfiguration(classes = {...}) forces Spring to load only what you need,
+ * overriding the default component scan or @SpringBootApplication class
+ * In @WebMvcTest, adding @ContextConfiguration(classes = {OrderController.class}) helps you:
+ * Explicitly isolate the controller
+ * Prevent JPA and Redis config from being loaded
+ * Speed up your tests and avoid irrelevant bean creation errors
+ */
+@ContextConfiguration(classes = {OrderController.class})
 class OrderControllerTest {
 
   /**

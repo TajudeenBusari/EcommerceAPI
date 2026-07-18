@@ -10,11 +10,11 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
     consumer:
       group-id: user-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
     properties:
       spring.json.trusted.packages: '*' #trust all packages for JSON serialization/deserialization
       metrics.reporters: ""
@@ -23,6 +23,7 @@ spring:
       user-created: user-created-topic
       user-updated: user-updated-topic
       user-deleted: user-deleted-topic
+
 management:
   endpoints:
     web:

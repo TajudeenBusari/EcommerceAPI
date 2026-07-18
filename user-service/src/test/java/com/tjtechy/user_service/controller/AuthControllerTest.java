@@ -8,6 +8,7 @@ package com.tjtechy.user_service.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tjtechy.RedisCacheConfig;
+import com.tjtechy.user_service.exception.ExceptionHandlingAdvice;
 import com.tjtechy.user_service.service.impl.AuthService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -50,8 +52,11 @@ import static org.mockito.Mockito.when;
         //exclude auto configurations that are not needed for the test
         RedisCacheConfig.class, EurekaClientAutoConfiguration.class
 })
+
+@ContextConfiguration(classes = {AuthController.class})
 @AutoConfigureWebTestClient
-@Import(TestSecurityConfig.class) //to disable security (csrf) for testing
+@Import({TestSecurityConfig.class, ExceptionHandlingAdvice.class}) //to disable security (csrf) for testing
+
 class AuthControllerTest {
 
   @Autowired

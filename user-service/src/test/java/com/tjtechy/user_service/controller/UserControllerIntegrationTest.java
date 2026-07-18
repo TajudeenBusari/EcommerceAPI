@@ -207,14 +207,14 @@ public class UserControllerIntegrationTest {
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + loginInfo()) // Include the token in the Authorization header
             .exchange()
-            .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
+            .expectStatus().isBadRequest() // Expecting client error due to invalid password
             .expectBody()
             .consumeWith(res -> {
               assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(false)
-            .jsonPath("$.message").isEqualTo("A server internal error occurs");
+            .jsonPath("$.message").isEqualTo("Provided arguments are invalid, see data for details");
   }
 
   @Test
@@ -238,14 +238,14 @@ public class UserControllerIntegrationTest {
             .header("Content-Type", "application/json")
             .header("Authorization", "Bearer " + loginInfo()) // Include the token in the Authorization header
             .exchange()
-            .expectStatus().is5xxServerError() // Expecting server error due to invalid password, not client error
+            .expectStatus().isBadRequest() // Expecting client error due to invalid password
             .expectBody()
             .consumeWith(res -> {
               assert res.getResponseBody() != null;
               System.out.println("ResponseBody: " + new String(res.getResponseBody()));
             })
             .jsonPath("$.flag").isEqualTo(false)
-            .jsonPath("$.message").isEqualTo("A server internal error occurs");
+            .jsonPath("$.message").isEqualTo("Provided arguments are invalid, see data for details");
   }
 
 

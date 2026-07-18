@@ -17,7 +17,10 @@ import com.tjtechy.*;
 import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.OrderItemDto;
 import com.tjtechy.order_service.entity.dto.UpdateOrderDto;
+import com.tjtechy.order_service.kafka.OrderEventProducer;
 import org.junit.jupiter.api.*;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +40,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 //import org.testcontainers.containers.PostgreSQLContainer; //deprecated
 import org.testcontainers.junit.jupiter.Container;
@@ -54,6 +58,8 @@ import java.util.UUID;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static wiremock.com.google.common.base.Preconditions.checkState;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -88,6 +94,10 @@ public class OrderServiceControllerIntegrationTest {
   //private TestRestTemplate restTemplate;
   private WebTestClient webTestClient; //add @AutoConfigureWebTestClient to enable WebTestClient
 
+  @MockitoBean
+  private OrderEventProducer orderEventProducer; //mock the Kafka producer to avoid sending messages to Kafka during tests
+
+
   @LocalServerPort
   private int port;
 
@@ -105,6 +115,7 @@ public class OrderServiceControllerIntegrationTest {
 
   //spin up kafka container
   /**
+   * Note: KAFKA LOGIC WILL BE TESTED SEPARATELY IN A SEPARATE TEST CLASS. SO IT REMOVED FROM HERE
    * This already bundles Zookeeper, no need to start a separate Zookeeper container
    * The Confluent image (confluentinc/cp-kafka:latest) is failing immediately because Testcontainers’ KafkaContainer
    * expects the Apache Kafka image layout, but Confluent has a different startup script structure.
@@ -114,9 +125,9 @@ public class OrderServiceControllerIntegrationTest {
    * If you must use Confluent, you will need to create a custom container class that extends GenericContainer:
    * E.G; Check a readme file
    */
-  @Container
-  private static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName
-          .parse("apache/kafka:latest"));
+//  @Container
+//  private static final KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName
+//          .parse("apache/kafka:latest"));
 
 
   private static final WireMockServer wireMockServer;
@@ -144,14 +155,15 @@ public class OrderServiceControllerIntegrationTest {
       return "http://localhost:" + wireMockServer.port() + "/api/v1";
     });
     registry.add("api.endpoint.base-url", () -> "/api/v1");
+
     //KAFKA
-    registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+   // registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
   }
 
   @BeforeAll
   static void startContainers() {
     postgreSQLContainer.start();
-    kafkaContainer.start();
+    //kafkaContainer.start();
   }
 
   @AfterAll
@@ -162,13 +174,14 @@ public class OrderServiceControllerIntegrationTest {
     if (postgreSQLContainer != null && postgreSQLContainer.isRunning()) {
       postgreSQLContainer.stop();
     }
-    if (kafkaContainer.isRunning()) {
-      kafkaContainer.stop();
-    }
+    //if (kafkaContainer.isRunning()) {
+    //  kafkaContainer.stop();
+    //}
   }
 
   @BeforeEach
   void resetWireMock() {
+    doNothing().when(orderEventProducer).sendOrderPlacedEvent(ArgumentMatchers.any());
     wireMockServer.resetAll();
   }
 
@@ -204,9 +217,6 @@ public class OrderServiceControllerIntegrationTest {
                     .withBody(objectMapper.writeValueAsString(deductInventoryResponse)))); //no need to register JavaTimeModule here since we are not using LocalDate in the request body
     //Create order
     String url = "http://localhost:" + port + baseUrl + "/order/reactive/externalized";
-
-//    var headers = new HttpHeaders();
-//    headers.setContentType(MediaType.APPLICATION_JSON);
 
     String json = objectMapper
             .registerModule(new JavaTimeModule()) // Register JavaTimeModule to handle LocalDate and other Java 8 date/time types
@@ -278,16 +288,7 @@ public class OrderServiceControllerIntegrationTest {
     createOrderDto.setShippingAddress("123 Test Street, Test City, TC 12345");
     createOrderDto.setOrderItems(List.of(orderItemDto1));
 
-//    This also works but is commented to be consistent with other integration tests
-//    String url = UriComponentsBuilder
-//            .newInstance()
-//            .scheme("http")
-//            .host("localhost")
-//            .port(port)
-//            .path(baseUrl)
-//            .path("/order/reactive/externalized")
-//            .build()
-//            .toUriString();
+
     String url = "http://localhost:" + port + baseUrl + "/order/reactive/externalized";
 
     String json = objectMapper
@@ -317,6 +318,10 @@ public class OrderServiceControllerIntegrationTest {
     wireMockServer.verify(1, WireMock.patchRequestedFor(urlEqualTo("/api/v1/inventory/internal/deduct-inventory-reactive"))
             .withRequestBody(matchingJsonPath("$.productId", equalTo(productDto.productId().toString())))
             .withRequestBody(matchingJsonPath("$.quantity", equalTo("10"))));
+
+    //verify event producer was invoked
+    Mockito.verify(orderEventProducer, times(1)).sendOrderPlacedEvent(ArgumentMatchers.any());
+
   }
 
   @Test
