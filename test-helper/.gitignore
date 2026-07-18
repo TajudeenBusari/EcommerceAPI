@@ -35,5 +35,9 @@ build/
 ##ignore log files
 *.log
 
-##ignore public and private key files
+##ignore public and private key files and not the test ones. It is ok to commit the test keys for testing purposes for CI to work
 *.pem
+
+# Except the test JWT keys. Not from project root but from the test-helper module. The test keys are used for testing purposes and are safe to commit.
+!src/main/resources/cert/private-test.pem
+!src/main/resources/cert/public-test.pem
