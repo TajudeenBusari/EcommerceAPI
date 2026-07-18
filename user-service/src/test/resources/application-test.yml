@@ -28,6 +28,9 @@ spring:
       hostname: localhost
   redis:
     enabled: false
+    jackson:
+      serialization:
+        write-dates-as-timestamps: false
 api:
   endpoint:
     base-url: /api/v1

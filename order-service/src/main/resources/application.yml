@@ -15,12 +15,12 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer #Serializer for the key
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer #Serializer for the value
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer #Serializer for the value
         #NOTE: if order service is not consuming messages from kafka, the consumer configuration is not needed
     consumer:
       group-id: order-service-group #Consumer group ID, ensure load balancing across multiple instances
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer #Deserializer for the key
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer #Deserializer for the value
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer #Deserializer for the value
     properties:
       spring.json.trusted.packages: '*' #Trust all packages for JSON serialization/deserialization
 #      spring.json.value.default.type: com.tjtechy.order_service.event.OrderPlacedEvent #Default type for deserialization, if needed
@@ -36,11 +36,12 @@ spring:
       payment-received: payment-received-topic
       payment-failed: payment-failed-topic
 
-
 product-service:
   base-url: http://product-service/api/v1
+
 inventory-service:
   base-url: http://inventory-service/api/v1
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html #will be access at http://localhost:8082/swagger-ui.html
