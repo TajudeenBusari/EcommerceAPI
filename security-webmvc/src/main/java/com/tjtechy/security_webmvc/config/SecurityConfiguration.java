@@ -36,9 +36,6 @@ import java.security.interfaces.RSAPublicKey;
 @ConditionalOnProperty(name = "app.security.enabled", havingValue = "true", matchIfMissing = true)
 public class SecurityConfiguration {
 
-//  private final RSAPublicKey publicKey;
-//  private final RSAPrivateKey privateKey;
-
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
 
@@ -61,15 +58,26 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                     .requestMatchers(HttpMethod.GET, this.baseUrl + "/product").permitAll() //allow unauthenticated access to GET /product endpoint
                     .requestMatchers(HttpMethod.GET, this.baseUrl + "/product/**").permitAll() //allow unauthenticated access to GET /product/{id} endpoint
+
+                    //for now order-service endpoint will be secured with Admin role exception for creating order
+                    .requestMatchers(HttpMethod.POST, this.baseUrl + "/order/**").permitAll() //allow unauthenticated access to POST /order endpoint
+
+                    .requestMatchers(HttpMethod.GET, this.baseUrl + "/order").hasAuthority("ROLE_ADMIN") //ADMIN roles to access GET /order endpoint
+                    .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/order/**").hasAuthority("ROLE_ADMIN") //allow only ADMIN role to access DELETE /order/{id} endpoint
+                    .requestMatchers(HttpMethod.GET, this.baseUrl + "/order/**").hasAuthority("ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.PUT, this.baseUrl + "/order/**").hasAuthority("ROLE_ADMIN") //allow only ADMIN role to access PUT /order/{id} endpoint
+
                     .requestMatchers(HttpMethod.POST, this.baseUrl + "/product").hasAuthority("ROLE_ADMIN") //allow only ADMIN role to access POST /product endpoint
                     .requestMatchers(HttpMethod.POST, this.baseUrl + "/product/**").hasAuthority("ROLE_ADMIN")
                     .requestMatchers(HttpMethod.PUT, this.baseUrl + "/product/**").hasAuthority("ROLE_ADMIN")
                     .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/product/**").hasAuthority("ROLE_ADMIN")
+
                     .requestMatchers(EndpointRequest.to("health", "info", "prometheus")).permitAll() //allow unauthenticated access to health and info endpoints
                     .requestMatchers(EndpointRequest.toAnyEndpoint().excluding("health", "info", "prometheus")).hasAuthority("ROLE_ADMIN") //allow only ADMIN role to access other actuator endpoints
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()//allow unauthenticated access to swagger endpoints for API documentation
                     .anyRequest()
                     .authenticated()
+
             )
             .csrf(AbstractHttpConfigurer::disable) //disable to allow post, put, delete requests without csrf token
             .cors(Customizer.withDefaults())

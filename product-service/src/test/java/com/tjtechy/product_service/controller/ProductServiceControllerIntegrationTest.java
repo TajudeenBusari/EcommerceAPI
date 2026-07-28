@@ -107,8 +107,6 @@ public class ProductServiceControllerIntegrationTest {
 
   private String adminToken;
 
-
-
   private static final String CREATE_INVENTORY_SERVICE_URL = "/api/v1/inventory/internal/create";
   private static final String GET_INVENTORY_BY_PRODUCT_URL = "/api/v1/inventory/internal/product";
   private static final String UPDATE_INVENTORY_URL = "/api/v1/inventory/internal/update";
@@ -214,7 +212,6 @@ public class ProductServiceControllerIntegrationTest {
 
     return savedProduct;
   }
-
 
   /**
    * Used for just creating a product without inventory.

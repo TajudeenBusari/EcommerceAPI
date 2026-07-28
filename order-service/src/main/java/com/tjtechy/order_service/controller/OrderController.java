@@ -32,7 +32,7 @@ public class OrderController {
     this.meterRegistry = meterRegistry;
   }
 
-  /**
+  /*
    * This is the method to create order
    * Non-reactive method, blocking and synchronous
    * The entire request thread is held until processing completes.
@@ -42,26 +42,26 @@ public class OrderController {
    * (e.g., calling product service for each item in the order) and will be
    * deprecated in the next version.
    */
-  @Operation(summary = "Create a new order",
-  description = "This endpoint creates a new order based on the provided CreateOrderDto. " +
-          "Endpoint is deprecated and will be removed in the next version. Use any of the /reactive instead.",
-          responses = {@ApiResponse(responseCode = "200", description = "Order created successfully"),
-
-          })
-  @PostMapping
-  @Deprecated(since = "1.1", forRemoval = true)
-  public Result createOrder(@Valid @RequestBody CreateOrderDto createOrderDto) {
-    //map from createOrderDto to Order
-    var order = OrderMapper.mapFromCreateOrderDtoToOrder(createOrderDto);
-
-    //call orderService.createOrder
-    var createdOrder = orderService.createOrder(order);
-
-    //map from Order to OrderDto
-    var orderDto = OrderMapper.mapFromOrderToOrderDto(createdOrder);
-
-    return new Result("Order created successfully", true, orderDto, StatusCode.SUCCESS);
-  }
+//  @Operation(summary = "Create a new order",
+//  description = "This endpoint creates a new order based on the provided CreateOrderDto. " +
+//          "Endpoint is deprecated and will be removed in the next version. Use any of the /reactive instead.",
+//          responses = {@ApiResponse(responseCode = "200", description = "Order created successfully"),
+//
+//          })
+//  @PostMapping
+//  @Deprecated(since = "1.1", forRemoval = true)
+//  public Result createOrder(@Valid @RequestBody CreateOrderDto createOrderDto) {
+//    //map from createOrderDto to Order
+//    var order = OrderMapper.mapFromCreateOrderDtoToOrder(createOrderDto);
+//
+//    //call orderService.createOrder
+//    var createdOrder = orderService.createOrder(order);
+//
+//    //map from Order to OrderDto
+//    var orderDto = OrderMapper.mapFromOrderToOrderDto(createdOrder);
+//
+//    return new Result("Order created successfully", true, orderDto, StatusCode.SUCCESS);
+//  }
 
   /**
    * This is the method to create order reactively
@@ -214,15 +214,15 @@ public class OrderController {
   }
 
   /**
-   * This is the method to get all orders without cancelled ones
+   * This is the method to get all orders without canceled ones
    */
-  @Operation(summary = "Get all orders without cancelled ones",
-          description = "This endpoint retrieves all orders excluding those that are cancelled.",
+  @Operation(summary = "Get all orders without canceled ones",
+          description = "This endpoint retrieves all orders excluding those that are canceled.",
   responses = {
-          @ApiResponse(responseCode = "200", description = "Orders retrieved successfully without cancelled ones")
+          @ApiResponse(responseCode = "200", description = "Orders retrieved successfully without canceled ones")
   })
-  @GetMapping("/without-cancelled")
-  public Result getAllOrdersWithoutCancelledOnes() {
+  @GetMapping("/without-canceled")
+  public Result getAllOrdersWithoutCanceledOnes() {
 
     var orderDtos = orderService.getAllOrdersWithoutCancelledOnes();
 

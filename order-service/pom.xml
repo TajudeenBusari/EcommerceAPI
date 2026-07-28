@@ -58,7 +58,6 @@
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
 
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -75,13 +74,13 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 		<!-- Autoconfigure test database -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-jdbc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 
 		<dependency>
 			<groupId>com.tjtechy</groupId>
@@ -115,21 +114,6 @@
 <!--			<version>2.18.2</version>-->
 		</dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>jakarta.validation</groupId>-->
-<!--            <artifactId>jakarta.validation-api</artifactId>-->
-<!--        </dependency>-->
-
-		<!-- Jackson module to support Hibernate types and lazy loading
-		 It prevents infinite recursion or unexpected JSON.E.G.,When you have
-		 when you have another entity inside another entity related by, for
-		 example @OneToMany-->
-		<!--		<dependency>-->
-		<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
-		<!--			<artifactId>jackson-datatype-hibernate6</artifactId>-->
-		<!--			<version>2.18.2</version> &lt;!&ndash; Use the latest version &ndash;&gt;-->
-		<!--		</dependency>-->
-
         <!--Add spring cloud config client dependency so application can use the
         config server config file-->
 		<dependency>
@@ -149,54 +133,6 @@
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
-		</dependency>
-
-		<!-- Test dependencies -->
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- PostgreSQL Test Container -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers-postgresql</artifactId>
-<!--			<version>2.0.5</version>-->
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers-kafka</artifactId>
-<!--			<version>2.0.5</version>-->
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.kafka</groupId>
-			<artifactId>spring-kafka-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!--JUnit-->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers-junit-jupiter</artifactId>
-<!--			<version>2.0.5</version>-->
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.redis</groupId>
-			<artifactId>testcontainers-redis</artifactId>
-			<version>2.2.2</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-test</artifactId>
-			<scope>test</scope>
 		</dependency>
 
 		<!-- Optional: For using JSON serialization in Redis,
@@ -244,7 +180,67 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Security dependency for production -->
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>security-webmvc</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
+		<!-- =========Test dependencies=========== -->
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- PostgreSQL Test Container -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<!--<version>2.0.5</version>-->
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-kafka</artifactId>
+			<!--			<version>2.0.5</version>-->
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!--JUnit-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<!--			<version>2.0.5</version>-->
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.redis</groupId>
+			<artifactId>testcontainers-redis</artifactId>
+			<version>2.2.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>test-helper</artifactId>
+			<version>0.0.1</version>
+			<scope>test</scope> <!--ensures code is never packaged in production-->
+		</dependency>
 
 	</dependencies>
 

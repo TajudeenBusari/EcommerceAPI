@@ -19,7 +19,6 @@ import java.security.interfaces.RSAPublicKey;
 
 @Configuration
 @ComponentScan(basePackages = "com.tjtechy.test_helper")
-//@Import(TestKeyConfiguration.class) use this or ComponentScan
 public class TestConfiguration {
 
   //explicitly provide the Bean of TestJwtGenerator so that JwtEncoder bean is also available

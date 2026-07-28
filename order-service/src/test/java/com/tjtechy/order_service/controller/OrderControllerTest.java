@@ -16,6 +16,7 @@ import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.OrderDto;
 import com.tjtechy.order_service.entity.dto.OrderItemDto;
 import com.tjtechy.order_service.entity.dto.UpdateOrderDto;
+import com.tjtechy.order_service.exception.ExceptionHandlingAdvice;
 import com.tjtechy.order_service.mapper.OrderMapper;
 import com.tjtechy.order_service.service.OrderService;
 import org.junit.jupiter.api.AfterEach;
@@ -28,6 +29,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.cloud.config.client.ConfigServerBootstrapper;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.MediaType;
 
@@ -80,6 +82,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Speed up your tests and avoid irrelevant bean creation errors
  */
 @ContextConfiguration(classes = {OrderController.class})
+@Import({TestSecurityConfig.class, ExceptionHandlingAdvice.class}) // Import the TestSecurityConfig class to override security configuration
 class OrderControllerTest {
 
   /**
@@ -446,7 +449,7 @@ class OrderControllerTest {
   }
 
   @Test
-  void getAllOrdersWithoutCancelledOnesSuccess() throws Exception {
+  void getAllOrdersWithoutCanceledOnesSuccess() throws Exception {
     // Given
     List<OrderDto> orderDtos = new ArrayList<>();
 
@@ -476,7 +479,7 @@ class OrderControllerTest {
             .toList());
 
     // Perform the GET request
-    mockMvc.perform(get(baseUrl + "/order/without-cancelled")
+    mockMvc.perform(get(baseUrl + "/order/without-canceled")
                     .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.message").value("Orders retrieved successfully"))
