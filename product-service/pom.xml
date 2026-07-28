@@ -67,12 +67,6 @@
 			</exclusions>
 		</dependency>
 
-		<!--Spring boot Starter WebFlux (For WebClient)-->
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.boot</groupId>-->
-<!--			<artifactId>spring-boot-starter-webflux</artifactId>-->
-<!--		</dependency>-->
-
 		<!-- Eureka Client -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>

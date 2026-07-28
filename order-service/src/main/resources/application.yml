@@ -3,14 +3,19 @@ server:
 spring:
   application:
     name: order-service # This name is used in WebClient URI
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8086/oauth2/jwks} # Use environment variable for JWK Set URI
 
     #kafka configuration
     #the producer key and value configures how the producer serializes message before sending to kafka
-    #key converts message keys (e.g order ID) to a string
-    #value converts message values (e.g order details-JSON PAYLOAD) to a string
+    #key converts message keys (e.g., order ID) to a string
+    #value converts message values (e.g., order details-JSON PAYLOAD) to a string
     # the consumer key and value configures how the consumer deserializes message after receiving from kafka
-    #key converts message keys (e.g order ID) from a string
-    #value converts message values (e.g order details-JSON PAYLOAD) from a string
+    #key converts message keys (e.g., order ID) from a string
+    #value converts message values (e.g., order details-JSON PAYLOAD) from a string
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -35,6 +40,7 @@ spring:
       #not yet implemented
       payment-received: payment-received-topic
       payment-failed: payment-failed-topic
+
 
 product-service:
   base-url: http://product-service/api/v1
@@ -95,7 +101,7 @@ logging:
     name: ./logs/order-service/app.log # Log file path
 app:
   security:
-    enabled: false
+    enabled: true
   openapi:
     gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
     serviceUrl: http://localhost:8082
@@ -108,6 +114,7 @@ info:
     author: Tajudeen Busari (tjtechy)
     link:
       github: https://github.com/TajudeenBusari/EcommerceAPI/tree/master/order-service
+
 
 
 #NOTE: SOME GET_TELEMETRY PROPERTIES ERROR IS COMING WHEN THE SERVICE PLACES ORDER, IGNORE THEM, NOT CRITICAL

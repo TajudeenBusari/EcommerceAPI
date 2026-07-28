@@ -20,10 +20,12 @@ public class TestJwtGenerator {
   private final JwtEncoder jwtEncoder;
 
   public TestJwtGenerator(JwtEncoder jwtEncoder) {
+
     this.jwtEncoder = jwtEncoder;
   }
 
   public String adminToken(){
+
     return generateToken("admintest", List.of("ROLE_ADMIN"));
   }
 

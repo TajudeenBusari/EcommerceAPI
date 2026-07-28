@@ -118,7 +118,7 @@ public class ExceptionHandlingAdvice {
   }
 
   /**
-   * Handle already cancelled order exception.
+   * Handle already canceled order exception.
    */
   @ExceptionHandler(OrderAlreadyCancelledException.class)
   @ResponseStatus(HttpStatus.CONFLICT)

@@ -18,6 +18,8 @@ import com.tjtechy.order_service.entity.dto.CreateOrderDto;
 import com.tjtechy.order_service.entity.dto.OrderItemDto;
 import com.tjtechy.order_service.entity.dto.UpdateOrderDto;
 import com.tjtechy.order_service.kafka.OrderEventProducer;
+import com.tjtechy.test_helper.config.TestConfiguration;
+import com.tjtechy.test_helper.security.TestJwtGenerator;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -33,6 +35,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -85,18 +88,17 @@ properties = {
         EurekaDiscoveryClientConfiguration.class,
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-//since application context already loads the KafkaTemplate bean, we need to disable the autoconfiguration
-//@Import(KafkaTestConfig.class) // Import the KafkaTestConfig class to provide a mock KafkaTemplate bean
+
+@Import(TestConfiguration.class) //from test-helper package. It provides the TestJwtGenerator bean and JwtDecoder bean for testing purposes
 @AutoConfigureWebTestClient
 public class OrderServiceControllerIntegrationTest {
 
   @Autowired
-  //private TestRestTemplate restTemplate;
+
   private WebTestClient webTestClient; //add @AutoConfigureWebTestClient to enable WebTestClient
 
   @MockitoBean
   private OrderEventProducer orderEventProducer; //mock the Kafka producer to avoid sending messages to Kafka during tests
-
 
   @LocalServerPort
   private int port;
@@ -105,6 +107,11 @@ public class OrderServiceControllerIntegrationTest {
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
+
+  @Autowired
+  private TestJwtGenerator testJwtGenerator;
+
+  private String adminToken;
 
   //spin up postgres container
   @Container
@@ -137,7 +144,7 @@ public class OrderServiceControllerIntegrationTest {
     WireMock.configureFor("localhost", wireMockServer.port());
   }
 
-  //Register dynamic properties for Postgres, Wiremock, and Kafka
+  //Register dynamic properties for Postgres, WireMock
   @DynamicPropertySource
   static void registerPostgresProperties(DynamicPropertyRegistry registry) {
     //POSTGRES
@@ -183,8 +190,8 @@ public class OrderServiceControllerIntegrationTest {
   void resetWireMock() {
     doNothing().when(orderEventProducer).sendOrderPlacedEvent(ArgumentMatchers.any());
     wireMockServer.resetAll();
+    adminToken = testJwtGenerator.adminToken();
   }
-
 
   private Map<String, Object> createOrderReactively(CreateOrderDto createOrderDto) throws Exception {
     //Mock the product-service get response
@@ -224,6 +231,7 @@ public class OrderServiceControllerIntegrationTest {
             .writeValueAsString(createOrderDto);
     var response = webTestClient.post()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(json)
             .exchange()
@@ -298,6 +306,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.post()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(json)
             .exchange()
@@ -348,6 +357,7 @@ public class OrderServiceControllerIntegrationTest {
     String url = "http://localhost:" + port + baseUrl + "/order/" + orderId;
     var response = webTestClient.get()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -385,6 +395,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.get()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -426,6 +437,7 @@ public class OrderServiceControllerIntegrationTest {
   String url = "http://localhost:" + port + baseUrl + "/order";
   var response = webTestClient.get()
           .uri(url)
+          .header("Authorization", "Bearer " + adminToken)
           .exchange()
           .expectStatus().isOk()
           .expectBody(Result.class)
@@ -459,6 +471,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.get()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -502,6 +515,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.delete()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -555,6 +569,7 @@ public class OrderServiceControllerIntegrationTest {
     var orders = List.of(orderId1, orderId2);
     var response = webTestClient.method(HttpMethod.DELETE)
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(orders)
             .exchange()
@@ -599,6 +614,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.get()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -687,6 +703,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.put()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(json)
             .exchange()
@@ -743,6 +760,7 @@ public class OrderServiceControllerIntegrationTest {
 
     var response = webTestClient.delete()
             .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
