@@ -72,6 +72,13 @@ public class SecurityConfiguration {
                     .requestMatchers(HttpMethod.PUT, this.baseUrl + "/product/**").hasAuthority("ROLE_ADMIN")
                     .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/product/**").hasAuthority("ROLE_ADMIN")
 
+                    .requestMatchers(HttpMethod.GET, this.baseUrl + "/inventory").hasAuthority("ROLE_ADMIN") //allow only ADMIN role to access GET /inventory endpoint
+                    .requestMatchers(HttpMethod.GET, this.baseUrl + "/inventory/**").hasAuthority("ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.POST, this.baseUrl + "/inventory/**").hasAuthority("ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.PUT, this.baseUrl + "/inventory/**").hasAuthority("ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/inventory/**").hasAuthority("ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/inventory/**").hasAuthority("ROLE_ADMIN")
+
                     .requestMatchers(EndpointRequest.to("health", "info", "prometheus")).permitAll() //allow unauthenticated access to health and info endpoints
                     .requestMatchers(EndpointRequest.toAnyEndpoint().excluding("health", "info", "prometheus")).hasAuthority("ROLE_ADMIN") //allow only ADMIN role to access other actuator endpoints
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()//allow unauthenticated access to swagger endpoints for API documentation

@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Import;
 })
 @EnableDiscoveryClient
 @Import(RedisCacheConfig.class)
-//@EnableJpaRepositories(basePackages = "com.tjtechy.product_service.repository")
 
 public class ProductServiceApplication {
 

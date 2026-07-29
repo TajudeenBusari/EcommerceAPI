@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.javafaker.Faker;
 import com.tjtechy.*;
+import com.tjtechy.test_helper.config.TestConfiguration;
+import com.tjtechy.test_helper.security.TestJwtGenerator;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +24,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -72,6 +75,7 @@ properties = {
 @AutoConfigureWebTestClient
 //since the application context already loads the webClientBuilder bean, we need to disable the autoconfiguration
 //@Import(TestConfig.class)
+@Import(TestConfiguration.class) //from
 public class InventoryControllerIntegrationTest {
 
   @Autowired
@@ -90,7 +94,7 @@ public class InventoryControllerIntegrationTest {
    * numeric timestamps (<"expiryDate":"1725408000000">).
    * .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) prevents errors(InvalidDefinitionException)
    * during serialization of an object with no properties. Disabling ensures Jackson output to be {}
-   *
+   * Not currently used
    */
   private final ObjectMapper objectMapper = new ObjectMapper()
           .registerModule(new JavaTimeModule())
@@ -99,6 +103,11 @@ public class InventoryControllerIntegrationTest {
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
+
+  @Autowired
+  private TestJwtGenerator testJwtGenerator;
+
+  private String adminToken;
 
   private final Faker faker = new Faker(); //initialize Faker to generate random data
 
@@ -129,6 +138,12 @@ public class InventoryControllerIntegrationTest {
     }
   }
 
+  @BeforeEach
+  void setUpEach() {
+    // Initialize or reset any necessary state before each test
+    adminToken = testJwtGenerator.adminToken();
+  }
+
   //Helper class to createInventoryDto List data
   private List<CreateInventoryDto> createInventoryDtoList (int count){
     List<CreateInventoryDto> inventoryDtoList = new ArrayList<>();
@@ -156,7 +171,10 @@ public class InventoryControllerIntegrationTest {
   private Map<String, Object> createInventory (CreateInventoryDto createInventoryDto) throws Exception {
      var url = "http://localhost:" + port + baseUrl + "/inventory/internal/create";
 
-    var response = webTestClient.post().uri(url)
+    var response = webTestClient
+            .post()
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(createInventoryDto)
             .exchange()
@@ -217,7 +235,10 @@ public class InventoryControllerIntegrationTest {
     // Now get the inventory by id
     var url = "http://localhost:" + port + baseUrl + "/inventory/" + expectedInventoryId;
 
-    var response = webTestClient.get().uri(url)
+    var response = webTestClient
+            .get()
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -248,7 +269,10 @@ public class InventoryControllerIntegrationTest {
     // Now get all inventories
     var url = "http://localhost:" + port + baseUrl + "/inventory";
 
-    var response = webTestClient.get().uri(url)
+    var response = webTestClient
+            .get()
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -279,7 +303,10 @@ public class InventoryControllerIntegrationTest {
     // Now get the inventory by product id
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/product/" + expectedProductId;
 
-    var response = webTestClient.get().uri(url)
+    var response = webTestClient
+            .get()
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -306,6 +333,7 @@ public class InventoryControllerIntegrationTest {
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/product/" + nonExistentProductId;
 
     var response = webTestClient.get().uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isNotFound()
             .expectBody(Result.class)
@@ -344,7 +372,10 @@ public class InventoryControllerIntegrationTest {
     // Now update the inventory
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/update/" + inventoryId;
 
-    var response = webTestClient.put().uri(url)
+    var response = webTestClient
+            .put()
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(updateInventoryDto)
             .exchange()
@@ -380,6 +411,7 @@ public class InventoryControllerIntegrationTest {
     var url = "http://localhost:" + port + baseUrl + "/inventory/" + inventoryId;
 
     var response = webTestClient.method(HttpMethod.DELETE).uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .exchange()
             .expectStatus().isOk()
             .expectBody(Result.class)
@@ -404,6 +436,7 @@ public class InventoryControllerIntegrationTest {
     // Now bulk delete the inventories
     var url = "http://localhost:" + port + baseUrl + "/inventory/bulk-delete";
     var response = webTestClient.method(HttpMethod.DELETE).uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(inventoryIds)
             .exchange()
@@ -433,12 +466,6 @@ public class InventoryControllerIntegrationTest {
     // Prepare the deduction request
     var deductInventoryRequestDto = new DeductInventoryRequestDto(
         UUID.fromString((String) savedInventory.get("productId")), // Use the same productId
-            /*
-             * // Randomly generate a quantity to deduct may generate a number greater than the available stock
-             * //it is good to give it a small value like 1 to avoid the error
-             *
-             */
-//        faker.number().numberBetween(1, 10) // Randomly generate a quantity to deduct
             1
     );
 
@@ -449,7 +476,9 @@ public class InventoryControllerIntegrationTest {
      */
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/deduct-inventory-reactive";
 
-    var response = webTestClient.method(HttpMethod.PATCH).uri(url)
+    var response = webTestClient.method(HttpMethod.PATCH)
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(deductInventoryRequestDto)
             .exchange()
@@ -485,7 +514,10 @@ public class InventoryControllerIntegrationTest {
 
     // Now restore the inventory
     var url = "http://localhost:" + port + baseUrl + "/inventory/internal/restore-inventory";
-    var response = webTestClient.post().uri(url)
+    var response = webTestClient
+            .post()
+            .uri(url)
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(restoreInventoryDto)
             .exchange()

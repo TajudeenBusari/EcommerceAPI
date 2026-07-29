@@ -65,7 +65,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.redis.enabled=false", // Disable Redis
 
 })
-@Import(ExceptionHandlingAdvice.class) // Import the ExceptionHandlingAdvice class to handle exceptions in the controller tests
+@Import({ExceptionHandlingAdvice.class, TestSecurityConfig.class}) // Import the ExceptionHandlingAdvice class to handle exceptions in the controller tests
 @AutoConfigureWebTestClient
 
 /*
