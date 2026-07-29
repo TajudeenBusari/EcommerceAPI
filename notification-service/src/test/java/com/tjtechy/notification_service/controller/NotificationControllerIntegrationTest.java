@@ -12,6 +12,8 @@ import com.tjtechy.notification_service.config.FirebaseConfig;
 import com.tjtechy.notification_service.entity.Notification;
 import com.tjtechy.notification_service.repository.NotificationRepository;
 import com.tjtechy.notification_service.service.impl.TwilioSmsProvider;
+import com.tjtechy.test_helper.config.TestConfiguration;
+import com.tjtechy.test_helper.security.TestJwtGenerator;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EurekaDiscoveryClientConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -67,6 +70,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@Import(TestConfiguration.class)
 public class NotificationControllerIntegrationTest {
 
   /**
@@ -82,6 +86,11 @@ public class NotificationControllerIntegrationTest {
 
   @Autowired
   NotificationRepository notificationRepository;
+
+  @Autowired
+  private TestJwtGenerator testJwtGenerator;
+
+  private String adminToken;
 
   @Value("${api.endpoint.base-url}")
   private String baseUrl;
@@ -175,6 +184,8 @@ public class NotificationControllerIntegrationTest {
     notificationList.add(notification3);
     notificationList.add(notification4);
     notificationRepository.saveAll(notificationList);
+
+    adminToken = testJwtGenerator.adminToken();
   }
 
   @Test
@@ -187,7 +198,9 @@ public class NotificationControllerIntegrationTest {
   @DisplayName("Check Get all Notifications Success (GET /api/v1/notification)")
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testGetNotificationsSuccess() throws Exception {
-    var result = mockMvc.perform(get(baseUrl + "/notification"))
+    var result = mockMvc
+            .perform(get(baseUrl + "/notification")
+                    .header("Authorization", "Bearer " + adminToken))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notifications fetched successfully"))
             .andExpect(jsonPath("$.data").isArray());
@@ -202,7 +215,8 @@ public class NotificationControllerIntegrationTest {
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testGetNotificationByIdSuccess() throws Exception {
     var notification = notificationList.getFirst(); // Get the first notification
-    var result = mockMvc.perform(get(baseUrl + "/notification/{notificationId}", notification.getNotificationId()))
+    var result = mockMvc.perform(get(baseUrl + "/notification/{notificationId}", notification.getNotificationId())
+                    .header("Authorization", "Bearer " + adminToken))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notification fetched successfully"))
             .andExpect(jsonPath("$.data.notificationId").value(notification.getNotificationId()))
@@ -221,7 +235,8 @@ public class NotificationControllerIntegrationTest {
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testRemoveNotificationByIdSuccess() throws Exception {
     var notification = notificationList.getFirst(); // Get the first notification
-    var result = mockMvc.perform(delete(baseUrl + "/notification/{notificationId}", notification.getNotificationId()))
+    var result = mockMvc.perform(delete(baseUrl + "/notification/{notificationId}", notification.getNotificationId())
+                    .header("Authorization", "Bearer " + adminToken))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notification removed successfully"));
     //Additional assertions can be added here if needed
@@ -233,7 +248,8 @@ public class NotificationControllerIntegrationTest {
   @DisplayName("Check Cleanup Old Notifications Success (DELETE /api/v1/notification/cleanup)")
   @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
   void testCleanupOldNotificationsSuccess() throws Exception {
-    var result = mockMvc.perform(delete(baseUrl + "/notification/cleanup"))
+    var result = mockMvc.perform(delete(baseUrl + "/notification/cleanup")
+                    .header("Authorization", "Bearer " + adminToken))
             .andExpect(jsonPath("$.flag").value(true))
             .andExpect(jsonPath("$.message").value("Notifications of 30 days or older successfully deleted"));
     //Additional assertions can be added here if needed

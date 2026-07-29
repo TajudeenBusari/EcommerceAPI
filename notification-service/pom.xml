@@ -45,12 +45,6 @@
 			<groupId>com.tjtechy</groupId>
 			<artifactId>common-utils</artifactId>
 			<version>0.0.1</version>
-<!--			<exclusions>-->
-<!--				<exclusion>-->
-<!--					<groupId>org.springframework.boot</groupId>-->
-<!--					<artifactId>spring-boot-starter-data-redis</artifactId>-->
-<!--				</exclusion>-->
-<!--			</exclusions>-->
 		</dependency>
 
 		<!--dependency to load env variable from https://github.com/paulschwarz/spring-dotenv?utm_source=chatgpt.com
@@ -61,19 +55,6 @@
 			<version>5.1.0</version>
 			<optional>true</optional>
 		</dependency>
-
-<!--		<dependency>no longer used in spring boot 4.1.0-->
-<!--			<groupId>io.github.cdimascio</groupId>-->
-<!--			<artifactId>dotenv-java</artifactId>-->
-<!--			<version>3.2.0</version>-->
-<!--		</dependency>-->
-
-		<!-- Spring Boot Actuator (Optional - Useful for Monitoring)
-		already available in the parent pom.xml (ECommerceMicroservices)-->
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.boot</groupId>-->
-<!--			<artifactId>spring-boot-starter-actuator</artifactId>-->
-<!--		</dependency>-->
 
 		<!--kafka dependencies-->
 		<!-- Messaging (Kafka Example) -->
@@ -166,12 +147,6 @@
 <!--			<version>2.18.2</version>-->
 		</dependency>
 
-<!--		<dependency>-->
-<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
-<!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
-<!--			<version>2.18.2</version>-->
-<!--		</dependency>-->
-
 		<!--Firebase dependency for push notification-->
 		<dependency>
 			<groupId>com.google.firebase</groupId>
@@ -179,7 +154,7 @@
 			<version>9.6.0</version>
 		</dependency>
 
-		<!-- test dependencies -->
+		<!-- =====test dependencies=========== -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -235,6 +210,19 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>test-helper</artifactId>
+			<version>0.0.1</version>
+			<scope>test</scope> <!--ensures code is never packaged in production-->
+		</dependency>
+
 		<!-- Swagger api doc HTML and JSON Format -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
@@ -247,10 +235,11 @@
 			<version>${springdoc.version}</version>
 		</dependency>
 
+		<!-- Security dependency for production -->
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<scope>test</scope>
+			<groupId>com.tjtechy</groupId>
+			<artifactId>security-webmvc</artifactId>
+			<version>0.0.1</version>
 		</dependency>
 
 	</dependencies>
@@ -262,13 +251,6 @@
 				<artifactId>commons-io</artifactId>
 				<version>2.20.0</version>
 			</dependency>
-<!--			<dependency>-->
-<!--				<groupId>me.paulschwarz</groupId>-->
-<!--				<artifactId>spring-dotenv-bom</artifactId>-->
-<!--				<version>$version</version>-->
-<!--				<type>pom</type>-->
-<!--				<scope>import</scope>-->
-<!--			</dependency>-->
 		</dependencies>
 	</dependencyManagement>
 
