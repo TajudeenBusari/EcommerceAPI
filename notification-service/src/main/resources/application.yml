@@ -3,6 +3,11 @@ server:
 spring:
   application:
     name: notification-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8086/oauth2/jwks} # Use environment variable for JWK Set URI
 
   #mail properties with mailtrap.io for testing emails in dev and local environments
   mail:
@@ -18,7 +23,7 @@ spring:
             enable: true
     from: ${MAIL_FROM:no-reply@tjtechy.com} #fallback if not set in .env
 
-  #twilio properties for sending SMS
+  #Twilio properties for sending SMS
   # it is loaded by default from environment variables (.env)
   twilio:
     account-sid: ${TWILIO_ACCOUNT_SID} #Twilio Account SID
@@ -102,7 +107,7 @@ app:
     timezone: Africa/Lagos #Set the timezone for scheduled tasks
     retention-days: 30 #Retention period for logs or data cleanup tasks
   security:
-    enabled: false
+    enabled: true
   openapi:
     serviceUrl: http://localhost:8085
     gatewayUrl: ${GATEWAY_URL:http://localhost:8080}

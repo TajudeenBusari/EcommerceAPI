@@ -104,6 +104,33 @@
             <version>0.0.1</version>
         </dependency>
 
+        <!-- Optional: For using JSON serialization in Redis,
+			 You don't need this if we are not serializing in redis
+			 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <!--        <version>2.18.2</version>-->
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <!--<version>2.18.2</version>-->
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!--to generate fake data for testing-->
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+
         <!-- DEPENDENCIES FOR TESTS-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -149,39 +176,18 @@
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Optional: For using JSON serialization in Redis,
-			 You don't need this if we are not serializing in redis
-			 -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-<!--        <version>2.18.2</version>-->
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <!--<version>2.18.2</version>-->
-        </dependency>
-
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-
-        <!--to generate fake data for testing-->
-        <dependency>
-            <groupId>com.github.javafaker</groupId>
-            <artifactId>javafaker</artifactId>
-            <version>1.0.2</version>
-        </dependency>
-
         <!--for reactive test-->
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tjtechy</groupId>
+            <artifactId>test-helper</artifactId>
+            <version>0.0.1</version>
+            <scope>test</scope> <!--ensures code is never packaged in production-->
         </dependency>
 
         <!-- api documentation HTML FORMAT AND JSON FORMAT-->
@@ -195,6 +201,13 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
             <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- Security dependency for production -->
+        <dependency>
+            <groupId>com.tjtechy</groupId>
+            <artifactId>security-webmvc</artifactId>
+            <version>0.0.1</version>
         </dependency>
 
     </dependencies>

@@ -1,36 +1,36 @@
 positions:
   /mnt/log/api-gateway/app.log: "2290899"
-  /mnt/log/config-server/app.log: "43672"
-  /mnt/log/eureka-server/app.log: "108305"
-  /mnt/log/inventory-service/app.log: "49709"
+  /mnt/log/config-server/app.log: "21718"
+  /mnt/log/eureka-server/app.log: "45594"
+  /mnt/log/inventory-service/app.log: "46977"
   /mnt/log/notification-service/app.log: "35212"
-  /mnt/log/order-service/app.log: "908481"
+  /mnt/log/order-service/app.log: "15382"
   /mnt/log/product-service/app.log: "67327"
-  ? /var/lib/docker/containers/03da22083c88f011d6c97ef69bd934f4f6855567a0979cd192f019320935118f/03da22083c88f011d6c97ef69bd934f4f6855567a0979cd192f019320935118f-json.log
-  : "122918"
-  ? /var/lib/docker/containers/4f7d30afe6601d405470bd3ca9c17bd602dbbee3b72d60c0b2b4928964b88df9/4f7d30afe6601d405470bd3ca9c17bd602dbbee3b72d60c0b2b4928964b88df9-json.log
-  : "2762574"
+  ? /var/lib/docker/containers/0ed6a2a6b2e26641d083078b871d4e84aefa45fe8fadfc1256f65b3f9bda9466/0ed6a2a6b2e26641d083078b871d4e84aefa45fe8fadfc1256f65b3f9bda9466-json.log
+  : "80739"
+  ? /var/lib/docker/containers/2ca9cf6aaf7e8a1713de58a6306813003c569ec49f1e8e8f018cd9965a841143/2ca9cf6aaf7e8a1713de58a6306813003c569ec49f1e8e8f018cd9965a841143-json.log
+  : "107979"
   ? /var/lib/docker/containers/6f578d3cab1ed6dfad91ba4e92e8dbef46f2324b6520c0d3f9ec6685b7fb45c9/6f578d3cab1ed6dfad91ba4e92e8dbef46f2324b6520c0d3f9ec6685b7fb45c9-json.log
   : "12578"
-  ? /var/lib/docker/containers/105c94d7e4fe326224b624e437f9353aceb26cdf6ec09aa28e77e8ea31ae901c/105c94d7e4fe326224b624e437f9353aceb26cdf6ec09aa28e77e8ea31ae901c-json.log
-  : "21087"
-  ? /var/lib/docker/containers/246a44a201e656e7218163174346eeca9ff6d694ceecbdd79b9a74a9489fad5e/246a44a201e656e7218163174346eeca9ff6d694ceecbdd79b9a74a9489fad5e-json.log
-  : "81554"
-  ? /var/lib/docker/containers/451d46f1df907f17f9a15592dca9c0307623b812bb4a6b6ab7730e8750c9141d/451d46f1df907f17f9a15592dca9c0307623b812bb4a6b6ab7730e8750c9141d-json.log
-  : "14500"
-  ? /var/lib/docker/containers/5898c7d2de2f1ddb9fbdcbad60d279eb0d3354bc9f8fb8e0e2e0b31efbce92fe/5898c7d2de2f1ddb9fbdcbad60d279eb0d3354bc9f8fb8e0e2e0b31efbce92fe-json.log
-  : "11984"
-  ? /var/lib/docker/containers/b984708b7770e5c15cb6d38f7c63b90f464123dd14b5e26061350c41c0a1eb01/b984708b7770e5c15cb6d38f7c63b90f464123dd14b5e26061350c41c0a1eb01-json.log
-  : "74858"
-  ? /var/lib/docker/containers/b9d53c47dfa74ec263468853ea46c952ee65bf22eb66fe4928679946945593ba/b9d53c47dfa74ec263468853ea46c952ee65bf22eb66fe4928679946945593ba-json.log
-  : "163787"
-  ? /var/lib/docker/containers/b27d80b5545f92f7fa9be4252a16dcbaec5b5dd079fd873240c29fcf5aeace86/b27d80b5545f92f7fa9be4252a16dcbaec5b5dd079fd873240c29fcf5aeace86-json.log
-  : "407686"
-  ? /var/lib/docker/containers/c88264f29778544c3c740a3e8549edf71bf69905b6254963c23cae7b4f46bab7/c88264f29778544c3c740a3e8549edf71bf69905b6254963c23cae7b4f46bab7-json.log
-  : "112933"
-  ? /var/lib/docker/containers/d63dcdbc79d5d0fc8c45a8bb0591476774140d4651e08cd23819d8b05a26754f/d63dcdbc79d5d0fc8c45a8bb0591476774140d4651e08cd23819d8b05a26754f-json.log
-  : "75360"
+  ? /var/lib/docker/containers/30d9765a1338778d058800f908d56c02819e18538464778dc058e321ac29e9dc/30d9765a1338778d058800f908d56c02819e18538464778dc058e321ac29e9dc-json.log
+  : "407726"
+  ? /var/lib/docker/containers/35d9293be52d8103afd671e0179d010839e25f9aeef57bf7f600044bbad9a13a/35d9293be52d8103afd671e0179d010839e25f9aeef57bf7f600044bbad9a13a-json.log
+  : "120683"
+  ? /var/lib/docker/containers/85dab82a85e39ce055584fa567ec4926ffb912d6ba1ae1a896493bc2aafc179d/85dab82a85e39ce055584fa567ec4926ffb912d6ba1ae1a896493bc2aafc179d-json.log
+  : "40527"
+  ? /var/lib/docker/containers/94d42fe8a0b4994948c5873c83886605c10f61d21792eff013930a3d9b121f46/94d42fe8a0b4994948c5873c83886605c10f61d21792eff013930a3d9b121f46-json.log
+  : "18032"
+  ? /var/lib/docker/containers/176a343abcf9a8a72dc106f994cfd5c768ce7636b00b4a37c0f3c5ceb8481a6e/176a343abcf9a8a72dc106f994cfd5c768ce7636b00b4a37c0f3c5ceb8481a6e-json.log
+  : "14496"
+  ? /var/lib/docker/containers/a229be19ef672b4ebab5426bf8caacd633d8d31db56f95552c825359c8dc9149/a229be19ef672b4ebab5426bf8caacd633d8d31db56f95552c825359c8dc9149-json.log
+  : "10001"
+  ? /var/lib/docker/containers/a9594c9dee5cdcdcfa9b69c11169b97b3810920c8af94ddb01be7ca9fa135196/a9594c9dee5cdcdcfa9b69c11169b97b3810920c8af94ddb01be7ca9fa135196-json.log
+  : "71772"
+  ? /var/lib/docker/containers/aa2d959eda9c8d2ad7b640a18bc9dea4d10f596881279e7d79772f72ccfe899a/aa2d959eda9c8d2ad7b640a18bc9dea4d10f596881279e7d79772f72ccfe899a-json.log
+  : "1891244"
+  ? /var/lib/docker/containers/db46534f58c603fb519d0442e0fa7af5d819ea63b6b9f730dc20b0758880142f/db46534f58c603fb519d0442e0fa7af5d819ea63b6b9f730dc20b0758880142f-json.log
+  : "11119"
+  ? /var/lib/docker/containers/e0fd61efb897af37629ac91b492000b637af1fdd992e10b138951a8c15eae342/e0fd61efb897af37629ac91b492000b637af1fdd992e10b138951a8c15eae342-json.log
+  : "169651"
   ? /var/lib/docker/containers/f1ab92a18209c477f449831e70d833f49d33f48c12fcc84e39751dce6c229f6d/f1ab92a18209c477f449831e70d833f49d33f48c12fcc84e39751dce6c229f6d-json.log
   : "10907"
-  ? /var/lib/docker/containers/feabb27cac498287ade5142a0a4acd1f66a2956b356844cc3c87e6f9ee60af2b/feabb27cac498287ade5142a0a4acd1f66a2956b356844cc3c87e6f9ee60af2b-json.log
-  : "29066"

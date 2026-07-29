@@ -218,6 +218,5 @@ public class InventoryController {
     return new Result("Inventory restored successfully", true, null, StatusCode.SUCCESS);
   }
 
-
 }
 
