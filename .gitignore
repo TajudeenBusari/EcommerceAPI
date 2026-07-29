@@ -43,6 +43,7 @@ coverage/
 #grafana plugins
 docker/grafana/plugins/
 docker/grafana/grafana.db
+docker/grafana/grafana-config.env
 
 
 #loki
