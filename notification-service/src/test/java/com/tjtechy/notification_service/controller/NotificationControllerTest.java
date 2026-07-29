@@ -43,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.cloud.config.enabled=false", // Disable Spring Cloud Config for tests
         "spring.redis.enabled=false" // Disable Redis for tests
 })
-@Import(ExceptionHandlingAdvice.class)
+@Import({ExceptionHandlingAdvice.class, TestSecurityConfig.class})
 class NotificationControllerTest {
 
   @MockitoBean

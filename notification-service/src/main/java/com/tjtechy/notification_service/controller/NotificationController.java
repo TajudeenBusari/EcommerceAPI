@@ -37,8 +37,8 @@ public class NotificationController {
   responses = {@ApiResponse(responseCode = "200", description = "Get All Success")})
   @GetMapping
   public Result getAllNotifications(){
-    var nofications = notificationService.getAllNotifications();
-    return new Result("Notifications fetched successfully", true, nofications, StatusCode.SUCCESS);
+    var notifications = notificationService.getAllNotifications();
+    return new Result("Notifications fetched successfully", true, notifications, StatusCode.SUCCESS);
   }
 
   /**
@@ -52,7 +52,7 @@ public class NotificationController {
           responses = {@ApiResponse(responseCode = "200", description = "Get By ID Success"),
                   @ApiResponse(responseCode = "404", description = "Notification Not Found")})
   @GetMapping("/{notificationId}")
-  public Result getNotifications(@PathVariable Long notificationId){
+  public Result getNotification(@PathVariable Long notificationId){
     var notification = notificationService.getNotificationById(notificationId);
     return new Result("Notification fetched successfully", true, notification, StatusCode.SUCCESS);
   }
@@ -100,6 +100,7 @@ public class NotificationController {
   public Result bulkRemoveNotifications(@RequestBody List<Long> notificationIds){
     notificationService.bulkRemoveNotification(notificationIds);
     return new Result("Notifications removed successfully", true, StatusCode.SUCCESS);
+
   }
 
 }
