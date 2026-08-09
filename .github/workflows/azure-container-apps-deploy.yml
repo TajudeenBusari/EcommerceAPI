@@ -160,12 +160,203 @@ jobs:
                 --location ${{ env.AZURE_LOCATION }}
             fi
 
+  #===========================================================
+  #    Deploy Eureka server first. Eureka does not depend on Config server
+  #   Config server depends on Eureka server
+  #===========================================================
+  deploy-eureka:
+    name: Deploy Eureka Server
+    needs: create-container-app-environment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Azure Login using GitHub OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-oidc: true
+
+      - name: Install Azure Container Apps Extension
+        run: |
+          az extension add --name containerapp --upgrade
+
+      - name: Lowercase the repo name
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      - name: Create or Update Eureka Server
+        run: |
+          IMAGE="ghcr.io/${REPO}/eureka-server:${{ github.sha }}"
+          
+          if az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            > /dev/null 2>&1; then
+          
+            echo "Container App ecommerce-eureka-server already exists. Updating..."
+            
+            az containerapp update \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --image "$IMAGE" \
+              --ingress internal \
+              --target-port 8763
+          
+          else
+          
+            echo "Container App does not exist. Creating ..."
+          
+            az containerapp create \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+              --image "$IMAGE" \
+              --ingress internal \
+              --target-port 8763 \
+              --registry-server ghcr.io \
+              --registry-username ${{ github.actor }} \
+              --registry-password "${{ secrets.GITHUB_TOKEN }}" \
+              --min-replicas 1 \
+              --max-replicas 1
+          fi
+      - name: Wait for Eureka Server readiness
+        shell: bash
+        run: |
+          echo "Waiting for Eureka Server to be ready..."
+          for i in {1..30}; do
+          
+            STATUS=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.runningState" \
+              -o tsv 2>/dev/null || true)
+          
+            echo "Attempt $i/30 - Eureka status: $STATUS"
+            
+            if [ "$STATUS" = "Running" ]; then
+              echo "Eureka Container App is running."
+              break
+            fi
+          
+            if [ "$i" -eq 30 ]; then
+              echo "Eureka Server did not become ready."
+              exit 1
+            fi
+          
+            sleep 10
+          
+          done
+
+  #===========================================================
+  #   Deploy Config server next. Config server depends on Eureka server
+  #===========================================================
+  deploy-config-server:
+    name: Deploy Config Server
+    needs: deploy-eureka
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Azure Login using GitHub OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-oidc: true
+
+      - name: Install Azure Container Apps Extension
+        run: |
+          az extension add --name containerapp --upgrade
+
+      - name: Lowercase the repo name
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      - name: Get Eureka Server FQDN
+        run: |
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          echo "EUREKA_SERVER_URL=http://${EUREKA_FQDN}:8763/eureka/" >>${GITHUB_ENV}
+          echo "Eureka URL:"
+          echo "$EUREKA_SERVER_URL"
+
+      - name: Create or Update Config Server
+        run: |
+          IMAGE="ghcr.io/${REPO}/config-server:${{ github.sha }}"
+          
+          if az containerapp show \
+            --name ecommerce-config-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            > /dev/null 2>&1; then
+          
+            echo "Container App ecommerce-config-server already exists. Updating..."
+            
+            az containerapp update \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --image "$IMAGE" \
+              --ingress internal \
+              --target-port 8888 \
+              --set-env-vars EUREKA_SERVER_URL="$EUREKA_SERVER_URL"
+          
+          else
+          
+            echo "Container App does not exist. Creating ..."
+          
+            az containerapp create \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+              --image "$IMAGE" \
+              --ingress internal \
+              --target-port 8888 \
+              --registry-server ghcr.io \
+              --registry-username ${{ github.actor }} \
+              --registry-password "${{ secrets.GITHUB_TOKEN }}" \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --env-vars EUREKA_SERVER_URL="$EUREKA_SERVER_URL"
+          fi
+      - name: Wait for Config Server readiness
+        shell: bash
+        run: |
+          echo "Waiting for Config Server to be ready..."
+          for i in {1..30}; do
+          
+            STATUS=$(az containerapp show \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.runningState" \
+              -o tsv 2>/dev/null || true)
+          
+            echo "Attempt $i/30 - Config Server status: $STATUS"
+            
+            if [ "$STATUS" = "Running" ]; then
+              echo "Config Container App is running."
+              break
+            fi
+          
+            if [ "$i" -eq 30 ]; then
+              echo "Config Server did not become ready."
+              exit 1
+            fi
+          
+            sleep 10
+          
+          done
+
   # ============================================================
-  # Deploy each microservice to Azure Container Apps
+  # Deploy other microservices to Azure Container Apps
   # ============================================================
   deploy:
     name: Deploy ${{ matrix.service }} to Azure Container Apps
-    needs: create-container-app-environment
+    needs: deploy-config-server
     runs-on: ubuntu-latest
 
     strategy:
@@ -173,42 +364,38 @@ jobs:
 
       matrix:
         include:
+
           # API Gateway - PUBLIC
           - service: api-gateway
             container_app: ecommerce-api-gateway
             port: 8080
             ingress: external
 
-          - service: config-server
-            container_app: ecommerce-config-server
-            port: 8888
-            ingress: internal
-
-          - service: eureka-server
-            container_app: ecommerce-eureka-server
-            port: 8763
-            ingress: internal
-
+          # Inventory Service - INTERNAL
           - service: inventory-service
             container_app: ecommerce-inventory-service
             port: 8084
             ingress: internal
 
+          # Notification Service - INTERNAL
           - service: notification-service
             container_app: ecommerce-notification-service
             port: 8085
             ingress: internal
 
+          # Order Service - INTERNAL
           - service: order-service
             container_app: ecommerce-order-service
             port: 8082
             ingress: internal
 
+          # Product Service - INTERNAL
           - service: product-service
             container_app: ecommerce-product-service
             port: 8083
             ingress: internal
 
+          # User Service - INTERNAL
           - service: user-service
             container_app: ecommerce-user-service
             port: 8086
@@ -231,6 +418,31 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
+      - name: Get Eureka Server FQDN
+        run: |
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          EUREKA_SERVER_URL="http://${EUREKA_FQDN}:8763/eureka/"
+          
+          echo "EUREKA_SERVER_URL=$EUREKA_SERVER_URL" >>$GITHUB_ENV
+          echo "Eureka URL: $EUREKA_SERVER_URL"
+
+      - name: Get Config Server FQDN
+        run: |
+          CONFIG_FQDN=$(az containerapp show \
+            --name ecommerce-config-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          CONFIG_SERVER_URL="http://${CONFIG_FQDN}:8888"
+          echo "CONFIG_SERVER_URL=$CONFIG_SERVER_URL" >>${GITHUB_ENV}
+          echo "Config URL: $CONFIG_SERVER_URL"
+
       - name: Create or Update ${{ matrix.container_app}}
         run: |
           IMAGE="ghcr.io/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}"
@@ -241,34 +453,45 @@ jobs:
           echo " Image: $IMAGE"
           echo " Port: ${{ matrix.port }}"
           echo " Ingress: ${{ matrix.ingress }}"
+          echo "Eureka URL: $EUREKA_SERVER_URL"
+          echo "Config URL: $CONFIG_SERVER_URL"
           
           if az containerapp show \
             --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             > /dev/null 2>&1; then
           
-              echo "Container App ${{ matrix.container_app }} already exists. Updating..."
+            echo "Container App ${{ matrix.container_app }} already exists. Updating..."
+            
           
-              az containerapp update \
-                --name ${{ matrix.container_app }} \
-                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-                --image "$IMAGE" \
-                --ingress ${{ matrix.ingress }} \
-                --target-port ${{ matrix.port }}
+            az containerapp update \
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --image "$IMAGE" \
+              --ingress ${{ matrix.ingress }} \
+              --target-port ${{ matrix.port }} \
+              --set-env-vars \
+                EUREKA_SERVER_URL="$EUREKA_SERVER_URL" \
+                CONFIG_SERVER_URL="$CONFIG_SERVER_URL"
           
           else
-              echo "Container App does not exist. Creating ..."
           
-              az containerapp create \
-                --name ${{ matrix.container_app }} \
-                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-                --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
-                --image "$IMAGE" \
-                --ingress ${{ matrix.ingress }} \
-                --target-port ${{ matrix.port }} \
-                --registry-server ghcr.io \
-                --registry-username ${{ github.actor }} \
-                --registry-password "${{ secrets.GITHUB_TOKEN }}" \
-                --min-replicas 1 \
-                --max-replicas 1
+            echo "Container App does not exist. Creating ..."
+            
+            az containerapp create \
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+              --image "$IMAGE" \
+              --ingress ${{ matrix.ingress }} \
+              --target-port ${{ matrix.port }} \
+              --registry-server ghcr.io \
+              --registry-username ${{ github.actor }} \
+              --registry-password "${{ secrets.GITHUB_TOKEN }}" \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --env-vars \
+                EUREKA_SERVER_URL="$EUREKA_SERVER_URL" \
+                CONFIG_SERVER_URL="$CONFIG_SERVER_URL"
+          
           fi
