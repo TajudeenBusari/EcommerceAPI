@@ -200,10 +200,8 @@ jobs:
             az containerapp update \
               --name ecommerce-eureka-server \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --image "$IMAGE" \
-              --ingress internal \
-              --target-port 8763
-          
+              --image "$IMAGE"
+             
           else
           
             echo "Container App does not exist. Creating ..."
@@ -301,8 +299,6 @@ jobs:
               --name ecommerce-config-server \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
-              --ingress internal \
-              --target-port 8888 \
               --set-env-vars EUREKA_SERVER_URL="$EUREKA_SERVER_URL"
           
           else
@@ -463,13 +459,10 @@ jobs:
           
             echo "Container App ${{ matrix.container_app }} already exists. Updating..."
             
-          
             az containerapp update \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
-              --ingress ${{ matrix.ingress }} \
-              --target-port ${{ matrix.port }} \
               --set-env-vars \
                 EUREKA_SERVER_URL="$EUREKA_SERVER_URL" \
                 CONFIG_SERVER_URL="$CONFIG_SERVER_URL"
