@@ -1,0 +1,31 @@
+name: Test Azure OIDC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-azure-login:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Azure Login using GitHub OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure account
+        run: |
+          az account show --query "{subscription:id,name:name,tenant:tenantId,user:user.name}" -o table
+
+      - name: Verify resource group access
+        run: |
+          az group show \
+            --name ecommerce-java-resource-group \
+            --query "{name:name,location:location,provisioningState:properties.provisioningState}" \
+            -o table
