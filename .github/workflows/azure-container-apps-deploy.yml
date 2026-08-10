@@ -196,11 +196,13 @@ jobs:
             > /dev/null 2>&1; then
           
             echo "Container App ecommerce-eureka-server already exists. Updating..."
-            
+          
             az containerapp update \
               --name ecommerce-eureka-server \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE"
+            
+            echo "Eureka Container App updated."
              
           else
           
@@ -218,34 +220,40 @@ jobs:
               --registry-password "${{ secrets.GITHUB_TOKEN }}" \
               --min-replicas 1 \
               --max-replicas 1
+#              --startup-probe-type http \
+#              --startup-probe-path /actuator/health \
+#              --startup-probe-interval 10 \
+#              --startup-probe-timeout 5 \
+#              --startup-probe-success-threshold 1 \
+#              --startup-probe-failure-threshold 10
           fi
-      - name: Wait for Eureka Server readiness
-        shell: bash
-        run: |
-          echo "Waiting for Eureka Server to be ready..."
-          for i in {1..30}; do
-          
-            STATUS=$(az containerapp show \
-              --name ecommerce-eureka-server \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --query "properties.runningState" \
-              -o tsv 2>/dev/null || true)
-          
-            echo "Attempt $i/30 - Eureka status: $STATUS"
-            
-            if [ "$STATUS" = "Running" ]; then
-              echo "Eureka Container App is running."
-              break
-            fi
-          
-            if [ "$i" -eq 30 ]; then
-              echo "Eureka Server did not become ready."
-              exit 1
-            fi
-          
-            sleep 10
-          
-          done
+#      - name: Wait for Eureka Server readiness
+#        shell: bash
+#        run: |
+#          echo "Waiting for Eureka Server to be ready..."
+#          for i in {1..30}; do
+#
+#            STATUS=$(az containerapp show \
+#              --name ecommerce-eureka-server \
+#              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+#              --query "properties.runningState" \
+#              -o tsv 2>/dev/null || true)
+#
+#            echo "Attempt $i/30 - Eureka status: $STATUS"
+#
+#            if [ "$STATUS" = "Running" ]; then
+#              echo "Eureka Container App is running."
+#              break
+#            fi
+#
+#            if [ "$i" -eq 30 ]; then
+#              echo "Eureka Server did not become ready."
+#              exit 1
+#            fi
+#
+#            sleep 10
+#
+#          done
 
   #===========================================================
   #   Deploy Config server next. Config server depends on Eureka server
@@ -328,7 +336,7 @@ jobs:
             STATUS=$(az containerapp show \
               --name ecommerce-config-server \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --query "properties.runningState" \
+              --query "properties.runningStatus" \
               -o tsv 2>/dev/null || true)
           
             echo "Attempt $i/30 - Config Server status: $STATUS"
