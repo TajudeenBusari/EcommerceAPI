@@ -216,9 +216,6 @@ jobs:
               --image "$IMAGE" \
               --ingress internal \
               --target-port 8763 \
-              --registry-server ghcr.io \
-              --registry-username ${{ github.actor }} \
-              --registry-password "${{ secrets.GITHUB_TOKEN }}" \
               --min-replicas 1 \
               --max-replicas 1
             echo "Eureka Container App created."
@@ -291,9 +288,6 @@ jobs:
               --image "$IMAGE" \
               --ingress internal \
               --target-port 8888 \
-              --registry-server ghcr.io \
-              --registry-username ${{ github.actor }} \
-              --registry-password "${{ secrets.GITHUB_TOKEN }}" \
               --min-replicas 1 \
               --max-replicas 1 \
               --env-vars EUREKA_SERVER_URL="$EUREKA_SERVER_URL"
@@ -457,9 +451,6 @@ jobs:
               --image "$IMAGE" \
               --ingress ${{ matrix.ingress }} \
               --target-port ${{ matrix.port }} \
-              --registry-server ghcr.io \
-              --registry-username ${{ github.actor }} \
-              --registry-password "${{ secrets.GITHUB_TOKEN }}" \
               --min-replicas 1 \
               --max-replicas 1 \
               --env-vars \
