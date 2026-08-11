@@ -8,10 +8,10 @@ env:
   JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
   JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
 
-#on:
-#  push:
-#    branches:
-#      - master
+on:
+  push:
+    branches:
+      - master
 
 permissions:
   contents: 'read'
@@ -20,9 +20,7 @@ permissions:
 
 jobs:
   #======================================================================#
-  # First job builds all modules and skips tests.
-  # Just want the executable jar files to be built
-  # and cached for the next job to deploy the container to Azure Container Apps
+  # Build all modules and cache JAR files
   #======================================================================#
   build:
     name: Build All Modules
@@ -30,6 +28,8 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up JDK 25
         uses: actions/setup-java@v4
@@ -68,7 +68,7 @@ jobs:
           retention-days: 1
 
   #=====================================================#
-  # Build and push one Docker image per microservice.
+  # Build and push Docker images
   #=====================================================#
   docker:
     name: Build and Push ${{ matrix.service }} Docker Image
@@ -89,6 +89,8 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download Maven target directories from previous job
         uses: actions/download-artifact@v4
@@ -160,8 +162,7 @@ jobs:
           fi
 
   #===========================================================#
-  # Deploy Eureka server first.
-  # Eureka does not depend on Config server
+  # Deploy Eureka Server FIRST (standalone, no dependencies)
   #===========================================================#
   deploy-eureka:
     name: Deploy Eureka Server
@@ -188,9 +189,9 @@ jobs:
       - name: Create or Update Eureka Server
         run: |
           IMAGE="ghcr.io/${REPO}/eureka-server:${{ github.sha }}"
-          echo "Eureka Image: $IMAGE"
           
-          EUREKA_ENV_VARS="EUREKA_INSTANCE_HOSTNAME=ecommerce-eureka-server EUREKA_INSTANCE_PREFER_IP_ADDRESS=false EUREKA_CLIENT_REGISTER_WITH_EUREKA=false EUREKA_CLIENT_FETCH_REGISTRY=false SPRING_PROFILES_ACTIVE=azure"
+          # Eureka server runs standalone
+          EUREKA_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8761"
           
           if az containerapp show \
             --name ecommerce-eureka-server \
@@ -258,9 +259,25 @@ jobs:
             sleep 10
           done
 
+      - name: Get Eureka Server FQDN
+        run: |
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          # Your services use port 8763 in local, but in Azure Container Apps we use 8761
+          # The service name resolution will work with the container app name
+          echo "EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/" >>${GITHUB_ENV}
+          echo "Eureka URL: http://ecommerce-eureka-server:8761/eureka/"
+          
+          # Also store the actual FQDN for reference
+          echo "EUREKA_FQDN=${EUREKA_FQDN}" >>${GITHUB_ENV}
+
   #===========================================================#
-  # Deploy Config server next.
-  # Config server depends on Eureka server
+  # Deploy Config Server (registers with Eureka)
+  # Config Server uses bootstrap.yml with config.import
   #===========================================================#
   deploy-config-server:
     name: Deploy Config Server
@@ -284,22 +301,13 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      - name: Get Eureka Server FQDN
-        run: |
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          
-          echo "EUREKA_SERVER_URL=http://${EUREKA_FQDN}:8761/eureka/" >>${GITHUB_ENV}
-          echo "Eureka URL: http://${EUREKA_FQDN}:8761/eureka/"
-
       - name: Create or Update Config Server
         run: |
           IMAGE="ghcr.io/${REPO}/config-server:${{ github.sha }}"
           
-          CONFIG_ENV_VARS="EUREKA_SERVER_URL=$EUREKA_SERVER_URL EUREKA_CLIENT_REGISTER_WITH_EUREKA=false EUREKA_CLIENT_FETCH_REGISTRY=false SPRING_PROFILES_ACTIVE=azure"
+          # Config Server registers with Eureka
+          # It uses bootstrap.yml with config.import to get its own config
+          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/"
           
           if az containerapp show \
             --name ecommerce-config-server \
@@ -362,8 +370,23 @@ jobs:
             sleep 10
           done
 
+      - name: Get Config Server FQDN
+        run: |
+          CONFIG_FQDN=$(az containerapp show \
+            --name ecommerce-config-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          # For services that use config.import with explicit URL
+          echo "CONFIG_SERVER_URL=http://ecommerce-config-server:8888" >>${GITHUB_ENV}
+          echo "Config Server URL: http://ecommerce-config-server:8888"
+
   # ============================================================#
-  # Deploy all other microservices to Azure Container Apps
+  # Deploy all other microservices
+  # Each service will:
+  # 1. Use bootstrap.yml with config.import to get config
+  # 2. Register with Eureka
   # ============================================================#
   deploy:
     name: Deploy ${{ matrix.service }} to Azure Container Apps
@@ -379,42 +402,36 @@ jobs:
             container_app: ecommerce-api-gateway
             port: 8080
             ingress: external
-            env_vars: "CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/ SPRING_PROFILES_ACTIVE=azure"
 
           # Inventory Service - INTERNAL
           - service: inventory-service
             container_app: ecommerce-inventory-service
             port: 8084
             ingress: internal
-            env_vars: "CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/ SPRING_PROFILES_ACTIVE=azure"
 
           # Notification Service - INTERNAL
           - service: notification-service
             container_app: ecommerce-notification-service
             port: 8085
             ingress: internal
-            env_vars: "CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/ SPRING_PROFILES_ACTIVE=azure"
 
           # Order Service - INTERNAL
           - service: order-service
             container_app: ecommerce-order-service
             port: 8082
             ingress: internal
-            env_vars: "CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/ SPRING_PROFILES_ACTIVE=azure"
 
           # Product Service - INTERNAL
           - service: product-service
             container_app: ecommerce-product-service
             port: 8083
             ingress: internal
-            env_vars: "CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/ SPRING_PROFILES_ACTIVE=azure"
 
           # User Service - INTERNAL
           - service: user-service
             container_app: ecommerce-user-service
             port: 8081
             ingress: internal
-            env_vars: "CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/ SPRING_PROFILES_ACTIVE=azure"
 
     steps:
       - name: Azure Login using Github OIDC
@@ -433,33 +450,13 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      - name: Get Service URLs
-        run: |
-          # Get Eureka FQDN
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          
-          EUREKA_SERVER_URL="http://${EUREKA_FQDN}:8761/eureka/"
-          echo "EUREKA_SERVER_URL=$EUREKA_SERVER_URL" >>$GITHUB_ENV
-          echo "Eureka URL: $EUREKA_SERVER_URL"
-          
-          # Get Config FQDN
-          CONFIG_FQDN=$(az containerapp show \
-            --name ecommerce-config-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          
-          CONFIG_SERVER_URL="http://${CONFIG_FQDN}:8888"
-          echo "CONFIG_SERVER_URL=$CONFIG_SERVER_URL" >>${GITHUB_ENV}
-          echo "Config URL: $CONFIG_SERVER_URL"
-
       - name: Create or Update ${{ matrix.container_app }}
         run: |
           IMAGE="ghcr.io/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}"
+          
+          # Services use bootstrap.yml with config.import
+          # They need CONFIG_SERVER_URL and EUREKA_SERVER_URL
+          SERVICE_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=${{ matrix.port }} CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/"
           
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
@@ -467,10 +464,8 @@ jobs:
           echo "  Image: $IMAGE"
           echo "  Port: ${{ matrix.port }}"
           echo "  Ingress: ${{ matrix.ingress }}"
-          echo "  Eureka URL: $EUREKA_SERVER_URL"
-          echo "  Config URL: $CONFIG_SERVER_URL"
-          
-          SERVICE_ENV_VARS="EUREKA_SERVER_URL=$EUREKA_SERVER_URL CONFIG_SERVER_URL=$CONFIG_SERVER_URL SPRING_PROFILES_ACTIVE=azure"
+          echo "  Config URL: http://ecommerce-config-server:8888"
+          echo "  Eureka URL: http://ecommerce-eureka-server:8761/eureka/"
           
           if az containerapp show \
             --name ${{ matrix.container_app }} \
@@ -506,6 +501,39 @@ jobs:
                 --initial-delay 60 \
                 --period 30
           
+          fi
+
+      - name: Verify service registration with Eureka
+        shell: bash
+        run: |
+          echo "Checking if ${{ matrix.service }} is registered with Eureka..."
+          sleep 45
+          
+          # Use the container app name for internal DNS resolution
+          EUREKA_URL="http://ecommerce-eureka-server:8761/eureka/apps"
+          
+          echo "Checking Eureka registry at: $EUREKA_URL"
+          
+          # Since we're in a GitHub Action runner, we need to use the FQDN
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          RESPONSE=$(curl -s -f "http://${EUREKA_FQDN}:8761/eureka/apps" || echo "Failed to connect to Eureka")
+          
+          if [[ "$RESPONSE" != "Failed"* ]]; then
+            echo "Eureka registry accessible"
+            if echo "$RESPONSE" | grep -i "${{ matrix.service }}" > /dev/null; then
+              echo "✅ ${{ matrix.service }} successfully registered with Eureka!"
+            else
+              echo "⚠️ ${{ matrix.service }} not yet registered with Eureka"
+              echo "Current registered services:"
+              echo "$RESPONSE" | grep -E "<application>|</application>" | head -20
+            fi
+          else
+            echo "⚠️ Could not access Eureka registry"
           fi
 
       - name: Display service URL if external
@@ -547,35 +575,58 @@ jobs:
       - name: Display all service URLs
         run: |
           echo "=================================================="
-          echo " ALL SERVICES DEPLOYED SUCCESSFULLY!"
+          echo "🚀 ALL SERVICES DEPLOYED SUCCESSFULLY!"
           echo "=================================================="
           echo ""
           
+          # Get Eureka Server URL
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv 2>/dev/null || echo "Not deployed")
+          
+          echo "🔍 EUREKA SERVER:"
+          echo "   Internal: http://ecommerce-eureka-server:8761"
+          echo "   External: http://${EUREKA_FQDN}:8761"
+          echo "   Dashboard: http://${EUREKA_FQDN}:8761"
+          echo ""
+          
+          # Get Config Server URL
+          CONFIG_FQDN=$(az containerapp show \
+            --name ecommerce-config-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv 2>/dev/null || echo "Not deployed")
+          
+          echo "⚙️ CONFIG SERVER:"
+          echo "   Internal: http://ecommerce-config-server:8888"
+          echo "   External: http://${CONFIG_FQDN}:8888"
+          echo ""
+          
           # Get API Gateway URL (external)
-          GATEWAY_URL=$(az containerapp show \
+          GATEWAY_FQDN=$(az containerapp show \
             --name ecommerce-api-gateway \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv 2>/dev/null || echo "Not deployed")
           
-          echo " PUBLIC ENDPOINTS:"
-          echo "   API Gateway: https://${GATEWAY_URL}"
+          echo "🌐 PUBLIC ENDPOINT:"
+          echo "   API Gateway: https://${GATEWAY_FQDN}"
+          echo "   Health: https://${GATEWAY_FQDN}/actuator/health"
+          echo "   Swagger: https://${GATEWAY_FQDN}/swagger-ui/index.html"
           echo ""
           
-          echo " INTERNAL SERVICES (not publicly accessible):"
-          for app in ecommerce-eureka-server ecommerce-config-server ecommerce-user-service ecommerce-product-service ecommerce-order-service ecommerce-inventory-service ecommerce-notification-service; do
-            URL=$(az containerapp show \
-              --name $app \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --query "properties.configuration.ingress.fqdn" \
-              -o tsv 2>/dev/null || echo "Not deployed")
-          
-            if [ "$URL" != "Not deployed" ]; then
-              echo "   $app: http://${URL}"
-            fi
-          done
-          
+          echo "🔒 INTERNAL SERVICES (via service discovery):"
+          echo "   These services are accessible internally via their service names:"
+          echo "   • user-service: http://ecommerce-user-service:8081"
+          echo "   • product-service: http://ecommerce-product-service:8083"
+          echo "   • order-service: http://ecommerce-order-service:8082"
+          echo "   • inventory-service: http://ecommerce-inventory-service:8084"
+          echo "   • notification-service: http://ecommerce-notification-service:8085"
           echo ""
+          
           echo "=================================================="
-          echo "💡 Use the API Gateway URL for all external requests"
+          echo "📊 Check Eureka Dashboard for registered services:"
+          echo "   http://${EUREKA_FQDN}:8761"
           echo "=================================================="
