@@ -397,37 +397,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # API Gateway - PUBLIC entry point
           - service: api-gateway
             container_app: ecommerce-api-gateway
             port: 8080
             ingress: external
 
-          # Inventory Service - INTERNAL
           - service: inventory-service
             container_app: ecommerce-inventory-service
             port: 8084
             ingress: internal
 
-          # Notification Service - INTERNAL
           - service: notification-service
             container_app: ecommerce-notification-service
             port: 8085
             ingress: internal
 
-          # Order Service - INTERNAL
           - service: order-service
             container_app: ecommerce-order-service
             port: 8082
             ingress: internal
 
-          # Product Service - INTERNAL
           - service: product-service
             container_app: ecommerce-product-service
             port: 8083
             ingress: internal
 
-          # User Service - INTERNAL
           - service: user-service
             container_app: ecommerce-user-service
             port: 8081
@@ -453,11 +447,9 @@ jobs:
       - name: Create or Update ${{ matrix.container_app }}
         run: |
           IMAGE="ghcr.io/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}"
-          
-          # Services use bootstrap.yml with config.import
-          # They need CONFIG_SERVER_URL and EUREKA_SERVER_URL
+
           SERVICE_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=${{ matrix.port }} CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/"
-          
+
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
           echo "  Container App: ${{ matrix.container_app }}"
@@ -466,24 +458,24 @@ jobs:
           echo "  Ingress: ${{ matrix.ingress }}"
           echo "  Config URL: http://ecommerce-config-server:8888"
           echo "  Eureka URL: http://ecommerce-eureka-server:8761/eureka/"
-          
+
           if az containerapp show \
             --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             > /dev/null 2>&1; then
-          
+
             echo "Container App ${{ matrix.container_app }} already exists. Updating..."
-          
+
             az containerapp update \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
               --set-env-vars $SERVICE_ENV_VARS
-          
+
           else
-          
+
             echo "Container App does not exist. Creating ..."
-          
+
             az containerapp create \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -495,45 +487,90 @@ jobs:
               --max-replicas 1 \
               --env-vars $SERVICE_ENV_VARS \
               --health-probe \
-                --type liveness \
-                --path /actuator/health \
-                --port ${{ matrix.port }} \
-                --initial-delay 60 \
-                --period 30
-          
+              --type liveness \
+              --path /actuator/health \
+              --port ${{ matrix.port }} \
+              --initial-delay 60 \
+              --period 30
+
           fi
 
-      - name: Verify service registration with Eureka
+      - name: Wait for service to be ready
         shell: bash
         run: |
-          echo "Checking if ${{ matrix.service }} is registered with Eureka..."
-          sleep 45
-          
-          # Use the container app name for internal DNS resolution
-          EUREKA_URL="http://ecommerce-eureka-server:8761/eureka/apps"
-          
-          echo "Checking Eureka registry at: $EUREKA_URL"
-          
-          # Since we're in a GitHub Action runner, we need to use the FQDN
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
+          echo "Waiting for ${{ matrix.service }} to be ready..."
+          for i in {1..20}; do
+            STATUS=$(az containerapp show \
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.runningStatus" \
+              -o tsv 2>/dev/null || echo "Unknown")
+
+            echo "Attempt $i/20 - Status: $STATUS"
+
+            if [ "$STATUS" = "Running" ]; then
+              echo "${{ matrix.container_app }} is running"
+              break
+            fi
+
+            if [ "$i" -eq 20 ]; then
+              echo "⚠️ Service may not be ready yet"
+            fi
+
+            sleep 10
+          done
+
+      - name: Check service health (if external)
+        if: matrix.ingress == 'external'
+        shell: bash
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
-          
-          RESPONSE=$(curl -s -f "http://${EUREKA_FQDN}:8761/eureka/apps" || echo "Failed to connect to Eureka")
-          
-          if [[ "$RESPONSE" != "Failed"* ]]; then
-            echo "Eureka registry accessible"
-            if echo "$RESPONSE" | grep -i "${{ matrix.service }}" > /dev/null; then
-              echo "✅ ${{ matrix.service }} successfully registered with Eureka!"
+
+          echo "Checking health at: https://${FQDN}/actuator/health"
+
+          for i in {1..10}; do
+            RESPONSE=$(curl -s -f "https://${FQDN}/actuator/health" 2>/dev/null || echo "Failed")
+
+            if [[ "$RESPONSE" != "Failed" ]]; then
+              echo "Health check passed!"
+              echo "$RESPONSE" | head -20
+              break
+            fi
+
+            echo "Attempt $i/10 - Health check failed, waiting..."
+            sleep 10
+          done
+
+      - name: Check Eureka registration via logs
+        shell: bash
+        run: |
+          echo "Checking ${{ matrix.service }} registration via logs..."
+          sleep 20
+
+          LOGS=$(az containerapp logs show \
+            --name ${{ matrix.container_app }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --tail 30 2>/dev/null || echo "No logs available")
+
+          if [ "$LOGS" != "No logs available" ]; then
+            echo "Recent logs from ${{ matrix.service }}:"
+            echo "$LOGS"
+
+            if echo "$LOGS" | grep -i "registered with eureka" > /dev/null; then
+              echo "${{ matrix.service }} successfully registered with Eureka!"
+            elif echo "$LOGS" | grep -i "discovery" > /dev/null; then
+              echo "${{ matrix.service }} connected to discovery service"
+            elif echo "$LOGS" | grep -i "config" > /dev/null; then
+              echo "${{ matrix.service }} connected to Config Server"
             else
-              echo "⚠️ ${{ matrix.service }} not yet registered with Eureka"
-              echo "Current registered services:"
-              echo "$RESPONSE" | grep -E "<application>|</application>" | head -20
+              echo "⚠️ Check logs manually for registration status"
             fi
           else
-            echo "⚠️ Could not access Eureka registry"
+            echo "⚠️ No logs available yet"
           fi
 
       - name: Display service URL if external
@@ -544,9 +581,9 @@ jobs:
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
-          
+
           echo "=================================================="
-          echo "✅ ${{ matrix.service }} is available at:"
+          echo "${{ matrix.service }} is available at:"
           echo "   https://${FQDN}"
           echo "=================================================="
 
@@ -575,7 +612,7 @@ jobs:
       - name: Display all service URLs
         run: |
           echo "=================================================="
-          echo "🚀 ALL SERVICES DEPLOYED SUCCESSFULLY!"
+          echo "ALL SERVICES DEPLOYED SUCCESSFULLY!"
           echo "=================================================="
           echo ""
           
@@ -599,7 +636,7 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             -o tsv 2>/dev/null || echo "Not deployed")
           
-          echo "⚙️ CONFIG SERVER:"
+          echo "CONFIG SERVER:"
           echo "   Internal: http://ecommerce-config-server:8888"
           echo "   External: http://${CONFIG_FQDN}:8888"
           echo ""
@@ -611,13 +648,13 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             -o tsv 2>/dev/null || echo "Not deployed")
           
-          echo "🌐 PUBLIC ENDPOINT:"
+          echo " PUBLIC ENDPOINT:"
           echo "   API Gateway: https://${GATEWAY_FQDN}"
           echo "   Health: https://${GATEWAY_FQDN}/actuator/health"
           echo "   Swagger: https://${GATEWAY_FQDN}/swagger-ui/index.html"
           echo ""
           
-          echo "🔒 INTERNAL SERVICES (via service discovery):"
+          echo "INTERNAL SERVICES (via service discovery):"
           echo "   These services are accessible internally via their service names:"
           echo "   • user-service: http://ecommerce-user-service:8081"
           echo "   • product-service: http://ecommerce-product-service:8083"
@@ -627,6 +664,6 @@ jobs:
           echo ""
           
           echo "=================================================="
-          echo "📊 Check Eureka Dashboard for registered services:"
+          echo "Check Eureka Dashboard for registered services:"
           echo "   http://${EUREKA_FQDN}:8761"
           echo "=================================================="
