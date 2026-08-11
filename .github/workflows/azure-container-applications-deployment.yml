@@ -267,13 +267,9 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
           
-          # Your services use port 8763 in local, but in Azure Container Apps we use 8761
-          # The service name resolution will work with the container app name
-          echo "EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/" >>${GITHUB_ENV}
-          echo "Eureka URL: http://ecommerce-eureka-server:8761/eureka/"
+          echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
+          echo "Eureka FQDN: $EUREKA_FQDN"
           
-          # Also store the actual FQDN for reference
-          echo "EUREKA_FQDN=${EUREKA_FQDN}" >>${GITHUB_ENV}
 
   #===========================================================#
   # Deploy Config Server (registers with Eureka)
@@ -301,13 +297,31 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
+      # ==================== UPDATE 2: Get Eureka FQDN again ====================
+      - name: Get Eureka FQDN From previous job
+        run: |
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+
+          echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
+          echo "Eureka FQDN: $EUREKA_FQDN"
+
+      # ==================== UPDATE 3: Config Server uses FQDN ====================
       - name: Create or Update Config Server
         run: |
           IMAGE="ghcr.io/${REPO}/config-server:${{ github.sha }}"
           
-          # Config Server registers with Eureka
-          # It uses bootstrap.yml with config.import to get its own config
-          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/"
+          EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
+          
+          EUREKA_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8761"
+          
+          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL"
+          
+          echo "Config Server Environment Variables:"
+          echo "  EUREKA_SERVER_URL: $EUREKA_URL"
           
           if az containerapp show \
             --name ecommerce-config-server \
@@ -321,6 +335,8 @@ jobs:
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
               --set-env-vars $CONFIG_ENV_VARS
+               
+            echo "Config Container App updated."
           
           else
           
@@ -342,6 +358,9 @@ jobs:
                 --port 8888 \
                 --initial-delay 60 \
                 --period 30
+            
+            echo "Config Container App created."
+               
           fi
 
       - name: Wait for Config Server readiness
@@ -370,6 +389,7 @@ jobs:
             sleep 10
           done
 
+      # ==================== Get config server FQDN ====================
       - name: Get Config Server FQDN
         run: |
           CONFIG_FQDN=$(az containerapp show \
@@ -377,10 +397,13 @@ jobs:
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
+            
+          echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
+          echo "Config Server FQDN: $CONFIG_FQDN"
           
-          # For services that use config.import with explicit URL
-          echo "CONFIG_SERVER_URL=http://ecommerce-config-server:8888" >>${GITHUB_ENV}
-          echo "Config Server URL: http://ecommerce-config-server:8888"
+          # Test Config Server health from outside
+          echo "Testing Config Server health..."
+          curl -f "http://${CONFIG_FQDN}:8888/actuator/health" || echo "Config Server health check failed"
 
   # ============================================================#
   # Deploy all other microservices
@@ -443,12 +466,38 @@ jobs:
       - name: Lowercase the repo name
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+          
+      
+
+      - name: Get Service URLs
+        run: |
+          # Get Eureka FQDN
+          EUREKA_FQDN=$(az containerapp show \
+            --name ecommerce-eureka-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+    
+          echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
+          echo "Eureka FQDN: $EUREKA_FQDN"
+    
+          # Get Config Server FQDN
+          CONFIG_FQDN=$(az containerapp show \
+            --name ecommerce-config-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+    
+          echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
+          echo "Config FQDN: $CONFIG_FQDN"
 
       - name: Create or Update ${{ matrix.container_app }}
         run: |
           IMAGE="ghcr.io/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}"
-
-          SERVICE_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=${{ matrix.port }} CONFIG_SERVER_URL=http://ecommerce-config-server:8888 EUREKA_SERVER_URL=http://ecommerce-eureka-server:8761/eureka/"
+          
+          EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
+          CONFIG_URL="http://${CONFIG_FQDN}:8888"
+          SERVICE_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=${{ matrix.port }} CONFIG_SERVER_URL=$CONFIG_URL EUREKA_SERVER_URL=$EUREKA_URL"
 
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
@@ -456,8 +505,8 @@ jobs:
           echo "  Image: $IMAGE"
           echo "  Port: ${{ matrix.port }}"
           echo "  Ingress: ${{ matrix.ingress }}"
-          echo "  Config URL: http://ecommerce-config-server:8888"
-          echo "  Eureka URL: http://ecommerce-eureka-server:8761/eureka/"
+          echo "  Config URL: $CONFIG_URL"
+          echo "  Eureka URL: $EUREKA_URL"
 
           if az containerapp show \
             --name ${{ matrix.container_app }} \
@@ -537,43 +586,76 @@ jobs:
 
             if [[ "$RESPONSE" != "Failed" ]]; then
               echo "Health check passed!"
-              echo "$RESPONSE" | head -20
+              
+              if echo "$RESPONSE" | grep -q "clientConfigServer".*UNKNOWN; then
+                echo "Config Server connection issue detected!"
+                echo "Check that Config Server is running and accessible at:"
+                echo "   http://${CONFIG_FQDN}:8888"
+              fi
+              
+              if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
+                echo "⚠️ Eureka connection issue detected!"
+                echo "Check that Eureka is running and accessible at:"
+                echo "  http://${EUREKA_FQDN}:8761/eureka/"
+              fi
+              
+              if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
+                echo " All services connected successfully!"
+              fi
+              
+              echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
               break
             fi
-
+          
             echo "Attempt $i/10 - Health check failed, waiting..."
             sleep 10
           done
 
-      - name: Check Eureka registration via logs
+      - name: Check Service health and configuration
+        if: matrix.ingress == 'external'
         shell: bash
         run: |
-          echo "Checking ${{ matrix.service }} registration via logs..."
-          sleep 20
-
-          LOGS=$(az containerapp logs show \
+          FQDN=$(az containerapp show \
             --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --tail 30 2>/dev/null || echo "No logs available")
-
-          if [ "$LOGS" != "No logs available" ]; then
-            echo "Recent logs from ${{ matrix.service }}:"
-            echo "$LOGS"
-
-            if echo "$LOGS" | grep -i "registered with eureka" > /dev/null; then
-              echo "${{ matrix.service }} successfully registered with Eureka!"
-            elif echo "$LOGS" | grep -i "discovery" > /dev/null; then
-              echo "${{ matrix.service }} connected to discovery service"
-            elif echo "$LOGS" | grep -i "config" > /dev/null; then
-              echo "${{ matrix.service }} connected to Config Server"
-            else
-              echo "⚠️ Check logs manually for registration status"
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          
+          echo "=================================================="
+          echo "Checking health at: https://${FQDN}/actuator/health"
+          echo "=================================================="
+          
+          for i in {1..10}; do
+            RESPONSE=$(curl -s -f "https://${FQDN}/actuator/health" 2>/dev/null || echo "Failed")
+          
+            if [[ "$RESPONSE" != "Failed" ]]; then
+              echo "Health check passed!"
+              
+              if echo "$RESPONSE" | grep -q "clientConfigServer".*UNKNOWN; then
+                echo "Config Server connection issue detected!"
+                echo "Check that Config Server is running and accessible at:"
+                echo "   http://${CONFIG_FQDN}:8888"
+              fi
+              
+              if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
+                echo "Eureka connection issue detected!"
+                echo "Check that Eureka is running and accessible at:"
+                echo "  http://${EUREKA_FQDN}:8761/eureka/"
+              fi
+              
+              if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
+                echo " All services connected successfully!"
+              fi
+              
+              echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
+              break
             fi
-          else
-            echo "⚠️ No logs available yet"
-          fi
+          
+            echo "Attempt $i/10 - Health check failed, waiting..."
+            sleep 10
+          done
 
-      - name: Display service URL if external
+      - name: Display service URL
         if: matrix.ingress == 'external'
         run: |
           FQDN=$(az containerapp show \
@@ -581,11 +663,12 @@ jobs:
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
-
-          echo "=================================================="
-          echo "${{ matrix.service }} is available at:"
-          echo "   https://${FQDN}"
-          echo "=================================================="
+          
+          echo "Service ${{ matrix.service }} is accessible at:"
+          echo "  https://${FQDN}"
+          echo "  Health: https://${FQDN}/actuator/health"
+          echo "  Swagger: https://${FQDN}/swagger-ui/index.html"
+        
 
   #===========================================================#
   # Final job to display all service URLs
@@ -623,9 +706,9 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             -o tsv 2>/dev/null || echo "Not deployed")
           
-          echo "🔍 EUREKA SERVER:"
+          echo " EUREKA SERVER:"
           echo "   Internal: http://ecommerce-eureka-server:8761"
-          echo "   External: http://${EUREKA_FQDN}:8761"
+          echo "   Health: http://${EUREKA_FQDN}:8761/actuator/health"
           echo "   Dashboard: http://${EUREKA_FQDN}:8761"
           echo ""
           
@@ -637,8 +720,8 @@ jobs:
             -o tsv 2>/dev/null || echo "Not deployed")
           
           echo "CONFIG SERVER:"
-          echo "   Internal: http://ecommerce-config-server:8888"
-          echo "   External: http://${CONFIG_FQDN}:8888"
+          echo "   URL: http://${CONFIG_FQDN}:8888"
+          echo "   Health: http://${CONFIG_FQDN}:8888/actuator/health"
           echo ""
           
           # Get API Gateway URL (external)
@@ -652,6 +735,12 @@ jobs:
           echo "   API Gateway: https://${GATEWAY_FQDN}"
           echo "   Health: https://${GATEWAY_FQDN}/actuator/health"
           echo "   Swagger: https://${GATEWAY_FQDN}/swagger-ui/index.html"
+          echo ""
+          
+          #Display exact environment variables to use
+          echo " Environment Variables to use in your services:"
+          echo "  CONFIG_SERVER_URL=http://${CONFIG_FQDN}:8888"
+          echo "  EUREKA_SERVER_URL=http://${EUREKA_FQDN}:8761/eureka/"
           echo ""
           
           echo "INTERNAL SERVICES (via service discovery):"
