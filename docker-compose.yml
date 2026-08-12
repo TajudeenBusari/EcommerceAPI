@@ -259,16 +259,16 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-      inventory-service:
-        condition: service_healthy
-      product-service:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-      order-service:
-        condition: service_healthy
+#      inventory-service:
+#        condition: service_healthy
+#      product-service:
+#        condition: service_healthy
+#      user-service:
+#        condition: service_healthy
+#      notification-service:
+#        condition: service_healthy
+#      order-service:
+#        condition: service_healthy
     volumes:
       - ./logs/api-gateway:/mnt/log/api-gateway #mount from host(./logs/api-gateway) to container(/mnt/log/api-gateway)
     environment:

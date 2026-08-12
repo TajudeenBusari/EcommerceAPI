@@ -276,7 +276,7 @@ jobs:
           done
           
           if [ -z "$EUREKA_FQDN" ]; then
-            echo "❌ Failed to get Eureka FQDN after 5 attempts"
+            echo " Failed to get Eureka FQDN after 5 attempts"
             # Try one more time with full output for debugging
             EUREKA_FQDN=$(az containerapp show \
               --name ecommerce-eureka-server \
@@ -286,7 +286,7 @@ jobs:
           fi
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
-          echo "✅ Eureka FQDN: $EUREKA_FQDN"
+          echo "Eureka FQDN: $EUREKA_FQDN"
 
   #===========================================================#
   # Deploy Config Server
@@ -331,7 +331,7 @@ jobs:
           done
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
-          echo "✅ Eureka FQDN: $EUREKA_FQDN"
+          echo " Eureka FQDN: $EUREKA_FQDN"
 
       - name: Create or Update Config Server
         run: |
@@ -339,7 +339,7 @@ jobs:
           
           EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
           
-          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL"
+          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=default SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true"
           
           echo "Config Server Environment Variables:"
           echo "  EUREKA_SERVER_URL: $EUREKA_URL"
@@ -405,8 +405,39 @@ jobs:
             sleep 10
           done
 
-      # ==================== FIXED: Get Config Server FQDN with Retry ====================
-      - name: Get Config Server FQDN with retry
+      # ====================Verify Config Server via logs ====================
+      - name: Verify Config Server via logs
+        run: |
+          echo "Checking Config Server logs..."
+          
+          # Give it a moment to start up
+          sleep 15
+          
+          LOGS=$(az containerapp logs show \
+            --name ecommerce-config-server \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --tail 100 2>/dev/null || echo "No logs available")
+          
+          echo "Recent Config Server logs:"
+          echo "$LOGS"
+          
+          # Check for successful startup
+          if echo "$LOGS" | grep -i "Started ConfigServerApplication" > /dev/null; then
+            echo "Config Server started successfully!"
+          else
+            echo "Config Server may not have started properly"
+          fi
+          
+          # Check if Config Server registered with Eureka
+          if echo "$LOGS" | grep -i "registered with eureka" > /dev/null; then
+            echo "Config Server registered with Eureka!"
+          elif echo "$LOGS" | grep -i "eureka" > /dev/null; then
+            echo "Config Server connected to Eureka"
+          else
+            echo "Check if Config Server is registered with Eureka"
+          fi
+
+      - name: Get Config Server FQDN
         run: |
           echo "Getting Config Server FQDN..."
           
@@ -423,11 +454,13 @@ jobs:
           done
           
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
-          echo "✅ Config Server FQDN: $CONFIG_FQDN"
+          echo "Config Server Internal FQDN: $CONFIG_FQDN"
+          echo ""
+          echo "NOTE: Config Server is deployed with internal ingress."
+          echo "   It is only accessible from within the Container Apps environment."
+          echo "   Services inside the environment can reach it using the internal FQDN:"
+          echo "   http://${CONFIG_FQDN}:8888"
           
-          # Test Config Server health
-          echo "Testing Config Server health..."
-          curl -f "http://${CONFIG_FQDN}:8888/actuator/health" || echo "Config Server health check failed"
 
   #===========================================================#
   # Deploy all other microservices
@@ -527,7 +560,7 @@ jobs:
           EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
           CONFIG_URL="http://${CONFIG_FQDN}:8888"
           
-          SERVICE_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=${{ matrix.port }} CONFIG_SERVER_URL=$CONFIG_URL EUREKA_SERVER_URL=$EUREKA_URL"
+          SERVICE_ENV_VARS="SPRING_APPLICATION_NAME=${{ matrix.service }} SPRING_PROFILES_ACTIVE=default SERVER_PORT=${{ matrix.port }} EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true EUREKA_SERVER_URL=$EUREKA_URL SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL"
           
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
@@ -537,6 +570,7 @@ jobs:
           echo "  Ingress: ${{ matrix.ingress }}"
           echo "  Config URL: $CONFIG_URL"
           echo "  Eureka URL: $EUREKA_URL"
+          echo "  SPRING_CONFIG_IMPORT: optional:configserver:$CONFIG_URL"
           
           if az containerapp show \
             --name ${{ matrix.container_app }} \
