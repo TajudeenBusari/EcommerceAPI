@@ -240,7 +240,6 @@ jobs:
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
               --registry-password "${{ secrets.GHCR_PAT }}"
-#              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8761},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
           
             echo "Eureka Container App created."
           
@@ -390,7 +389,7 @@ jobs:
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
               --registry-password "${{ secrets.GHCR_PAT }}"
-#              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8888},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
+
               
           fi
 
@@ -607,8 +606,6 @@ jobs:
           
             echo "Container App does not exist. Creating ..."
           
-#            HEALTH_PROBE='{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":${{ matrix.port }}},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
-          
             az containerapp create \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -622,7 +619,6 @@ jobs:
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
               --registry-password "${{ secrets.GHCR_PAT }}"
-#              --health-probe "$HEALTH_PROBE"
           
           fi
 
