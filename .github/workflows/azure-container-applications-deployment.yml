@@ -239,8 +239,8 @@ jobs:
               --env-vars $EUREKA_ENV_VARS \
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
-              --registry-password "${{ secrets.GHCR_PAT }}" \
-              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8761},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
+              --registry-password "${{ secrets.GHCR_PAT }}"
+#              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8761},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
           
             echo "Eureka Container App created."
           
@@ -389,8 +389,8 @@ jobs:
               --env-vars $CONFIG_ENV_VARS \
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
-              --registry-password "${{ secrets.GHCR_PAT }}" \
-              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8888},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
+              --registry-password "${{ secrets.GHCR_PAT }}"
+#              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8888},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
               
           fi
 
@@ -607,7 +607,7 @@ jobs:
           
             echo "Container App does not exist. Creating ..."
           
-            HEALTH_PROBE='{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":${{ matrix.port }}},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
+#            HEALTH_PROBE='{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":${{ matrix.port }}},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
           
             az containerapp create \
               --name ${{ matrix.container_app }} \
@@ -621,8 +621,8 @@ jobs:
               --env-vars $SERVICE_ENV_VARS \
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
-              --registry-password "${{ secrets.GHCR_PAT }}" \
-              --health-probe "$HEALTH_PROBE"
+              --registry-password "${{ secrets.GHCR_PAT }}"
+#              --health-probe "$HEALTH_PROBE"
           
           fi
 
