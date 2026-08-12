@@ -162,7 +162,7 @@ jobs:
           fi
 
   #===========================================================#
-  # Deploy Eureka Server FIRST (standalone, no dependencies)
+  # Deploy Eureka Server FIRST
   #===========================================================#
   deploy-eureka:
     name: Deploy Eureka Server
@@ -190,7 +190,6 @@ jobs:
         run: |
           IMAGE="ghcr.io/${REPO}/eureka-server:${{ github.sha }}"
           
-          # Eureka server runs standalone
           EUREKA_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8761"
           
           if az containerapp show \
@@ -259,21 +258,38 @@ jobs:
             sleep 10
           done
 
-      - name: Get Eureka Server FQDN
+      # ==================== FIXED: Get Eureka FQDN with Retry ====================
+      - name: Get Eureka Server FQDN with retry
         run: |
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
+          echo "Attempting to get Eureka FQDN..."
+          
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            EUREKA_FQDN=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          if [ -z "$EUREKA_FQDN" ]; then
+            echo "❌ Failed to get Eureka FQDN after 5 attempts"
+            # Try one more time with full output for debugging
+            EUREKA_FQDN=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv)
+          fi
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
-          echo "Eureka FQDN: $EUREKA_FQDN"
-          
+          echo "✅ Eureka FQDN: $EUREKA_FQDN"
 
   #===========================================================#
-  # Deploy Config Server (registers with Eureka)
-  # Config Server uses bootstrap.yml with config.import
+  # Deploy Config Server
   #===========================================================#
   deploy-config-server:
     name: Deploy Config Server
@@ -297,26 +313,31 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      # ==================== UPDATE 2: Get Eureka FQDN again ====================
-      - name: Get Eureka FQDN From previous job
+      # ==================== FIXED: Get Eureka FQDN with Retry ====================
+      - name: Get Eureka FQDN from previous deployment
         run: |
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-
+          echo "Getting Eureka FQDN for Config Server..."
+          
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            EUREKA_FQDN=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
-          echo "Eureka FQDN: $EUREKA_FQDN"
+          echo "✅ Eureka FQDN: $EUREKA_FQDN"
 
-      # ==================== UPDATE 3: Config Server uses FQDN ====================
       - name: Create or Update Config Server
         run: |
           IMAGE="ghcr.io/${REPO}/config-server:${{ github.sha }}"
           
           EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
-          
-          EUREKA_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8761"
           
           CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL"
           
@@ -335,8 +356,6 @@ jobs:
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
               --set-env-vars $CONFIG_ENV_VARS
-               
-            echo "Config Container App updated."
           
           else
           
@@ -358,9 +377,6 @@ jobs:
                 --port 8888 \
                 --initial-delay 60 \
                 --period 30
-            
-            echo "Config Container App created."
-               
           fi
 
       - name: Wait for Config Server readiness
@@ -389,28 +405,33 @@ jobs:
             sleep 10
           done
 
-      # ==================== Get config server FQDN ====================
-      - name: Get Config Server FQDN
+      # ==================== FIXED: Get Config Server FQDN with Retry ====================
+      - name: Get Config Server FQDN with retry
         run: |
-          CONFIG_FQDN=$(az containerapp show \
-            --name ecommerce-config-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-            
-          echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
-          echo "Config Server FQDN: $CONFIG_FQDN"
+          echo "Getting Config Server FQDN..."
           
-          # Test Config Server health from outside
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            CONFIG_FQDN=$(az containerapp show \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
+          echo "✅ Config Server FQDN: $CONFIG_FQDN"
+          
+          # Test Config Server health
           echo "Testing Config Server health..."
           curl -f "http://${CONFIG_FQDN}:8888/actuator/health" || echo "Config Server health check failed"
 
-  # ============================================================#
+  #===========================================================#
   # Deploy all other microservices
-  # Each service will:
-  # 1. Use bootstrap.yml with config.import to get config
-  # 2. Register with Eureka
-  # ============================================================#
+  #===========================================================#
   deploy:
     name: Deploy ${{ matrix.service }} to Azure Container Apps
     needs: deploy-config-server
@@ -466,29 +487,37 @@ jobs:
       - name: Lowercase the repo name
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-          
-      
 
-      - name: Get Service URLs
+      # ==================== FIXED: Get both FQDNs with Retry ====================
+      - name: Get Service URLs with retry
         run: |
-          # Get Eureka FQDN
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-    
+          echo "Getting Eureka FQDN..."
+          for i in {1..5}; do
+            EUREKA_FQDN=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying..."
+            sleep 5
+          done
+          
+          echo "Getting Config Server FQDN..."
+          for i in {1..5}; do
+            CONFIG_FQDN=$(az containerapp show \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying..."
+            sleep 5
+          done
+          
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
-          echo "Eureka FQDN: $EUREKA_FQDN"
-    
-          # Get Config Server FQDN
-          CONFIG_FQDN=$(az containerapp show \
-            --name ecommerce-config-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-    
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
+          echo "Eureka FQDN: $EUREKA_FQDN"
           echo "Config FQDN: $CONFIG_FQDN"
 
       - name: Create or Update ${{ matrix.container_app }}
@@ -497,8 +526,9 @@ jobs:
           
           EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
           CONFIG_URL="http://${CONFIG_FQDN}:8888"
+          
           SERVICE_ENV_VARS="SPRING_PROFILES_ACTIVE=azure SERVER_PORT=${{ matrix.port }} CONFIG_SERVER_URL=$CONFIG_URL EUREKA_SERVER_URL=$EUREKA_URL"
-
+          
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
           echo "  Container App: ${{ matrix.container_app }}"
@@ -507,24 +537,24 @@ jobs:
           echo "  Ingress: ${{ matrix.ingress }}"
           echo "  Config URL: $CONFIG_URL"
           echo "  Eureka URL: $EUREKA_URL"
-
+          
           if az containerapp show \
             --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             > /dev/null 2>&1; then
-
+          
             echo "Container App ${{ matrix.container_app }} already exists. Updating..."
-
+          
             az containerapp update \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
               --set-env-vars $SERVICE_ENV_VARS
-
+          
           else
-
+          
             echo "Container App does not exist. Creating ..."
-
+          
             az containerapp create \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -536,12 +566,12 @@ jobs:
               --max-replicas 1 \
               --env-vars $SERVICE_ENV_VARS \
               --health-probe \
-              --type liveness \
-              --path /actuator/health \
-              --port ${{ matrix.port }} \
-              --initial-delay 60 \
-              --period 30
-
+                --type liveness \
+                --path /actuator/health \
+                --port ${{ matrix.port }} \
+                --initial-delay 60 \
+                --period 30
+          
           fi
 
       - name: Wait for service to be ready
@@ -554,22 +584,22 @@ jobs:
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --query "properties.runningStatus" \
               -o tsv 2>/dev/null || echo "Unknown")
-
+          
             echo "Attempt $i/20 - Status: $STATUS"
-
+          
             if [ "$STATUS" = "Running" ]; then
               echo "${{ matrix.container_app }} is running"
               break
             fi
-
+          
             if [ "$i" -eq 20 ]; then
-              echo "⚠️ Service may not be ready yet"
+              echo "Service may not be ready yet"
             fi
-
+          
             sleep 10
           done
 
-      - name: Check service health (if external)
+      - name: Check service health and configuration
         if: matrix.ingress == 'external'
         shell: bash
         run: |
@@ -578,84 +608,42 @@ jobs:
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
-
+          
+          echo "=================================================="
           echo "Checking health at: https://${FQDN}/actuator/health"
-
-          for i in {1..10}; do
+          echo "=================================================="
+          
+          for i in {1..15}; do
             RESPONSE=$(curl -s -f "https://${FQDN}/actuator/health" 2>/dev/null || echo "Failed")
-
+          
             if [[ "$RESPONSE" != "Failed" ]]; then
               echo "Health check passed!"
-              
-              if echo "$RESPONSE" | grep -q "clientConfigServer".*UNKNOWN; then
+          
+              if echo "$RESPONSE" | grep -q "clientConfigServer.*UNKNOWN"; then
                 echo "Config Server connection issue detected!"
                 echo "Check that Config Server is running and accessible at:"
-                echo "   http://${CONFIG_FQDN}:8888"
+                echo "  http://${CONFIG_FQDN}:8888"
               fi
-              
+          
               if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
                 echo "⚠️ Eureka connection issue detected!"
                 echo "Check that Eureka is running and accessible at:"
                 echo "  http://${EUREKA_FQDN}:8761/eureka/"
               fi
-              
+          
               if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
-                echo " All services connected successfully!"
+                echo "All services connected successfully!"
               fi
-              
+          
               echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
               break
             fi
           
-            echo "Attempt $i/10 - Health check failed, waiting..."
+            echo "Attempt $i/15 - Health check failed, waiting..."
             sleep 10
           done
 
-      - name: Check Service health and configuration
-        if: matrix.ingress == 'external'
-        shell: bash
-        run: |
-          FQDN=$(az containerapp show \
-            --name ${{ matrix.container_app }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          
-          echo "=================================================="
-          echo "Checking health at: https://${FQDN}/actuator/health"
-          echo "=================================================="
-          
-          for i in {1..10}; do
-            RESPONSE=$(curl -s -f "https://${FQDN}/actuator/health" 2>/dev/null || echo "Failed")
-          
-            if [[ "$RESPONSE" != "Failed" ]]; then
-              echo "Health check passed!"
-              
-              if echo "$RESPONSE" | grep -q "clientConfigServer".*UNKNOWN; then
-                echo "Config Server connection issue detected!"
-                echo "Check that Config Server is running and accessible at:"
-                echo "   http://${CONFIG_FQDN}:8888"
-              fi
-              
-              if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
-                echo "Eureka connection issue detected!"
-                echo "Check that Eureka is running and accessible at:"
-                echo "  http://${EUREKA_FQDN}:8761/eureka/"
-              fi
-              
-              if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
-                echo " All services connected successfully!"
-              fi
-              
-              echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
-              break
-            fi
-          
-            echo "Attempt $i/10 - Health check failed, waiting..."
-            sleep 10
-          done
-
-      - name: Display service URL
+      - name: Display service URL if external
         if: matrix.ingress == 'external'
         run: |
           FQDN=$(az containerapp show \
@@ -664,11 +652,10 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             -o tsv)
           
-          echo "Service ${{ matrix.service }} is accessible at:"
-          echo "  https://${FQDN}"
-          echo "  Health: https://${FQDN}/actuator/health"
-          echo "  Swagger: https://${FQDN}/swagger-ui/index.html"
-        
+          echo "=================================================="
+          echo " ${{ matrix.service }} is available at:"
+          echo "   https://${FQDN}"
+          echo "=================================================="
 
   #===========================================================#
   # Final job to display all service URLs
@@ -692,67 +679,61 @@ jobs:
         run: |
           az extension add --name containerapp --upgrade
 
-      - name: Display all service URLs
+      - name: Display all service URLs and debug info
         run: |
           echo "=================================================="
           echo "ALL SERVICES DEPLOYED SUCCESSFULLY!"
           echo "=================================================="
           echo ""
           
-          # Get Eureka Server URL
-          EUREKA_FQDN=$(az containerapp show \
-            --name ecommerce-eureka-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv 2>/dev/null || echo "Not deployed")
+          # Get all FQDNs with retry
+          for i in {1..5}; do
+            EUREKA_FQDN=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv 2>/dev/null) && break
+            sleep 5
+          done
           
-          echo " EUREKA SERVER:"
-          echo "   Internal: http://ecommerce-eureka-server:8761"
-          echo "   Health: http://${EUREKA_FQDN}:8761/actuator/health"
-          echo "   Dashboard: http://${EUREKA_FQDN}:8761"
-          echo ""
+          for i in {1..5}; do
+            CONFIG_FQDN=$(az containerapp show \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv 2>/dev/null) && break
+            sleep 5
+          done
           
-          # Get Config Server URL
-          CONFIG_FQDN=$(az containerapp show \
-            --name ecommerce-config-server \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv 2>/dev/null || echo "Not deployed")
-          
-          echo "CONFIG SERVER:"
-          echo "   URL: http://${CONFIG_FQDN}:8888"
-          echo "   Health: http://${CONFIG_FQDN}:8888/actuator/health"
-          echo ""
-          
-          # Get API Gateway URL (external)
           GATEWAY_FQDN=$(az containerapp show \
             --name ecommerce-api-gateway \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" \
             -o tsv 2>/dev/null || echo "Not deployed")
           
-          echo " PUBLIC ENDPOINT:"
+          echo "EUREKA SERVER:"
+          echo "   URL: http://${EUREKA_FQDN}:8761"
+          echo "   Health: http://${EUREKA_FQDN}:8761/actuator/health"
+          echo "   Dashboard: http://${EUREKA_FQDN}:8761"
+          echo ""
+          
+          echo "CONFIG SERVER:"
+          echo "   URL: http://${CONFIG_FQDN}:8888"
+          echo "   Health: http://${CONFIG_FQDN}:8888/actuator/health"
+          echo ""
+          
+          echo "PUBLIC ENDPOINT:" 
           echo "   API Gateway: https://${GATEWAY_FQDN}"
           echo "   Health: https://${GATEWAY_FQDN}/actuator/health"
-          echo "   Swagger: https://${GATEWAY_FQDN}/swagger-ui/index.html"
           echo ""
           
-          #Display exact environment variables to use
-          echo " Environment Variables to use in your services:"
-          echo "  CONFIG_SERVER_URL=http://${CONFIG_FQDN}:8888"
-          echo "  EUREKA_SERVER_URL=http://${EUREKA_FQDN}:8761/eureka/"
+          echo "Environment Variables to use in your services:"
+          echo "   CONFIG_SERVER_URL=http://${CONFIG_FQDN}:8888"
+          echo "   EUREKA_SERVER_URL=http://${EUREKA_FQDN}:8761/eureka/"
           echo ""
           
-          echo "INTERNAL SERVICES (via service discovery):"
-          echo "   These services are accessible internally via their service names:"
-          echo "   • user-service: http://ecommerce-user-service:8081"
-          echo "   • product-service: http://ecommerce-product-service:8083"
-          echo "   • order-service: http://ecommerce-order-service:8082"
-          echo "   • inventory-service: http://ecommerce-inventory-service:8084"
-          echo "   • notification-service: http://ecommerce-notification-service:8085"
+          echo "Check if services are registered with Eureka:"
+          echo "   curl http://${EUREKA_FQDN}:8761/eureka/apps"
           echo ""
           
-          echo "=================================================="
-          echo "Check Eureka Dashboard for registered services:"
-          echo "   http://${EUREKA_FQDN}:8761"
           echo "=================================================="
