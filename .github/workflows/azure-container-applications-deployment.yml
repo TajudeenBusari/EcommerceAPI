@@ -205,7 +205,7 @@ jobs:
           
           EUREKA_ENV_VARS="SPRING_PROFILES_ACTIVE=default SERVER_PORT=8761 EUREKA_CLIENT_REGISTER_WITH_EUREKA=false EUREKA_CLIENT_FETCH_REGISTRY=false"
           
-          HEALTH_PROBE='{"type":"liveness","httpGet":{"path":"/actuator/health","port":8761},"initialDelaySeconds":60,"periodSeconds":30}'
+          
           
           if az containerapp show \
             --name ecommerce-eureka-server \
@@ -240,7 +240,7 @@ jobs:
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
               --registry-password "${{ secrets.GHCR_PAT }}" \
-              --health-probe "$HEALTH_PROBE"
+              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8761},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
           
             echo "Eureka Container App created."
           
@@ -355,7 +355,7 @@ jobs:
           
           CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=default SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true"
           
-          HEALTH_PROBE="{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":${{ matrix.port }}},\"initialDelaySeconds\":60,\"periodSeconds\":30}"
+          
           
           echo "Config Server Environment Variables:"
           echo "  EUREKA_SERVER_URL: $EUREKA_URL"
@@ -390,7 +390,7 @@ jobs:
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
               --registry-password "${{ secrets.GHCR_PAT }}" \
-              --health-probe "$HEALTH_PROBE"
+              --health-probe '{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":8888},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
               
           fi
 
@@ -588,7 +588,7 @@ jobs:
           echo "  SPRING_CONFIG_IMPORT: optional:configserver:$CONFIG_URL"
           
           
-          HEALTH_PROBE="{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":${{ matrix.port }}},\"initialDelaySeconds\":60,\"periodSeconds\":30}"
+          
           
           if az containerapp show \
             --name ${{ matrix.container_app }} \
@@ -606,6 +606,8 @@ jobs:
           else
           
             echo "Container App does not exist. Creating ..."
+          
+            HEALTH_PROBE='{\"type\":\"liveness\",\"httpGet\":{\"path\":\"/actuator/health\",\"port\":${{ matrix.port }}},\"initialDelaySeconds\":60,\"periodSeconds\":30}'
           
             az containerapp create \
               --name ${{ matrix.container_app }} \
