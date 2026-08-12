@@ -19,4 +19,4 @@ COPY --from=builder /builder/extracted/application/ ./
 #ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 ENTRYPOINT ["java", "-jar", "application.jar"]
 
-EXPOSE 8763
+EXPOSE 8761

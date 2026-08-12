@@ -1,14 +1,9 @@
 server:
-  port: 8763
+  port: 8761
 spring:
   application:
     name: eureka-server
-#  autoconfigure:
-#    exclude: org.springframework.boot.autoconfigure.aop.AopAutoConfiguration
-  #disble jarkata.validationNoProviderFoundException showing in the logs
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
+
 
 eureka:
   client:

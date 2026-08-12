@@ -201,7 +201,7 @@ services:
     build: eureka-server
     container_name: eureka-server
     ports:
-      - "8763:8763"
+      - "8761:8761"
     volumes:
       - ./logs/eureka-server:/mnt/log/eureka-server #mount from host(./logs/eureka-server) to container(/mnt/log/eureka-server)
     environment:
@@ -213,8 +213,8 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8763/actuator/health"]
-      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8763/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -233,9 +233,9 @@ services:
       - ./applicationsConfiguration:/config
       - ./logs/config-server:/mnt/log/config-server #mount from host(./logs/config-server) to container(/mnt/log/config-server)
     environment:
-      - SPRING_PROFILES_ACTIVE=native
+      #- SPRING_PROFILES_ACTIVE=native
       - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/config
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - LOGGING_FILE_NAME=/mnt/log/config-server/app.log #tells app to write log to this file, important when running inside Docker container
     networks:
       - microservices-network
@@ -273,10 +273,10 @@ services:
       - ./logs/api-gateway:/mnt/log/api-gateway #mount from host(./logs/api-gateway) to container(/mnt/log/api-gateway)
     environment:
       - SPRING_APPLICATION_NAME=api-gateway
-      - SPRING_PROFILES_ACTIVE=default
+      #- SPRING_PROFILES_ACTIVE=default
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - LOGGING_FILE_NAME=/mnt/log/api-gateway/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
@@ -339,11 +339,11 @@ services:
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_PROFILES_ACTIVE=default
+      #- SPRING_PROFILES_ACTIVE=default
       - SPRING_APPLICATION_NAME=product-service
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
@@ -398,11 +398,11 @@ services:
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_PROFILES_ACTIVE=default
+      #- SPRING_PROFILES_ACTIVE=default
       - SPRING_APPLICATION_NAME=inventory-service
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
@@ -460,11 +460,11 @@ services:
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_PROFILES_ACTIVE=default
+      #- SPRING_PROFILES_ACTIVE=default
       - SPRING_APPLICATION_NAME=order-service
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
@@ -528,11 +528,11 @@ services:
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_PROFILES_ACTIVE=default
+      #- SPRING_PROFILES_ACTIVE=default
       - SPRING_APPLICATION_NAME=notification-service
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
@@ -603,11 +603,11 @@ services:
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_PROFILES_ACTIVE=default
+      #- SPRING_PROFILES_ACTIVE=default
       - SPRING_APPLICATION_NAME=user-service
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-      - EUREKA_SERVER_URL=http://eureka-server:8763/eureka
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - DB_HOST=postgres
       - DB_USER=${DB_USER}
