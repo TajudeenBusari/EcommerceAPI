@@ -496,7 +496,7 @@ jobs:
           - service: inventory-service
             container_app: ecommerce-inventory-service
             port: 8084
-            ingress: internal
+            ingress: external #temporarily set to external for testing, change to internal in production
 
           - service: notification-service
             container_app: ecommerce-notification-service
