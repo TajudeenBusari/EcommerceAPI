@@ -694,35 +694,68 @@ jobs:
           echo "Checking health at: https://${FQDN}/actuator/health"
           echo "=================================================="
           
+          HEALTH_OK=false
+          RESPONSE=""
+          
           for i in {1..15}; do
-            RESPONSE=$(curl -s -f "https://${FQDN}/actuator/health" 2>/dev/null || echo "Failed")
-          
-            if [[ "$RESPONSE" != "Failed" ]]; then
-              echo "Health check passed!"
-          
-              if echo "$RESPONSE" | grep -q "clientConfigServer.*UNKNOWN"; then
-                echo "Config Server connection issue detected!"
-                echo "Check that Config Server is running and accessible at:"
-                echo "https://${CONFIG_FQDN}:8888"
-              fi
-          
-              if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
-                echo "Eureka connection issue detected!"
-                echo "Check that Eureka is running and accessible at:"
-                echo "https://${EUREKA_FQDN}:8761/eureka/"
-              fi
-          
-              if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
-                echo "All services connected successfully!"
-              fi
-          
+            RESPONSE=$(curl -sS \
+              --connect-timeout 10 \
+              --max-time 20 \
+              "https://${FQDN}/actuator/health" 2>/dev/null || true)
+            
+            if [ -n "$RESPONSE" ]; then
+              echo "Health endpoint responded on attempt $i."
               echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
+              HEALTH_OK=true
               break
             fi
           
-            echo "Attempt $i/15 - Health check failed, waiting..."
+            echo "Attempt $i/15 - Health endpoint not responding yet."
             sleep 10
           done
+          
+          if [ "$HEALTH_OK" = false ]; then
+            echo "WARNING: Health endpoint did not respond after 15 attempts."
+            echo "The Container App itself may still be running."
+            echo "Continuing deployment."
+          
+          else
+            echo "Health endpoint responded successfully."
+          
+            # --------------------------------------------------
+            # Check Config Server connection
+            # --------------------------------------------------
+          
+            if echo "$RESPONSE" | grep -q "clientConfigServer.*UNKNOWN"; then
+              echo "WARNING: Config Server connection issue detected!"
+              echo "Config Server URL:"
+              echo "https://${CONFIG_FQDN}"
+            else
+              echo "Config Server connection does not report UNKNOWN."
+            fi
+            
+            # --------------------------------------------------
+            # Check Eureka connection
+            # --------------------------------------------------
+            if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
+              echo "Eureka connection issue detected!"
+              echo "Check that Eureka is running and accessible at:"
+              echo "https://${EUREKA_FQDN}/eureka/"
+            else
+              echo "Eureka connection does not report a connection failure."
+            fi
+            
+            # --------------------------------------------------
+            # Overall health status
+            # --------------------------------------------------
+            if echo "$RESPONSE" | grep -q '"status"[[:space:]]*:[[:space:]]*"UP"' \
+              && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
+
+              echo "All reported health indicators are UP."
+            else
+              echo "WARNING: One or more health indicators may not be UP."
+            fi
+          fi
 
       - name: Display service URL if external
         if: matrix.ingress == 'external'
