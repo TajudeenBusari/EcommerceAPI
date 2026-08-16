@@ -50,7 +50,7 @@ services:
   #The volume mount ./servers.json:/pgadmin4/servers.json in your docker-compose.yml is telling Docker:
   #"Take the file servers.json from the current directory on my
   #host machine and map it to the path /pgadmin4/servers.json inside the pgAdmin container."
-  #As long as the pgadmin interface is opened in the browser, connection updates will keep coming into the log
+  #As long as the pgAdmin interface is opened in the browser, connection updates will keep coming into the log
 
   pgadmin:
     image: elestio/pgadmin:latest #dpage/pgadmin4
@@ -269,6 +269,7 @@ services:
 #        condition: service_healthy
 #      order-service:
 #        condition: service_healthy
+    restart: on-failure
     volumes:
       - ./logs/api-gateway:/mnt/log/api-gateway #mount from host(./logs/api-gateway) to container(/mnt/log/api-gateway)
     environment:
@@ -333,6 +334,7 @@ services:
         condition: service_healthy
       promtail:
         condition: service_started
+    restart: on-failure
 
     volumes:
       - ./logs/product-service:/mnt/log/product-service #mount from host(./logs/product-service) to container(/mnt/log/product-service)
@@ -392,6 +394,7 @@ services:
         condition: service_healthy
       promtail:
         condition: service_started #promtail may take longer to be healthy, so just ensure it's started
+    restart: on-failure
 
     volumes:
       - ./logs/inventory-service:/mnt/log/inventory-service #mount from host(./logs/inventory-service) to container(/mnt/log/inventory-service)
@@ -455,6 +458,7 @@ services:
         condition: service_started
       prometheus:
         condition: service_healthy
+    restart: on-failure
     volumes:
       - ./logs/order-service:/mnt/log/order-service #mount from host(./logs/order-service) to container(/mnt/log/order-service)
     environment:
@@ -525,6 +529,7 @@ services:
         condition: service_healthy
       inventory-service:
         condition: service_healthy
+    restart: on-failure
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
@@ -600,6 +605,7 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
+    restart: on-failure
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379

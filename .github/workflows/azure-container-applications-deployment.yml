@@ -298,6 +298,9 @@ jobs:
               -o tsv)
           fi
           
+          if [ -z "$EUREKA_FQDN" ]; then echo "ERROR: Eureka FQDN is empty." exit 1 fi
+          
+          
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
           echo "Eureka FQDN: $EUREKA_FQDN"
 
@@ -343,6 +346,10 @@ jobs:
             sleep 5
           done
           
+          if [ -z "$EUREKA_FQDN" ]; then echo "ERROR: Eureka FQDN is empty." exit 1
+          
+          fi
+          
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
           echo " Eureka FQDN: $EUREKA_FQDN"
 
@@ -350,14 +357,14 @@ jobs:
         run: |
           IMAGE="ghcr.io/${REPO}/config-server:${{ github.sha }}"
           
-          EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
-          
-          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=default SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true"
-          
+          EUREKA_URL="https://${EUREKA_FQDN}/eureka/"
+    
+          CONFIG_ENV_VARS="SPRING_PROFILES_ACTIVE=default SERVER_PORT=8888 EUREKA_SERVER_URL=$EUREKA_URL EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true"
           
           
           echo "Config Server Environment Variables:"
           echo "  EUREKA_SERVER_URL: $EUREKA_URL"
+          echo "  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: $EUREKA_URL"
           
           if az containerapp show \
             --name ecommerce-config-server \
@@ -455,6 +462,8 @@ jobs:
         run: |
           echo "Getting Config Server FQDN..."
           
+          CONFIG_FQDN=""
+          
           for i in {1..5}; do
             echo "Attempt $i/5..."
             CONFIG_FQDN=$(az containerapp show \
@@ -467,13 +476,16 @@ jobs:
             sleep 5
           done
           
+          if [ -z "$CONFIG_FQDN" ]; then echo "ERROR: Could not retrieve Config Server FQDN." exit 1 fi
+          
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
           echo "Config Server Internal FQDN: $CONFIG_FQDN"
           echo ""
           echo "NOTE: Config Server is deployed with internal ingress."
           echo "   It is only accessible from within the Container Apps environment."
           echo "   Services inside the environment can reach it using the internal FQDN:"
-          echo "   http://${CONFIG_FQDN}:8888"
+          echo "   https://${CONFIG_FQDN}"
+          
           
 
   #===========================================================#
@@ -551,6 +563,9 @@ jobs:
           done
           
           echo "Getting Config Server FQDN..."
+          
+          CONFIG_FQDN=""
+          
           for i in {1..5}; do
             CONFIG_FQDN=$(az containerapp show \
               --name ecommerce-config-server \
@@ -562,6 +577,9 @@ jobs:
             sleep 5
           done
           
+          if [ -z "$EUREKA_FQDN" ]; then echo "ERROR: Eureka FQDN is empty." exit 1 fi
+          if [ -z "$CONFIG_FQDN" ]; then echo "ERROR: Config Server FQDN is empty." exit 1 fi
+          
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
           echo "Eureka FQDN: $EUREKA_FQDN"
@@ -571,10 +589,10 @@ jobs:
         run: |
           IMAGE="ghcr.io/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}"
           
-          EUREKA_URL="http://${EUREKA_FQDN}:8761/eureka/"
-          CONFIG_URL="http://${CONFIG_FQDN}:8888"
+          EUREKA_URL="https://${EUREKA_FQDN}/eureka/"
+          CONFIG_URL="https://${CONFIG_FQDN}"
           
-          SERVICE_ENV_VARS="SPRING_APPLICATION_NAME=${{ matrix.service }} SPRING_PROFILES_ACTIVE=default SERVER_PORT=${{ matrix.port }} EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true EUREKA_SERVER_URL=$EUREKA_URL SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL"
+          SERVICE_ENV_VARS="SPRING_APPLICATION_NAME=${{ matrix.service }} SPRING_PROFILES_ACTIVE=default SERVER_PORT=${{ matrix.port }} EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true EUREKA_SERVER_URL=$EUREKA_URL EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL"
           
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
@@ -585,8 +603,6 @@ jobs:
           echo "  Config URL: $CONFIG_URL"
           echo "  Eureka URL: $EUREKA_URL"
           echo "  SPRING_CONFIG_IMPORT: optional:configserver:$CONFIG_URL"
-          
-          
           
           
           if az containerapp show \
@@ -670,13 +686,13 @@ jobs:
               if echo "$RESPONSE" | grep -q "clientConfigServer.*UNKNOWN"; then
                 echo "Config Server connection issue detected!"
                 echo "Check that Config Server is running and accessible at:"
-                echo "  http://${CONFIG_FQDN}:8888"
+                echo "  https://${CONFIG_FQDN}:8888"
               fi
           
               if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
                 echo "⚠️ Eureka connection issue detected!"
                 echo "Check that Eureka is running and accessible at:"
-                echo "  http://${EUREKA_FQDN}:8761/eureka/"
+                echo "  https://${EUREKA_FQDN}:8761/eureka/"
               fi
           
               if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
@@ -734,7 +750,12 @@ jobs:
           echo "=================================================="
           echo ""
           
-          # Get all FQDNs with retry
+          # ============================================================ 
+          # Get Eureka FQDN 
+          # ============================================================
+          
+          EUREKA_FQDN=""
+          
           for i in {1..5}; do
             EUREKA_FQDN=$(az containerapp show \
               --name ecommerce-eureka-server \
@@ -743,6 +764,12 @@ jobs:
               -o tsv 2>/dev/null) && break
             sleep 5
           done
+          
+          # ============================================================ 
+          # Get Config Server FQDN 
+          # ============================================================
+          
+          CONFIG_FQDN=""
           
           for i in {1..5}; do
             CONFIG_FQDN=$(az containerapp show \
@@ -760,14 +787,14 @@ jobs:
             -o tsv 2>/dev/null || echo "Not deployed")
           
           echo "EUREKA SERVER:"
-          echo "   URL: http://${EUREKA_FQDN}:8761"
-          echo "   Health: http://${EUREKA_FQDN}:8761/actuator/health"
-          echo "   Dashboard: http://${EUREKA_FQDN}:8761"
+          echo "   URL: https://${EUREKA_FQDN}"
+          echo "   Health: https://${EUREKA_FQDN}/actuator/health"
+          echo "   Dashboard: https://${EUREKA_FQDN}"
           echo ""
           
           echo "CONFIG SERVER:"
-          echo "   URL: http://${CONFIG_FQDN}:8888"
-          echo "   Health: http://${CONFIG_FQDN}:8888/actuator/health"
+          echo "   URL: https://${CONFIG_FQDN}"
+          echo "   Health: https://${CONFIG_FQDN}/actuator/health"
           echo ""
           
           echo "PUBLIC ENDPOINT:" 
@@ -776,12 +803,12 @@ jobs:
           echo ""
           
           echo "Environment Variables to use in your services:"
-          echo "   CONFIG_SERVER_URL=http://${CONFIG_FQDN}:8888"
-          echo "   EUREKA_SERVER_URL=http://${EUREKA_FQDN}:8761/eureka/"
+          echo "   CONFIG_SERVER_URL=https://${CONFIG_FQDN}"
+          echo "   EUREKA_SERVER_URL=https://${EUREKA_FQDN}/eureka"
           echo ""
           
           echo "Check if services are registered with Eureka:"
-          echo "   curl http://${EUREKA_FQDN}:8761/eureka/apps"
+          echo "   curl https://${EUREKA_FQDN}/eureka/apps"
           echo ""
           
           echo "=================================================="
