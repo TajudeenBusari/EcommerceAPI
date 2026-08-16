@@ -587,8 +587,15 @@ jobs:
             sleep 5
           done
           
-          if [ -z "$EUREKA_FQDN" ]; then echo "ERROR: Eureka FQDN is empty." exit 1 fi
-          if [ -z "$CONFIG_FQDN" ]; then echo "ERROR: Config Server FQDN is empty." exit 1 fi
+          if [ -z "$EUREKA_FQDN" ]; then
+            echo "ERROR: Eureka FQDN is empty."
+            exit 1
+          fi
+          
+          if [ -z "$CONFIG_FQDN" ]; then
+            echo "ERROR: Config Server FQDN is empty."
+            exit 1
+          fi
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
@@ -696,13 +703,13 @@ jobs:
               if echo "$RESPONSE" | grep -q "clientConfigServer.*UNKNOWN"; then
                 echo "Config Server connection issue detected!"
                 echo "Check that Config Server is running and accessible at:"
-                echo "  https://${CONFIG_FQDN}:8888"
+                echo "https://${CONFIG_FQDN}:8888"
               fi
           
               if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
-                echo "⚠️ Eureka connection issue detected!"
+                echo "Eureka connection issue detected!"
                 echo "Check that Eureka is running and accessible at:"
-                echo "  https://${EUREKA_FQDN}:8761/eureka/"
+                echo "https://${EUREKA_FQDN}:8761/eureka/"
               fi
           
               if echo "$RESPONSE" | grep -q "UP" && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
