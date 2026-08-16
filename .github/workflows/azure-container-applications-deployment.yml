@@ -276,8 +276,11 @@ jobs:
         run: |
           echo "Attempting to get Eureka FQDN..."
           
+          EUREKA_FQDN=""
+          
           for i in {1..5}; do
             echo "Attempt $i/5..."
+          
             EUREKA_FQDN=$(az containerapp show \
               --name ecommerce-eureka-server \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -298,7 +301,10 @@ jobs:
               -o tsv)
           fi
           
-          if [ -z "$EUREKA_FQDN" ]; then echo "ERROR: Eureka FQDN is empty." exit 1 fi
+          if [ -z "$EUREKA_FQDN" ]; then
+            echo "ERROR: Eureka FQDN is empty."
+            exit 1 
+          fi
           
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
@@ -346,8 +352,9 @@ jobs:
             sleep 5
           done
           
-          if [ -z "$EUREKA_FQDN" ]; then echo "ERROR: Eureka FQDN is empty." exit 1
-          
+          if [ -z "$EUREKA_FQDN" ]; then
+            echo "ERROR: Eureka FQDN is empty."
+            exit 1
           fi
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
@@ -476,7 +483,10 @@ jobs:
             sleep 5
           done
           
-          if [ -z "$CONFIG_FQDN" ]; then echo "ERROR: Could not retrieve Config Server FQDN." exit 1 fi
+          if [ -z "$CONFIG_FQDN" ]; then
+            echo "ERROR: Could not retrieve Config Server FQDN."
+            exit 1
+          fi
           
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
           echo "Config Server Internal FQDN: $CONFIG_FQDN"
