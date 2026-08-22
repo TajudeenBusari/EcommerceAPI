@@ -92,6 +92,15 @@ logging:
   level:
     io.micrometer.tracing: INFO #FOR DETAILED TRACING LOGS, can be set to INFO or WARN in production
     io.opentelemetry.exporter.otlp: INFO #reduce opentelemetry logs in production
+    #debug why actuator endpoints are not working, can be set to INFO or WARN in production
+    org.springframework.security: INFO #reduce security logs in production
+    org.springframework.security.web.FilterChainProxy: INFO #reduce security logs in production
+    org.springframework.security.authorization: INFO #reduce security logs in production
+    org.springframework.security.config: INFO
+    org.springframework.boot.actuate: INFO
+    org.springframework.boot.actuate.autoconfigure.security: INFO
+
+
 info:
   app:
     name:

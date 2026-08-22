@@ -70,7 +70,7 @@ logging:
 #    io.opentelemetry.exporter.otlp: DEBUG
 app:
   security:
-    enabled: false
+    enabled: true
   openapi:
     gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
     serviceUrl: http://localhost:8084

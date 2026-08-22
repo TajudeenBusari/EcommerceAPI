@@ -331,7 +331,7 @@ services:
       prometheus:
         condition: service_healthy
       loki:
-        condition: service_healthy
+        condition: service_started
       promtail:
         condition: service_started
     restart: on-failure
@@ -355,6 +355,7 @@ services:
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
       - APP_OPENAPI_SERVICEURL=http://localhost:8083
       - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      - APP_SECURITY_ENABLED=true
       #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY
     networks:
       - microservices-network
@@ -391,7 +392,7 @@ services:
       prometheus:
         condition: service_healthy
       loki:
-        condition: service_healthy
+        condition: service_started
       promtail:
         condition: service_started #promtail may take longer to be healthy, so just ensure it's started
     restart: on-failure
@@ -413,8 +414,9 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/inventory-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - OPENAPI_GATEWAY_SERVER_URL=http://localhost:8080
-      - OPENAPI_SELF_SERVER_URL=http://localhost:8084
+      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      - APP_OPENAPI_SERVICEURL=http://localhost:8084
+      - APP_SECURITY_ENABLED=true
       #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY, NOT REALLY NEEDED HERE
 #      - DEBUG=true
     networks:
@@ -453,7 +455,7 @@ services:
       ecommerce-jaeger:
         condition: service_healthy
       loki:
-        condition: service_healthy
+        condition: service_started
       promtail:
         condition: service_started
       prometheus:
@@ -484,8 +486,9 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/order-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - OPENAPI_GATEWAY_SERVER_URL=http://localhost:8080
-      - OPENAPI_SELF_SERVER_URL=http://localhost:8082
+      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      - APP_OPENAPI_SERVICEURL=http://localhost:8082
+      - APP_SECURITY_ENABLED=true
      # - RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY, NOT REALLY NEEDED HERE
     networks:
       - microservices-network
@@ -522,7 +525,7 @@ services:
       ecommerce-jaeger:
         condition: service_healthy
       loki:
-        condition: service_healthy
+        condition: service_started
       promtail:
         condition: service_started
       prometheus:
@@ -555,8 +558,9 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/notification-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - OPENAPI_GATEWAY_SERVER_URL=http://localhost:8080
-      - OPENAPI_SELF_SERVER_URL=http://localhost:8085
+      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      - APP_OPENAPI_SERVICEURL=http://localhost:8085
+      - APP_SECURITY_ENABLED=true
       #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY
 
     volumes:
@@ -594,7 +598,7 @@ services:
       ecommerce-jaeger:
         condition: service_healthy
       loki:
-        condition: service_healthy
+        condition: service_started
       promtail:
         condition: service_started
       prometheus:
@@ -627,6 +631,7 @@ services:
       - APP_ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - APP_OPENAPI_SERVICEURL=http://localhost:8086
       - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      - APP_SECURITY_ENABLED=true
     networks:
       - microservices-network
     healthcheck:

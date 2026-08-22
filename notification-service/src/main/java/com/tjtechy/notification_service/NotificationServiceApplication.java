@@ -20,7 +20,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-@SpringBootApplication //don't scan the common-util package, it will try to inject the InventoryServiceClient bean which will fail
+//don't scan the common-util package, it will try to inject the InventoryServiceClient bean which will fail
+@SpringBootApplication(scanBasePackages = {"com.tjtechy.notification_service", "com.tjtechy.security_webmvc"}) // This is to scan the security-webmvc package for the JwtEncoder bean and other security-related beans
 @EnableDiscoveryClient
 @EnableCaching
 @Import(RedisCacheConfig.class)
