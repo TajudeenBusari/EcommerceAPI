@@ -205,8 +205,6 @@ jobs:
           
           EUREKA_ENV_VARS="SPRING_PROFILES_ACTIVE=default SERVER_PORT=8761 EUREKA_CLIENT_REGISTER_WITH_EUREKA=false EUREKA_CLIENT_FETCH_REGISTRY=false"
           
-          
-          
           if az containerapp show \
             --name ecommerce-eureka-server \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -831,24 +829,26 @@ jobs:
             # --------------------------------------------------
             # Check Eureka connection
             # --------------------------------------------------
-
-            if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
-              echo "WARNING: Eureka connection issue detected!"
+            EUREKA_STATUS=$(echo "$RESPONSE" | jq -r \
+              '.components.discoveryComposite.components.eureka.status // empty' \
+              2>/dev/null || true)
+            if [ "$EUREKA_STATUS" = "UP" ]; then
+              echo "Eureka connection is UP."
+            else
+              echo "WARNING: Eureka connection may have an issue."
+              echo "Eureka status: ${EUREKA_STATUS:-UNKNOWN}"
               echo "Eureka URL:"
               echo "https://${EUREKA_FQDN}/eureka/"
-            else
-              echo "Eureka connection does not report a connection failure."
             fi
 
             # --------------------------------------------------
             # Overall health status
             # --------------------------------------------------
-
-            if echo "$RESPONSE" | grep -q '"status"[[:space:]]*:[[:space:]]*"UP"' \
-              && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
-              echo "All reported health indicators are UP."
+            OVERALL_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty' 2>/dev/null || true)
+            if [ "$OVERALL_STATUS" = "UP" ]; then
+              echo "Overall health status is UP."
             else
-              echo "WARNING: One or more health indicators may not be UP."
+              echo "WARNING: Overall health status is not UP. Status: ${OVERALL_STATUS:-UNKNOWN}"
             fi
           fi
 
