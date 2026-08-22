@@ -81,8 +81,8 @@ public class FirebaseConfig {
       }
     }
 
-    //works in docker container, BUT I HAVE NOT TESTED IT LOCALLY
-    /*
+
+    /*works in docker container, BUT I HAVE NOT TESTED IT LOCALLY
      * After I deleted the image, container, removed all unused volumes and networks
      * and rebuilt the project, it worked perfectly.
      * The error of mark/reset vanished.
