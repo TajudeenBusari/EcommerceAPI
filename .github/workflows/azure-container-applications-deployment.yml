@@ -653,7 +653,7 @@ jobs:
           if [ "${{ matrix.uses_data_services }}" = "true" ]; then
             echo "  Database: ${{ matrix.database }}"
             echo "  DB_HOST: ecommerce-java.postgres.database.azure.com"
-            echo "  DB_USER configure: yes"
+            echo "  DB_USER configured: yes"
             echo "  REDIS_HOST: ecommerce-java-redis.swedencentral.redis.azure.net"
             echo "  REDIS_PORT: 10000"
             echo "  REDIS_SSL_ENABLED: true"
