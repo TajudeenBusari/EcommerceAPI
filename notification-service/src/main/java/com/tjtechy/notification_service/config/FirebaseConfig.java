@@ -41,7 +41,8 @@ public class FirebaseConfig {
     if(firebaseConfigBase64 != null && !firebaseConfigBase64.isBlank()){
       logger.info("*********FIREBASE_CONFIG_BASE64 is configured. Initializing Firebase from Base64 configuration.***********");
       try {
-        byte[] decodedBytes = Base64.getDecoder().decode(firebaseConfigBase64);
+        String normalizedBase64 = firebaseConfigBase64.replaceAll("\\s", ""); // Remove all whitespace characters
+        byte[] decodedBytes = Base64.getDecoder().decode(normalizedBase64);
 
         try (ByteArrayInputStream serviceAccount = new ByteArrayInputStream(decodedBytes)) {
           FirebaseOptions options = FirebaseOptions.builder()
