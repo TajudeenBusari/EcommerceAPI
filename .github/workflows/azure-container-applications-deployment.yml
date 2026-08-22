@@ -512,35 +512,42 @@ jobs:
             container_app: ecommerce-api-gateway
             port: 8080
             ingress: external
+            uses_data_services: false
 
           - service: inventory-service
             container_app: ecommerce-inventory-service
             port: 8084
             ingress: external #temporarily set to external for testing, change to internal in production
             database: ECommerce-Inventory-Service
+            uses_data_services: true
 
           - service: notification-service
             container_app: ecommerce-notification-service
             port: 8085
             ingress: internal
             database: ECommerce-Notification-Service
+            uses_data_services: true
 
           - service: order-service
             container_app: ecommerce-order-service
             port: 8082
             ingress: internal
             database: ECommerce-Order-Service
+            uses_data_services: true
 
           - service: product-service
             container_app: ecommerce-product-service
             port: 8083
             ingress: internal
             database: ECommerce-Product-Service
+            uses_data_services: true
+
           - service: user-service
             container_app: ecommerce-user-service
             port: 8086
             ingress: internal
             database: ECommerce-User-Service
+            uses_data_services: true
 
     steps:
       - name: Azure Login using Github OIDC
@@ -611,8 +618,7 @@ jobs:
           EUREKA_URL="https://${EUREKA_FQDN}/eureka/"
           CONFIG_URL="https://${CONFIG_FQDN}"
           
-          
-          SERVICE_ENV_VARS="\
+          BASE_ENV_VARS="\
           SPRING_APPLICATION_NAME=${{ matrix.service }} \
           SPRING_PROFILES_ACTIVE=default \
           SERVER_PORT=${{ matrix.port }} \
@@ -620,15 +626,20 @@ jobs:
           EUREKA_CLIENT_FETCH_REGISTRY=true \
           EUREKA_SERVER_URL=$EUREKA_URL \
           EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL \
-          SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL \
-          DB_HOST=ecommerce-java.postgres.database.azure.com \
-          DB_NAME=${{ matrix.database }} \
-          DB_USER=${{ secrets.DB_USER }} \
-          DB_PASSWORD=secretref:db-password \
-          REDIS_HOST=ecommerce-java-redis.swedencentral.redis.azure.net \
-          REDIS_PORT=10000 \
-          REDIS_PASSWORD=secretref:redis-password \
-          REDIS_SSL_ENABLED=true"
+          SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL"
+          if [ "${{ matrix.uses_data_services }}" = "true" ]; then
+            SERVICE_ENV_VARS="$BASE_ENV_VARS \
+            DB_HOST=ecommerce-java.postgres.database.azure.com \
+            DB_NAME=${{ matrix.database }} \
+            DB_USER=${{ secrets.DB_USER }} \
+            DB_PASSWORD=secretref:db-password \
+            REDIS_HOST=ecommerce-java-redis.swedencentral.redis.azure.net \
+            REDIS_PORT=10000 \
+            REDIS_PASSWORD=secretref:redis-password \
+            REDIS_SSL_ENABLED=true"
+          else
+            SERVICE_ENV_VARS="$BASE_ENV_VARS"
+          fi
           
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
@@ -639,11 +650,16 @@ jobs:
           echo "  Config URL: $CONFIG_URL"
           echo "  Eureka URL: $EUREKA_URL"
           echo "  SPRING_CONFIG_IMPORT: optional:configserver:$CONFIG_URL"
-          echo "  DB_HOST: ecommerce-java.postgres.database.azure.com"
-          echo "  DB_USER: ${{ secrets.DB_USER }}"
-          echo "  REDIS_HOST: ecommerce-java-redis.swedencentral.redis.azure.net"
-          echo "  REDIS_PORT: 10000"
-          echo "  REDIS_SSL_ENABLED: true"
+          if [ "${{ matrix.uses_data_services }}" = "true" ]; then
+            echo "  Database: ${{ matrix.database }}"
+            echo "  DB_HOST: ecommerce-java.postgres.database.azure.com"
+            echo "  DB_USER configure: yes"
+            echo "  REDIS_HOST: ecommerce-java-redis.swedencentral.redis.azure.net"
+            echo "  REDIS_PORT: 10000"
+            echo "  REDIS_SSL_ENABLED: true"
+          else
+            echo "  Database/Redis configuration: not required for this service"
+          fi
           
           if az containerapp show \
             --name ${{ matrix.container_app }} \
@@ -653,12 +669,14 @@ jobs:
             echo "Container App ${{ matrix.container_app }} already exists. Updating..."
           
             #store sensitive values as Azure Container App Secrets
-            az containerapp secret set \
-              --name ${{ matrix.container_app }} \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --secrets \
-                db-password="${{ secrets.DB_PASSWORD }}" \
-                redis-password="${{ secrets.REDIS_PASSWORD }}"
+            if [ "${{ matrix.uses_data_services }}" = "true" ]; then
+              az containerapp secret set \
+                --name ${{ matrix.container_app }} \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --secrets \
+                  db-password="${{ secrets.DB_PASSWORD }}" \
+                  redis-password="${{ secrets.REDIS_PASSWORD }}"
+            fi
           
             #update the image and environment variables for the existing container app
             az containerapp update \
@@ -670,24 +688,39 @@ jobs:
           else
           
             echo "Container App does not exist. Creating ..."
+            if [ "${{ matrix.uses_data_services }}" = "true" ]; then
+              az containerapp create \
+                --name ${{ matrix.container_app }} \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+                --image "$IMAGE" \
+                --ingress ${{ matrix.ingress }} \
+                --target-port ${{ matrix.port }} \
+                --min-replicas 1 \
+                --max-replicas 1 \
+                --secrets \
+                  db-password="${{ secrets.DB_PASSWORD }}" \
+                  redis-password="${{ secrets.REDIS_PASSWORD }}" \
+                --env-vars $SERVICE_ENV_VARS \
+                --registry-server ghcr.io \
+                --registry-username "${{ github.actor }}" \
+                --registry-password "${{ secrets.GHCR_PAT }}"
           
-            az containerapp create \
-              --name ${{ matrix.container_app }} \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
-              --image "$IMAGE" \
-              --ingress ${{ matrix.ingress }} \
-              --target-port ${{ matrix.port }} \
-              --min-replicas 1 \
-              --max-replicas 1 \
-              --secrets \
-                db-password="${{ secrets.DB_PASSWORD }}" \
-                redis-password="${{ secrets.REDIS_PASSWORD }}" \
-              --env-vars $SERVICE_ENV_VARS \
-              --registry-server ghcr.io \
-              --registry-username "${{ github.actor }}" \
-              --registry-password "${{ secrets.GHCR_PAT }}"
-          
+            else
+              az containerapp create \
+                --name ${{ matrix.container_app }} \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+                --image "$IMAGE" \
+                --ingress ${{ matrix.ingress }} \
+                --target-port ${{ matrix.port }} \
+                --min-replicas 1 \
+                --max-replicas 1 \
+                --env-vars $SERVICE_ENV_VARS \
+                --registry-server ghcr.io \
+                --registry-username "${{ github.actor }}" \
+                --registry-password "${{ secrets.GHCR_PAT }}"
+            fi
           fi
 
       - name: Wait for service to be ready
