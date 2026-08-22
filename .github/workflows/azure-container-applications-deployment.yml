@@ -495,8 +495,6 @@ jobs:
           echo "   It is only accessible from within the Container Apps environment."
           echo "   Services inside the environment can reach it using the internal FQDN:"
           echo "   https://${CONFIG_FQDN}"
-          
-          
 
   #===========================================================#
   # Deploy all other microservices
@@ -519,26 +517,30 @@ jobs:
             container_app: ecommerce-inventory-service
             port: 8084
             ingress: external #temporarily set to external for testing, change to internal in production
+            database: ECommerce-Inventory-Service
 
           - service: notification-service
             container_app: ecommerce-notification-service
             port: 8085
             ingress: internal
+            database: ECommerce-Notification-Service
 
           - service: order-service
             container_app: ecommerce-order-service
             port: 8082
             ingress: internal
+            database: ECommerce-Order-Service
 
           - service: product-service
             container_app: ecommerce-product-service
             port: 8083
             ingress: internal
-
+            database: ECommerce-Product-Service
           - service: user-service
             container_app: ecommerce-user-service
-            port: 8081
+            port: 8086
             ingress: internal
+            database: ECommerce-User-Service
 
     steps:
       - name: Azure Login using Github OIDC
@@ -609,7 +611,24 @@ jobs:
           EUREKA_URL="https://${EUREKA_FQDN}/eureka/"
           CONFIG_URL="https://${CONFIG_FQDN}"
           
-          SERVICE_ENV_VARS="SPRING_APPLICATION_NAME=${{ matrix.service }} SPRING_PROFILES_ACTIVE=default SERVER_PORT=${{ matrix.port }} EUREKA_CLIENT_REGISTER_WITH_EUREKA=true EUREKA_CLIENT_FETCH_REGISTRY=true EUREKA_SERVER_URL=$EUREKA_URL EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL"
+          
+          SERVICE_ENV_VARS="\
+          SPRING_APPLICATION_NAME=${{ matrix.service }} \
+          SPRING_PROFILES_ACTIVE=default \
+          SERVER_PORT=${{ matrix.port }} \
+          EUREKA_CLIENT_REGISTER_WITH_EUREKA=true \
+          EUREKA_CLIENT_FETCH_REGISTRY=true \
+          EUREKA_SERVER_URL=$EUREKA_URL \
+          EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL \
+          SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL \
+          DB_HOST=ecommerce-java.postgres.database.azure.com \
+          DB_NAME=${{ matrix.database }} \
+          DB_USER=${{ secrets.DB_USER }} \
+          DB_PASSWORD=secretref:db-password \
+          REDIS_HOST=ecommerce-java-redis.swedencentral.redis.azure.net \
+          REDIS_PORT=10000 \
+          REDIS_PASSWORD=secretref:redis-password \
+          REDIS_SSL_ENABLED=true"
           
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
@@ -620,7 +639,11 @@ jobs:
           echo "  Config URL: $CONFIG_URL"
           echo "  Eureka URL: $EUREKA_URL"
           echo "  SPRING_CONFIG_IMPORT: optional:configserver:$CONFIG_URL"
-          
+          echo "  DB_HOST: ecommerce-java.postgres.database.azure.com"
+          echo "  DB_USER: ${{ secrets.DB_USER }}"
+          echo "  REDIS_HOST: ecommerce-java-redis.swedencentral.redis.azure.net"
+          echo "  REDIS_PORT: 10000"
+          echo "  REDIS_SSL_ENABLED: true"
           
           if az containerapp show \
             --name ${{ matrix.container_app }} \
@@ -629,6 +652,15 @@ jobs:
           
             echo "Container App ${{ matrix.container_app }} already exists. Updating..."
           
+            #store sensitive values as Azure Container App Secrets
+            az containerapp secret set \
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --secrets \
+                db-password="${{ secrets.DB_PASSWORD }}" \
+                redis-password="${{ secrets.REDIS_PASSWORD }}"
+          
+            #update the image and environment variables for the existing container app
             az containerapp update \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -648,6 +680,9 @@ jobs:
               --target-port ${{ matrix.port }} \
               --min-replicas 1 \
               --max-replicas 1 \
+              --secrets \
+                db-password="${{ secrets.DB_PASSWORD }}" \
+                redis-password="${{ secrets.REDIS_PASSWORD }}" \
               --env-vars $SERVICE_ENV_VARS \
               --registry-server ghcr.io \
               --registry-username "${{ github.actor }}" \
@@ -685,47 +720,73 @@ jobs:
         shell: bash
         run: |
           FQDN=$(az containerapp show \
-            --name ${{ matrix.container_app }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name "${{ matrix.container_app }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
             --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          
+            --output tsv)
+
           echo "=================================================="
-          echo "Checking health at: https://${FQDN}/actuator/health"
+          echo "Checking health at:"
+          echo "https://${FQDN}/actuator/health"
           echo "=================================================="
-          
+
           HEALTH_OK=false
           RESPONSE=""
-          
+
           for i in {1..15}; do
             RESPONSE=$(curl -sS \
               --connect-timeout 10 \
               --max-time 20 \
-              "https://${FQDN}/actuator/health" 2>/dev/null || true)
-            
+              "https://${FQDN}/actuator/health" \
+              2>/dev/null || true)
+
             if [ -n "$RESPONSE" ]; then
               echo "Health endpoint responded on attempt $i."
+
               echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
-              HEALTH_OK=true
-              break
+
+              STATUS=$(echo "$RESPONSE" | jq -r '.status // empty' 2>/dev/null || true)
+
+              echo "Actuator health status: ${STATUS:-UNKNOWN}"
+
+              if [ "$STATUS" = "UP" ]; then
+                HEALTH_OK=true
+                echo "Health check passed on attempt $i."
+                break
+              fi
+
+              echo "Attempt $i/15 - Health endpoint responded but service status is '${STATUS:-UNKNOWN}'."
+            else
+              echo "Attempt $i/15 - Health endpoint not responding yet."
             fi
-          
-            echo "Attempt $i/15 - Health endpoint not responding yet."
+
             sleep 10
           done
-          
+
+          echo "=================================================="
+          echo "Health check analysis"
+          echo "=================================================="
+
           if [ "$HEALTH_OK" = false ]; then
-            echo "WARNING: Health endpoint did not respond after 15 attempts."
-            echo "The Container App itself may still be running."
+            echo "WARNING: Service health did not reach UP after 15 attempts."
+
+            if [ -n "$RESPONSE" ]; then
+              echo "The health endpoint responded, but the service is not healthy."
+              echo "Final health response:"
+              echo "$RESPONSE" | jq '.' 2>/dev/null || echo "$RESPONSE"
+            else
+              echo "The health endpoint did not respond."
+              echo "The Container App itself may still be starting or may have failed."
+            fi
+
             echo "Continuing deployment."
-          
           else
-            echo "Health endpoint responded successfully."
-          
+            echo "Health endpoint reports UP."
+
             # --------------------------------------------------
             # Check Config Server connection
             # --------------------------------------------------
-          
+
             if echo "$RESPONSE" | grep -q "clientConfigServer.*UNKNOWN"; then
               echo "WARNING: Config Server connection issue detected!"
               echo "Config Server URL:"
@@ -733,24 +794,25 @@ jobs:
             else
               echo "Config Server connection does not report UNKNOWN."
             fi
-            
+
             # --------------------------------------------------
             # Check Eureka connection
             # --------------------------------------------------
+
             if echo "$RESPONSE" | grep -q "Eureka discovery client has not yet successfully connected"; then
-              echo "Eureka connection issue detected!"
-              echo "Check that Eureka is running and accessible at:"
+              echo "WARNING: Eureka connection issue detected!"
+              echo "Eureka URL:"
               echo "https://${EUREKA_FQDN}/eureka/"
             else
               echo "Eureka connection does not report a connection failure."
             fi
-            
+
             # --------------------------------------------------
             # Overall health status
             # --------------------------------------------------
+
             if echo "$RESPONSE" | grep -q '"status"[[:space:]]*:[[:space:]]*"UP"' \
               && ! echo "$RESPONSE" | grep -q "UNKNOWN"; then
-
               echo "All reported health indicators are UP."
             else
               echo "WARNING: One or more health indicators may not be UP."
@@ -759,16 +821,17 @@ jobs:
 
       - name: Display service URL if external
         if: matrix.ingress == 'external'
+        shell: bash
         run: |
           FQDN=$(az containerapp show \
-            --name ${{ matrix.container_app }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name "${{ matrix.container_app }}" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
             --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          
+            --output tsv)
+
           echo "=================================================="
-          echo " ${{ matrix.service }} is available at:"
-          echo "   https://${FQDN}"
+          echo "${{ matrix.service }} is available at:"
+          echo "https://${FQDN}"
           echo "=================================================="
 
   #===========================================================#
