@@ -650,6 +650,11 @@ jobs:
             DB_NAME=${{ matrix.database }} \
             DB_USER=${{ secrets.DB_USER }} \
             DB_PASSWORD=secretref:db-password \
+            DB_MAX_POOL_SIZE=3 \
+            DB_MIN_IDLE=1 \
+            DB_CONNECTION_TIMEOUT=30000 \
+            DB_MAX_LIFETIME=1800000 \
+            DB_IDLE_TIMEOUT=600000 \
             REDIS_HOST=ecommerce-java-redis.swedencentral.redis.azure.net \
             REDIS_PORT=10000 \
             REDIS_PASSWORD=secretref:redis-password \
