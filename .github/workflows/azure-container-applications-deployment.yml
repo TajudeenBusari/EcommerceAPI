@@ -512,6 +512,8 @@ jobs:
             ingress: external
             uses_data_services: false
             uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
 
           - service: inventory-service
             container_app: ecommerce-inventory-service
@@ -520,6 +522,8 @@ jobs:
             database: ECommerce-Inventory-Service
             uses_data_services: true
             uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
 
           - service: notification-service
             container_app: ecommerce-notification-service
@@ -528,6 +532,8 @@ jobs:
             database: ECommerce-Notification-Service
             uses_data_services: true
             uses_firebase: true
+            uses_mailtrap: true
+            uses_twilio: true
 
           - service: order-service
             container_app: ecommerce-order-service
@@ -536,6 +542,8 @@ jobs:
             database: ECommerce-Order-Service
             uses_data_services: true
             uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
 
           - service: product-service
             container_app: ecommerce-product-service
@@ -544,6 +552,8 @@ jobs:
             database: ECommerce-Product-Service
             uses_data_services: true
             uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
 
           - service: user-service
             container_app: ecommerce-user-service
@@ -552,6 +562,8 @@ jobs:
             database: ECommerce-User-Service
             uses_data_services: true
             uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
 
     steps:
       - name: Azure Login using Github OIDC
@@ -651,6 +663,21 @@ jobs:
             SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
             FIREBASE_CONFIG_BASE64=secretref:firebase-config-base64"
           fi
+          #Mailtrap
+            if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
+                SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+                MAIL_HOST=sandbox.smtp.mailtrap.io \
+                MAIL_PORT=2525 \
+                MAILTRAP_USERNAME=secretref:mailtrap-username \
+                MAILTRAP_PASSWORD=secretref:mailtrap-password"
+            fi
+          #twilio
+            if [ "${{ matrix.uses_twilio }}" = "true" ]; then
+                SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+                TWILIO_ACCOUNT_SID=secretref:twilio-account-sid \
+                TWILIO_AUTH_TOKEN=secretref:twilio-auth-token \
+                TWILIO_FROM_NUMBER=secretref:twilio-from-number"
+            fi
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
           echo "  Container App: ${{ matrix.container_app }}"
@@ -695,7 +722,25 @@ jobs:
                 --secrets \
                   firebase-config-base64="${{ secrets.FIREBASE_CONFIG_BASE64 }}"
             fi
-          
+            #Store Mailtrap secrets only for services that require them
+            if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
+              az containerapp secret set \
+                --name ${{ matrix.container_app }} \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --secrets \
+                  mailtrap-username="${{ secrets.MAILTRAP_USERNAME }}" \
+                  mailtrap-password="${{ secrets.MAILTRAP_PASSWORD }}"
+            fi
+            #Store Twilio secrets only for services that require them
+            if [ "${{ matrix.uses_twilio }}" = "true" ]; then
+              az containerapp secret set \
+                --name ${{ matrix.container_app }} \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --secrets \
+                  twilio-account-sid="${{ secrets.TWILIO_ACCOUNT_SID }}" \
+                  twilio-auth-token="${{ secrets.TWILIO_AUTH_TOKEN }}" \
+                  twilio-from-number="${{ secrets.TWILIO_FROM_NUMBER }}"
+            fi
             #update the image and environment variables for the existing container app
             az containerapp update \
               --name ${{ matrix.container_app }} \
@@ -714,6 +759,19 @@ jobs:
                 CREATE_SECRETS="$CREATE_SECRETS \
                 firebase-config-base64=${{ secrets.FIREBASE_CONFIG_BASE64 }}"
               fi
+              #ADD MAILTRAP
+                if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
+                    CREATE_SECRETS="$CREATE_SECRETS \
+                    mailtrap-username=${{ secrets.MAILTRAP_USERNAME }} \
+                    mailtrap-password=${{ secrets.MAILTRAP_PASSWORD }}"
+                fi
+              #ADD TWILIO
+                if [ "${{ matrix.uses_twilio }}" = "true" ]; then
+                    CREATE_SECRETS="$CREATE_SECRETS \
+                    twilio-account-sid=${{ secrets.TWILIO_ACCOUNT_SID }} \
+                    twilio-auth-token=${{ secrets.TWILIO_AUTH_TOKEN }} \
+                    twilio-from-number=${{ secrets.TWILIO_FROM_NUMBER }}"
+                fi
               az containerapp create \
                 --name ${{ matrix.container_app }} \
                 --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
