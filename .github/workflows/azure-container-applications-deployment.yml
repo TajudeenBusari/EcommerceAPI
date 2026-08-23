@@ -218,12 +218,6 @@ jobs:
               --image "$IMAGE" \
               --set-env-vars $EUREKA_ENV_VARS
             
-            # Keep ingress target port aligned with the service matrix
-            az containerapp ingress update \
-              --name ${{ matrix.container_app }} \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --target-port ${{ matrix.port }} \
-              --transport auto
             echo "Eureka Container App updated."
           
           else
@@ -790,6 +784,12 @@ jobs:
               --image "$IMAGE" \
               --set-env-vars $SERVICE_ENV_VARS
           
+            # Keep ingress target port aligned with the service matrix
+            az containerapp ingress update \
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --target-port ${{ matrix.port }} \
+              --transport auto
           else
           
             echo "Container App does not exist. Creating ..."
