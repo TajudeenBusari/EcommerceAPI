@@ -515,6 +515,7 @@ jobs:
             uses_mailtrap: false
             uses_twilio: false
             uses_admin_secret: false
+            uses_r2dbc: false
 
           - service: inventory-service
             container_app: ecommerce-inventory-service
@@ -526,6 +527,7 @@ jobs:
             uses_mailtrap: false
             uses_twilio: false
             uses_admin_secret: false
+            uses_r2dbc: false
 
           - service: notification-service
             container_app: ecommerce-notification-service
@@ -537,6 +539,7 @@ jobs:
             uses_mailtrap: true
             uses_twilio: true
             uses_admin_secret: false
+            uses_r2dbc: false
 
           - service: order-service
             container_app: ecommerce-order-service
@@ -548,6 +551,7 @@ jobs:
             uses_mailtrap: false
             uses_twilio: false
             uses_admin_secret: false
+            uses_r2dbc: false
 
           - service: product-service
             container_app: ecommerce-product-service
@@ -559,6 +563,7 @@ jobs:
             uses_mailtrap: false
             uses_twilio: false
             uses_admin_secret: false
+            uses_r2dbc: false
 
           - service: user-service
             container_app: ecommerce-user-service
@@ -570,6 +575,7 @@ jobs:
             uses_mailtrap: false
             uses_twilio: false
             uses_admin_secret: true
+            uses_r2dbc: true
 
     steps:
       - name: Azure Login using Github OIDC
@@ -668,7 +674,11 @@ jobs:
           else
             SERVICE_ENV_VARS="$BASE_ENV_VARS"
           fi
-          
+          # Add R2DBC SSL configuration only for services that require it
+          if [ "${{ matrix.uses_r2dbc }}" = "true" ]; then
+            SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+            DB_SSL_MODE=require"
+          fi
           #Add Firebase config only for services that require it
           if [ "${{ matrix.uses_firebase }}" = "true" ]; then
             SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
@@ -714,6 +724,9 @@ jobs:
             echo "  Database/Redis configuration: not required for this service"
           fi
           
+          if [ "${{ matrix.uses_r2dbc }}" = "true" ]; then
+            echo "  R2DBC SSL mode: require"
+          fi
           if az containerapp show \
             --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
