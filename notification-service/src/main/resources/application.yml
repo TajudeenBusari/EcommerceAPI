@@ -118,9 +118,9 @@ app:
     retention-days: 30 #Retention period for logs or data cleanup tasks
   security:
     enabled: true
-  openapi:
-    serviceUrl: http://localhost:8085
-    gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
+#  openapi:
+#    serviceUrl: http://localhost:8085
+#    gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
 
 #Swagger/OpenAPI configuration
 springdoc:

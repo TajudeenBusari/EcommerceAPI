@@ -7,7 +7,7 @@
 
 package com.tjtechy.order_service.config;
 
-import com.tjtechy.config.OpenApiProperties;
+//import com.tjtechy.config.OpenApiProperties;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -20,13 +20,13 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 @Configuration
-@EnableConfigurationProperties(OpenApiProperties.class)
+//@EnableConfigurationProperties(OpenApiProperties.class)
 public class OrderServiceOpenAPIConfig {
 
-  private final OpenApiProperties openApiProperties;
-  public OrderServiceOpenAPIConfig(OpenApiProperties openApiProperties) {
-    this.openApiProperties = openApiProperties;
-  }
+  //private final OpenApiProperties openApiProperties;
+  //public OrderServiceOpenAPIConfig(OpenApiProperties openApiProperties) {
+  //  this.openApiProperties = openApiProperties;
+  //}
   /**
    * This is used to configure the OpenAPI documentation for the Order Service.
    */
@@ -41,9 +41,14 @@ public class OrderServiceOpenAPIConfig {
              .externalDocs(new ExternalDocumentation()
                      .description("This is the description of an order service")
                      .url("https://www.tjtechy.com/order-service")) // dummy URL for external documentation
-             .servers(List.of(
-                     new Server().url(openApiProperties.getGatewayUrl()).description("Access via API Gateway"),
-                     new Server().url(openApiProperties.getServiceUrl()).description("Direct access to Order Service")));
+//             .servers(List.of(
+//                     new Server().url(openApiProperties.getGatewayUrl()).description("Access via API Gateway"),
+//                     new Server().url(openApiProperties.getServiceUrl()).description("Direct access to Order Service")));
+              .servers(List.of(
+                      new Server()
+                              .url("/")
+                              .description("Current host")
+              ));
    }
 
 }

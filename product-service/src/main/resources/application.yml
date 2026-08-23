@@ -69,9 +69,9 @@ app:
   security:
     enabled: true
 
-  openapi:
-    serviceUrl: http://localhost:8083
-    gatewayUrl: ${GATEWAY_URL:http://localhost:8080} # Use environment variable for gateway URL, default to localhost if not set
+#  openapi:
+#    serviceUrl: http://localhost:8083
+#    gatewayUrl: ${GATEWAY_URL:http://localhost:8080} # Use environment variable for gateway URL, default to localhost if not set
 
 
 info:

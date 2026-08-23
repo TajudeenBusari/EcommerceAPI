@@ -86,9 +86,9 @@ app:
   admin:
     username: ${ADMIN_USERNAME:admin} #default admin username is 'admin' if not set in environment variables file
     password: ${ADMIN_PASSWORD}
-  openapi:
-    serviceUrl: http://localhost:8086
-    gatewayUrl: http://localhost:8080
+#  openapi:
+#    serviceUrl: http://localhost:8086
+#    gatewayUrl: http://localhost:8080
 info:
   app:
     name: user-service

@@ -7,7 +7,7 @@
 
 package com.tjtechy.product_service.config;
 
-import com.tjtechy.config.OpenApiProperties;
+//import com.tjtechy.config.OpenApiProperties;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -20,13 +20,13 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 @Configuration
-@EnableConfigurationProperties(OpenApiProperties.class)
+//@EnableConfigurationProperties(OpenApiProperties.class)
 public class ProductServiceOpenAPIConfig {
 
-  private final OpenApiProperties openApiProperties;
-  public ProductServiceOpenAPIConfig(OpenApiProperties openApiProperties) {
-    this.openApiProperties = openApiProperties;
-  }
+  //private final OpenApiProperties openApiProperties;
+  //public ProductServiceOpenAPIConfig(OpenApiProperties openApiProperties) {
+  //  this.openApiProperties = openApiProperties;
+  //}
 
   /**
    * This is used to configure the OpenAPI documentation for the Product Service.
@@ -42,11 +42,16 @@ public class ProductServiceOpenAPIConfig {
             .externalDocs(new ExternalDocumentation()
                     .description("This is the description of a product service")
                     .url("https://www.tjtechy.com/product-service")) // dummy URL for external documentation
+//            .servers(List.of(
+//                    new Server().url(openApiProperties.getGatewayUrl())
+//                            .description("Access via API Gateway"),
+//                    new Server()
+//                            .url(openApiProperties.getServiceUrl())
+//                            .description("Direct access to Product Service")));
             .servers(List.of(
-                    new Server().url(openApiProperties.getGatewayUrl())
-                            .description("Access via API Gateway"),
                     new Server()
-                            .url(openApiProperties.getServiceUrl())
-                            .description("Direct access to Product Service")));
+                            .url("/")
+                            .description("Current host")
+            ));
   }
 }

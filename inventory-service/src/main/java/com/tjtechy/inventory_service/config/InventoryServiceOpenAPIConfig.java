@@ -7,7 +7,7 @@
 
 package com.tjtechy.inventory_service.config;
 
-import com.tjtechy.config.OpenApiProperties;
+//import com.tjtechy.config.OpenApiProperties;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -26,14 +26,14 @@ import java.util.List;
  *
  */
 @Configuration
-@EnableConfigurationProperties(OpenApiProperties.class)
+//@EnableConfigurationProperties(OpenApiProperties.class)
 public class InventoryServiceOpenAPIConfig {
 
-  private final OpenApiProperties openApiProperties;
+  //private final OpenApiProperties openApiProperties;
 
-  public InventoryServiceOpenAPIConfig(OpenApiProperties openApiProperties) {
-    this.openApiProperties = openApiProperties;
-  }
+//  public InventoryServiceOpenAPIConfig(OpenApiProperties openApiProperties) {
+//    this.openApiProperties = openApiProperties;
+//  }
 
   @Bean
   public OpenAPI inventoryService() {
@@ -43,7 +43,7 @@ public class InventoryServiceOpenAPIConfig {
     return new OpenAPI()
         .info(new Info()
             .title("Inventory Service API")
-            .version("1.0.0")
+//            .version("1.0.0")
             .description("API documentation for the Inventory Service of the Ecommerce Microservices project.")
                 .version("V 1.0.0")
                 .license(new License()
@@ -53,10 +53,15 @@ public class InventoryServiceOpenAPIConfig {
         .description("This is the description of an inventory service")
             .url("https://www.tjtechy.com/inventory-service"))// dummy URL for external documentation
             .servers(List.of(
-                    new Server().url(openApiProperties.getGatewayUrl()).description("Access via API Gateway"),
-                    new Server().url(openApiProperties.getServiceUrl()).description("Direct access to Inventory Service")
-                    )
-            );
+                    new Server()
+                            .url("/")
+                            .description("Current host")
+            ));
+//            .servers(List.of(
+//                    new Server().url(openApiProperties.getGatewayUrl()).description("Access via API Gateway"),
+//                    new Server().url(openApiProperties.getServiceUrl()).description("Direct access to Inventory Service")
+//                    )
+//            );
   }
 }
 

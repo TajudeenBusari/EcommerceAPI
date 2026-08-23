@@ -71,9 +71,9 @@ logging:
 app:
   security:
     enabled: true
-  openapi:
-    gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
-    serviceUrl: http://localhost:8084
+  #openapi:
+    #gatewayUrl: ${GATEWAY_URL:http://localhost:8080}
+    #serviceUrl: http://localhost:8084
 
 
 info:
