@@ -353,8 +353,8 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/product-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - APP_OPENAPI_SERVICEURL=http://localhost:8083
-      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+      #- APP_OPENAPI_SERVICEURL=http://localhost:8083
+      #- APP_OPENAPI_GATEWAYURL=http://localhost:8080
       - APP_SECURITY_ENABLED=true
       #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY
     networks:
@@ -414,8 +414,8 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/inventory-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
-      - APP_OPENAPI_SERVICEURL=http://localhost:8084
+#      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+#      - APP_OPENAPI_SERVICEURL=http://localhost:8084
       - APP_SECURITY_ENABLED=true
       #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY, NOT REALLY NEEDED HERE
 #      - DEBUG=true
@@ -486,8 +486,8 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/order-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
-      - APP_OPENAPI_SERVICEURL=http://localhost:8082
+#      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+#      - APP_OPENAPI_SERVICEURL=http://localhost:8082
       - APP_SECURITY_ENABLED=true
      # - RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY, NOT REALLY NEEDED HERE
     networks:
@@ -558,8 +558,8 @@ services:
       - LOGGING_FILE_NAME=/mnt/log/notification-service/app.log #tells app to write log to this file, important when running inside Docker container
       - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
       - TRACING_URL=http://ecommerce-jaeger:4318/v1/traces
-      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
-      - APP_OPENAPI_SERVICEURL=http://localhost:8085
+#      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+#      - APP_OPENAPI_SERVICEURL=http://localhost:8085
       - APP_SECURITY_ENABLED=true
       #- RUNNING_IN_DOCKER=true #JUST ADDED FOR SAFETY
 
@@ -629,8 +629,8 @@ services:
       - APP_SECURITY_ENABLED=true
       - APP_ADMIN_USERNAME=${ADMIN_USERNAME} #loaded from the .env file
       - APP_ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - APP_OPENAPI_SERVICEURL=http://localhost:8086
-      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
+#      - APP_OPENAPI_SERVICEURL=http://localhost:8086
+#      - APP_OPENAPI_GATEWAYURL=http://localhost:8080
       - APP_SECURITY_ENABLED=true
     networks:
       - microservices-network

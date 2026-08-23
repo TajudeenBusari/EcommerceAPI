@@ -12,6 +12,7 @@ import com.tjtechy.StatusCode;
 import com.tjtechy.notification_service.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +35,8 @@ public class NotificationController {
    */
   @Operation(summary = "Fetch all notifications (Admin only)",
           description = "Retrieve all notifications from the system. This endpoint is restricted to admin users.",
-  responses = {@ApiResponse(responseCode = "200", description = "Get All Success")})
+          security = @SecurityRequirement(name = "BearerAuth"),
+        responses = {@ApiResponse(responseCode = "200", description = "Get All Success")})
   @GetMapping
   public Result getAllNotifications(){
     var notifications = notificationService.getAllNotifications();
@@ -49,6 +51,7 @@ public class NotificationController {
    */
   @Operation(summary = "Fetch a notification by ID (Admin only)",
           description = "Retrieve a specific notification using its ID. This endpoint is restricted to admin users.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {@ApiResponse(responseCode = "200", description = "Get By ID Success"),
                   @ApiResponse(responseCode = "404", description = "Notification Not Found")})
   @GetMapping("/{notificationId}")
@@ -64,6 +67,7 @@ public class NotificationController {
    */
   @Operation(summary = "Delete a notification by ID (Admin only)",
           description = "Remove a specific notification using its ID. This endpoint is restricted to admin users.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {@ApiResponse(responseCode = "200", description = "Delete By ID Success"),
                   @ApiResponse(responseCode = "404", description = "Notification Not Found")})
   @DeleteMapping("/{notificationId}")
@@ -77,6 +81,7 @@ public class NotificationController {
    */
   @Operation(summary = "Bulk delete notifications older than or equal to 30 days (Admin only)",
           description = "Remove all notifications that are older than or equal to 30 days. This endpoint is restricted to admin users.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {@ApiResponse(responseCode = "200", description = "Bulk Delete Success"),
                   @ApiResponse(responseCode = "404", description = "No notifications found that are 30 days or older")})
   @DeleteMapping("/cleanup")
@@ -94,6 +99,7 @@ public class NotificationController {
    */
   @Operation(summary = "Bulk delete notifications by IDs (Admin only)",
           description = "Remove multiple notifications using their IDs. This endpoint is restricted to admin users.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {@ApiResponse(responseCode = "200", description = "Bulk Delete Success"),
                   @ApiResponse(responseCode = "404", description = "One or more notifications not found")})
   @DeleteMapping("/bulk-delete")

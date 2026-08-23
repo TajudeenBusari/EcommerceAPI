@@ -16,6 +16,7 @@ import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -103,7 +104,7 @@ public class OrderController {
   @Operation(summary = "Create a new order reactively by calling externalized services",
           description = "This endpoint creates a new order reactively by calling externalized services" +
                   ". It is non-blocking and asynchronous",
-  responses = {
+          responses = {
           @ApiResponse(responseCode = "200", description = "Order created successfully by calling required external services")
   })
   @PostMapping("/reactive/externalized")
@@ -134,6 +135,7 @@ public class OrderController {
    * Use {@link #getOrderDtoById(Long)} instead
    */
   @Operation(summary = "Get order by ID",
+          security = @SecurityRequirement(name = "BearerAuth"),
           description = "This endpoint retrieves an order by its ID. " +
                   "It is deprecated and will be removed in the next version. Use /orderDto/{orderId} instead.")
   @Deprecated(since = "1.1", forRemoval = true)
@@ -152,6 +154,7 @@ public class OrderController {
    * This is the new method to get order by id
    */
   @Operation(summary = "Get order by ID",
+          security = @SecurityRequirement(name = "BearerAuth"),
           description = "This endpoint retrieves an order by its ID. " +
                   "It is the preferred method to use instead of the deprecated /{orderId} endpoint.",
   responses = {@ApiResponse(responseCode = "200", description = "OrderDto retrieved successfully")
@@ -169,7 +172,8 @@ public class OrderController {
    */
   @Operation(summary = "Get all orders",
           description = "This endpoint retrieves all orders in the system.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
   })
   @GetMapping
@@ -185,7 +189,8 @@ public class OrderController {
    */
   @Operation(summary = "Get orders by customer email",
           description = "This endpoint retrieves all orders associated with a specific customer email.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Orders by email retrieved successfully")
   })
   @GetMapping("/customer")
@@ -202,7 +207,8 @@ public class OrderController {
    */
   @Operation(summary = "Delete an order by ID",
           description = "This endpoint deletes an order by its ID.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Order deleted successfully")
   })
   @DeleteMapping("/{orderId}")
@@ -218,7 +224,8 @@ public class OrderController {
    */
   @Operation(summary = "Get all orders without canceled ones",
           description = "This endpoint retrieves all orders excluding those that are canceled.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Orders retrieved successfully without canceled ones")
   })
   @GetMapping("/without-canceled")
@@ -234,7 +241,8 @@ public class OrderController {
    */
   @Operation(summary = "Cancel an order by ID",
           description = "This endpoint cancels an order by its ID.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Order cancelled successfully")
   })
   @DeleteMapping("/cancel/{orderId}")
@@ -250,7 +258,8 @@ public class OrderController {
    */
   @Operation(summary = "Bulk delete orders",
           description = "This endpoint allows bulk deletion of orders based on a list of order IDs.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Orders bulk deleted successfully")
   })
   @DeleteMapping("/bulk-delete")
@@ -266,7 +275,8 @@ public class OrderController {
    */
   @Operation(summary = "Get orders by status",
           description = "This endpoint retrieves all orders with a specific status.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Orders by status retrieved successfully")
   })
   @GetMapping("/status")
@@ -280,7 +290,8 @@ public class OrderController {
    */
   @Operation(summary = "Update order status",
           description = "This endpoint updates the status of an order by its ID.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Order status updated successfully")
   })
   @PutMapping("/{orderId}/update-status")
@@ -304,7 +315,8 @@ public class OrderController {
    */
   @Operation(summary = "Update an order",
           description = "This endpoint updates an existing order based on the provided UpdateOrderDto.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Order updated successfully")
   })
   @PutMapping("/{orderId}")
@@ -325,7 +337,8 @@ public class OrderController {
 
   @Operation(summary = "Update an order by calling externalized services",
           description = "This endpoint updates an existing order by calling externalized services based on the provided UpdateOrderDto.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Order updated successfully by calling required external services")
   })
   @PutMapping("/externalized/{orderId}")
@@ -348,7 +361,8 @@ public class OrderController {
    */
   @Operation(summary = "Clear all cache",
           description = "This endpoint clears all cached data related to orders.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Cache cleared successfully")
   })
   @DeleteMapping("/clear-cache")
@@ -365,6 +379,13 @@ public class OrderController {
    * the name and timestamp of the user who performed the action will be logged
    * Bulk delete will not be implemented for this method to discourage misuse
    */
+  @Operation(summary = "Force delete an order by ID",
+          description = "This endpoint force deletes an order by its ID. " +
+                  "This method is strictly for Admin use only for database cleanup or emergency situations.",
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
+          @ApiResponse(responseCode = "200", description = "Order forced deleted successfully")
+  })
   @DeleteMapping
   ("/forced-delete/{orderId}")
   public Result forcedDeleteOrder(@PathVariable Long orderId) {

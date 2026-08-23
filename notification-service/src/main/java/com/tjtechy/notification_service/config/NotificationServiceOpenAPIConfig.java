@@ -8,10 +8,13 @@
 package com.tjtechy.notification_service.config;
 
 //import com.tjtechy.config.OpenApiProperties;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -43,16 +46,19 @@ public class NotificationServiceOpenAPIConfig {
             .externalDocs(new ExternalDocumentation()
                     .description("This is the description of a notification service")
                     .url("https://www.tjtechy.com/notification-service")) // dummy URL for external documentation
-//            .servers(List.of(
-//                    new Server().url(openApiProperties.getGatewayUrl()).description("Access via API Gateway"),
-//                    new Server().url(openApiProperties.getServiceUrl()).description("Direct access to Notification Service"))
-//            );
             .servers(List.of(
 
                     new Server()
                             .url("/")
                             .description("Current host")
-            ));
+            ))
+            // Define JWT Bearer authentication
+            .components(new Components()
+                    .addSecuritySchemes("BearerAuth",
+                            new SecurityScheme()
+                                    .type(SecurityScheme.Type.HTTP)
+                                    .scheme("bearer")
+                                    .bearerFormat("JWT")));
   }
 
 }

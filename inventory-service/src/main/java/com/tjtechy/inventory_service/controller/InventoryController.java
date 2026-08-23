@@ -12,6 +12,7 @@ import com.tjtechy.inventory_service.service.InventoryService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -40,7 +41,8 @@ public class InventoryController {
    */
   @Operation(summary = "Create Inventory",
           description = "This endpoint is used to create inventory for a product. It is used internally by the product service when a product is created.",
-  responses = {
+          security = @SecurityRequirement(name = "BearerAuth"),
+          responses = {
           @ApiResponse(responseCode = "200", description = "Inventory created successfully")
   })
   @PostMapping("/internal/create")
@@ -57,6 +59,7 @@ public class InventoryController {
    */
   @Operation(summary = "Get Inventory by ID",
           description = "This endpoint is used to get inventory by ID.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory retrieved successfully")
           })
@@ -76,6 +79,7 @@ public class InventoryController {
   @GetMapping
   @Operation(summary = "Get All Inventories",
           description = "This endpoint is used to get all inventories.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "All inventories retrieved successfully")
           })
@@ -92,6 +96,7 @@ public class InventoryController {
    */
   @Operation(summary = "Get Inventory by Product ID",
           description = "This endpoint is used to get inventory by product ID. It is used internally by the product service.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory retrieved successfully")
           })
@@ -110,6 +115,7 @@ public class InventoryController {
    */
   @Operation(summary = "Update Inventory",
           description = "This endpoint is used to update inventory. It is used internally by the product service when a product is updated.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory updated successfully")
           })
@@ -130,6 +136,7 @@ public class InventoryController {
    */
   @Operation(summary = "Delete Inventory",
           description = "This endpoint is used to delete inventory by ID.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory deleted successfully")
           })
@@ -148,6 +155,7 @@ public class InventoryController {
    */
   @Operation(summary = "Bulk Delete Inventories",
           description = "This endpoint is used to bulk delete inventories by inventory IDs.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventories deleted successfully")
           })
@@ -167,6 +175,7 @@ public class InventoryController {
    */
   @Operation(summary = "Deduct Inventory",
           description = "This endpoint is used to deduct inventory by product ID and quantity. It is used internally by the order service when an order is placed.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory deducted successfully")
           })
@@ -185,6 +194,7 @@ public class InventoryController {
    */
   @Operation(summary = "Deduct Inventory Reactively",
           description = "This endpoint is used to deduct inventory reactively by product ID and quantity. It is used internally by the order service when an order is placed.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory deducted successfully")
           })
@@ -206,6 +216,7 @@ public class InventoryController {
   @Operation(summary = "Restore Inventory",
           description = "This endpoint is used to restore inventory by product ID and quantity. It is typically used internally by the Order-Service " +
                   "when an order is deleted, cancelled, returned or updated and the inventory needs to be restored.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
                   @ApiResponse(responseCode = "200", description = "Inventory restored successfully")
           })

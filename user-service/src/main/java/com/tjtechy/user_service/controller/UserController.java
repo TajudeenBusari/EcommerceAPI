@@ -9,6 +9,7 @@ package com.tjtechy.user_service.controller;
 
 import com.tjtechy.Result;
 import com.tjtechy.StatusCode;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import userutils.dto.UserRegistrationDto;
 import userutils.mapper.UserMapper;
 import com.tjtechy.user_service.service.UserService;
@@ -32,6 +33,7 @@ public class UserController {
 
   @Operation(summary = "Register a new user",
           description = "Endpoint to register a new user in the system.",
+  security = @SecurityRequirement(name = "BearerAuth"),
   responses = {@ApiResponse(responseCode = "200", description = "User Registration Success"),
           @ApiResponse(responseCode = "400", description = "Invalid Input Data")})
   @PostMapping("/register")
@@ -48,6 +50,7 @@ public class UserController {
 
   @Operation(summary = "Get user by username",
           description = "Endpoint to retrieve user details by username.",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {@ApiResponse(responseCode = "200", description = "User Retrieval Success"),
                   @ApiResponse(responseCode = "404", description = "User Not Found")})
   @GetMapping("/by-username")
@@ -61,6 +64,7 @@ public class UserController {
 
     @Operation(summary = "Delete user by ID",
             description = "Endpoint to delete a user by their unique ID.",
+            security = @SecurityRequirement(name = "BearerAuth"),
             responses = {@ApiResponse(responseCode = "200", description = "User Deletion Success"),
                     @ApiResponse(responseCode = "404", description = "User Not Found")})
   @DeleteMapping("/{userId}")

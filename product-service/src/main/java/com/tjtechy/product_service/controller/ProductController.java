@@ -12,6 +12,7 @@ import com.tjtechy.product_service.mapper.ProductMapper;
 import com.tjtechy.product_service.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,9 +37,11 @@ public class ProductController {
    * Endpoint to get all products.
    * @return a Result object containing a list of all products
    */
-  @Operation(summary = "Get All Products", description = "Retrieve all products from the product service",
-  responses = {
+  @Operation(summary = "Get All Products",
+          description = "Retrieve all products from the product service",
+          responses = {
           @ApiResponse(responseCode = "200", description = "Get All Success"),
+
   })
   @GetMapping
   public Result getAllProducts(){
@@ -53,7 +56,8 @@ public class ProductController {
    * @param productId the UUID of the product to retrieve
    * @return a Result object containing the product details
    */
-  @Operation(summary = "Get Product By ID", description = "Retrieve a product by its ID from the product service",
+  @Operation(summary = "Get Product By ID",
+          description = "Retrieve a product by its ID from the product service",
           responses = {
           @ApiResponse(responseCode = "200", description = "Get One Success"),
           }
@@ -71,7 +75,9 @@ public class ProductController {
    * @param createProductDto the DTO containing the product details to create
    * @return a Result object containing the created product details
    */
-  @Operation(summary = "Add Product", description = "Add a new product to the product service",
+  @Operation(summary = "Add Product",
+          description = "Add a new product to the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Add One Success"),
           })
@@ -88,7 +94,9 @@ public class ProductController {
    * @param createProductDto the DTO containing the product details to create
    * @return a Result object containing the created product details
    */
-@Operation(summary = "Add Product With Inventory", description = "Add a new product with inventory to the product service",
+@Operation(summary = "Add Product With Inventory",
+          description = "Add a new product with inventory to the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Add One Success"),
           })
@@ -101,7 +109,9 @@ public class ProductController {
     return new Result("Add One Success", true, savedProductDto, StatusCode.SUCCESS);
   }
 
-  @Operation(summary = "Add Product With Inventory Externalized", description = "Add a new product with inventory using an externalized inventory service",
+  @Operation(summary = "Add Product With Inventory Externalized",
+          description = "Add a new product with inventory using an externalized inventory service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Add One Success Using Externalized"),
           })
@@ -121,7 +131,9 @@ public class ProductController {
    * @param updateProductDto the DTO containing the updated product details
    * @return a Result object containing the updated product details
    */
-  @Operation(summary = "Update Product With Inventory", description = "Update an existing product with inventory",
+  @Operation(summary = "Update Product With Inventory",
+          description = "Update an existing product with inventory",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Update One Success"),
           })
@@ -142,6 +154,7 @@ public class ProductController {
    */
   @Operation(summary = "Update Product With Externalized Inventory ",
           description = "Update an existing product with inventory using an externalized inventory service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Update One Success Using Externalized"),
           })
@@ -160,7 +173,9 @@ public class ProductController {
    * @param updateProductDto the DTO containing the updated product details
    * @return a Result object containing the updated product details
    */
-@Operation(summary = "Update Product", description = "Update an existing product in the product service",
+@Operation(summary = "Update Product",
+          description = "Update an existing product in the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Update One Success"),
           })
@@ -178,7 +193,9 @@ public class ProductController {
    * @param productId the UUID of the product to delete
    * @return a Result object indicating the success of the deletion
    */
-@Operation(summary = "Delete Product", description = "Delete a product by its ID from the product service",
+@Operation(summary = "Delete Product",
+        description = "Delete a product by its ID from the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Delete One Success"),
           })
@@ -192,7 +209,9 @@ public class ProductController {
    * Endpoint to clear all cached product data.
    * @return a Result object indicating the success of the cache clearing
    */
-@Operation(summary = "Clear Cache", description = "Clear all cached product data",
+@Operation(summary = "Clear Cache",
+        description = "Clear all cached product data",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Clear Cache Success"),
           })
@@ -206,7 +225,9 @@ public class ProductController {
    * @param productIds the list of UUIDs of the products to delete
    * @return a Result object indicating the success of the bulk deletion
    */
-@Operation(summary = "Bulk Delete Products", description = "Bulk delete products by their IDs from the product service",
+@Operation(summary = "Bulk Delete Products",
+        description = "Bulk delete products by their IDs from the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Bulk Delete Success"),
           })
@@ -218,7 +239,9 @@ public class ProductController {
 
 
   @DeleteMapping("/delete/with-inventory/{productId}")
-  @Operation(summary = "Delete Product With Inventory", description = "Delete a product with its inventory by its ID from the product service",
+  @Operation(summary = "Delete Product With Inventory",
+          description = "Delete a product with its inventory by its ID from the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Delete One Success"),
           })
@@ -230,6 +253,7 @@ public class ProductController {
   //TODO: Change to return Mono<Result> for reactive programming
   @Operation(summary = "Delete Product With Inventory Using Externalized Service",
           description = "Delete a product with its inventory using an externalized inventory service by its ID from the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Delete One Success Using Externalized"),
           })
@@ -241,6 +265,7 @@ public class ProductController {
 
   @Operation(summary = "Bulk Delete Products With Inventories",
           description = "Bulk delete products with their inventories by their IDs from the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Bulk Delete With Inventories Success"),
           })
@@ -252,6 +277,7 @@ public class ProductController {
 
   @Operation(summary = "Bulk Delete Products With Inventories Using Externalized Service",
           description = "Bulk delete products with their inventories using an externalized inventory service by their IDs from the product service",
+          security = @SecurityRequirement(name = "BearerAuth"),
           responses = {
           @ApiResponse(responseCode = "200", description = "Bulk Delete With Inventories Using Externalized Success"),
           })
