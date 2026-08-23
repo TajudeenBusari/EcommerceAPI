@@ -34,12 +34,31 @@ public class AdminUserInitializer {
   CommandLineRunner initializeAdminUser(){
     return args -> {
       userRepository.findByUserName(adminProperties.getUsername())
-              .doOnNext(existingUser ->{
+              .flatMap(existingUser ->{
                 logger.info("=======Admin user already exists with username=====: {}", existingUser.getUserName());
+
                 String configuredPassword = adminProperties.getPassword();
-                logger.info("====Configured password matches stored hash======: {}",
-                        passwordEncoder.matches(configuredPassword, existingUser.getPassword()));
-                logger.info("========Stored hash=======: {}", existingUser.getPassword());
+
+//                logger.info(
+//                        "ADMIN_PASSWORD configured: {}, length: {}",
+//                        configuredPassword != null && !configuredPassword.isBlank(),
+//                        configuredPassword != null ? configuredPassword.length() : 0
+//                );
+
+                if(passwordEncoder.matches(configuredPassword, existingUser.getPassword())){
+                  logger.info("Configured admin password already matches stored password");
+                  return Mono.just(existingUser);
+                }
+
+                logger.info("Configured admin password changed. Updating stored admin password.");
+                existingUser.setPassword(passwordEncoder.encode(configuredPassword));
+                return userRepository.save(existingUser)
+                        .doOnNext(updatedAdmin ->
+
+                  logger.info("Admin password updated successfully for username: {}", updatedAdmin.getUserName())
+                );
+
+
               })
               .switchIfEmpty(Mono.defer(() -> {
                 User adminUser = new User();
@@ -55,11 +74,12 @@ public class AdminUserInitializer {
 
 
                 return userRepository.save(adminUser)
-                        .doOnSuccess(savedAdmin -> {
-                          assert savedAdmin != null;
-                          logger.info("Admin user created with username: {}", savedAdmin.getUserName());
-                        });
-              })).doOnError(error -> logger.error("Error initializing admin user: {}", error.getMessage()))
+                        .doOnNext(savedAdmin ->
+
+                          logger.info("Admin user created with username: {}", savedAdmin.getUserName())
+                        );
+              }))
+              .doOnError(error -> logger.error("Error initializing admin user: {}", error.getMessage()))
               .subscribe();
     };
   }
