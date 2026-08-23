@@ -514,6 +514,7 @@ jobs:
             uses_firebase: false
             uses_mailtrap: false
             uses_twilio: false
+            uses_admin_secret: false
 
           - service: inventory-service
             container_app: ecommerce-inventory-service
@@ -524,6 +525,7 @@ jobs:
             uses_firebase: false
             uses_mailtrap: false
             uses_twilio: false
+            uses_admin_secret: false
 
           - service: notification-service
             container_app: ecommerce-notification-service
@@ -534,6 +536,7 @@ jobs:
             uses_firebase: true
             uses_mailtrap: true
             uses_twilio: true
+            uses_admin_secret: false
 
           - service: order-service
             container_app: ecommerce-order-service
@@ -544,6 +547,7 @@ jobs:
             uses_firebase: false
             uses_mailtrap: false
             uses_twilio: false
+            uses_admin_secret: false
 
           - service: product-service
             container_app: ecommerce-product-service
@@ -554,6 +558,7 @@ jobs:
             uses_firebase: false
             uses_mailtrap: false
             uses_twilio: false
+            uses_admin_secret: false
 
           - service: user-service
             container_app: ecommerce-user-service
@@ -564,6 +569,7 @@ jobs:
             uses_firebase: false
             uses_mailtrap: false
             uses_twilio: false
+            uses_admin_secret: true
 
     steps:
       - name: Azure Login using Github OIDC
@@ -669,20 +675,25 @@ jobs:
             FIREBASE_CONFIG_BASE64=secretref:firebase-config-base64"
           fi
           #Mailtrap
-            if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
-                SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
-                MAIL_HOST=sandbox.smtp.mailtrap.io \
-                MAIL_PORT=2525 \
-                MAILTRAP_USERNAME=secretref:mailtrap-username \
-                MAILTRAP_PASSWORD=secretref:mailtrap-password"
-            fi
+          if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
+            SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+            MAIL_HOST=sandbox.smtp.mailtrap.io \
+            MAIL_PORT=2525 \
+            MAILTRAP_USERNAME=secretref:mailtrap-username \
+            MAILTRAP_PASSWORD=secretref:mailtrap-password"
+          fi
           #twilio
-            if [ "${{ matrix.uses_twilio }}" = "true" ]; then
-                SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
-                TWILIO_ACCOUNT_SID=secretref:twilio-account-sid \
-                TWILIO_AUTH_TOKEN=secretref:twilio-auth-token \
-                TWILIO_FROM_NUMBER=secretref:twilio-from-number"
-            fi
+          if [ "${{ matrix.uses_twilio }}" = "true" ]; then
+            SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+            TWILIO_ACCOUNT_SID=secretref:twilio-account-sid \
+            TWILIO_AUTH_TOKEN=secretref:twilio-auth-token \
+            TWILIO_FROM_NUMBER=secretref:twilio-from-number"
+          fi
+          #Add Admin secret only for services that require it
+          if [ "${{ matrix.uses_admin_secret }}" = "true" ]; then
+            SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+            ADMIN_PASSWORD=secretref:admin-password"
+          fi
           echo "Deploying:"
           echo "  Service: ${{ matrix.service }}"
           echo "  Container App: ${{ matrix.container_app }}"
@@ -746,6 +757,14 @@ jobs:
                   twilio-auth-token="${{ secrets.TWILIO_AUTH_TOKEN }}" \
                   twilio-from-number="${{ secrets.TWILIO_FROM_NUMBER }}"
             fi
+            #Store Admin secret only for services that require it
+            if [ "${{ matrix.uses_admin_secret }}" = "true" ]; then
+              az containerapp secret set \
+                --name ${{ matrix.container_app }} \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --secrets \
+                  admin-password="${{ secrets.ADMIN_PASSWORD }}"
+            fi
             #update the image and environment variables for the existing container app
             az containerapp update \
               --name ${{ matrix.container_app }} \
@@ -756,27 +775,38 @@ jobs:
           else
           
             echo "Container App does not exist. Creating ..."
+            #Start with no application secret
+            CREATE_SECRETS=""
+            #add database and redis secrets only for services that require them
             if [ "${{ matrix.uses_data_services }}" = "true" ]; then
               CREATE_SECRETS="\
               db-password=${{ secrets.DB_PASSWORD }} \
               redis-password=${{ secrets.REDIS_PASSWORD }}"
-              if [ "${{ matrix.uses_firebase }}" = "true" ]; then
+            fi
+            #add firebase secret only for services that require it
+            if [ "${{ matrix.uses_firebase }}" = "true" ]; then
                 CREATE_SECRETS="$CREATE_SECRETS \
                 firebase-config-base64=${{ secrets.FIREBASE_CONFIG_BASE64 }}"
-              fi
-              #ADD MAILTRAP
-                if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
-                    CREATE_SECRETS="$CREATE_SECRETS \
-                    mailtrap-username=${{ secrets.MAILTRAP_USERNAME }} \
-                    mailtrap-password=${{ secrets.MAILTRAP_PASSWORD }}"
-                fi
-              #ADD TWILIO
-                if [ "${{ matrix.uses_twilio }}" = "true" ]; then
-                    CREATE_SECRETS="$CREATE_SECRETS \
-                    twilio-account-sid=${{ secrets.TWILIO_ACCOUNT_SID }} \
-                    twilio-auth-token=${{ secrets.TWILIO_AUTH_TOKEN }} \
-                    twilio-from-number=${{ secrets.TWILIO_FROM_NUMBER }}"
-                fi
+            fi
+            #ADD MAILTRAP
+            if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
+              CREATE_SECRETS="$CREATE_SECRETS \
+              mailtrap-username=${{ secrets.MAILTRAP_USERNAME }} \
+              mailtrap-password=${{ secrets.MAILTRAP_PASSWORD }}"
+            fi
+            #ADD TWILIO
+            if [ "${{ matrix.uses_twilio }}" = "true" ]; then
+              CREATE_SECRETS="$CREATE_SECRETS \
+              twilio-account-sid=${{ secrets.TWILIO_ACCOUNT_SID }} \
+              twilio-auth-token=${{ secrets.TWILIO_AUTH_TOKEN }} \
+              twilio-from-number=${{ secrets.TWILIO_FROM_NUMBER }}"
+            fi
+            #ADD ADMIN SECRET
+            if [ "${{ matrix.uses_admin_secret }}" = "true" ]; then
+              CREATE_SECRETS="$CREATE_SECRETS \
+              admin-password=${{ secrets.ADMIN_PASSWORD }}"
+            fi
+            if [ -n "$CREATE_SECRETS" ]; then
               az containerapp create \
                 --name ${{ matrix.container_app }} \
                 --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -794,18 +824,18 @@ jobs:
           
             else
               az containerapp create \
-                --name ${{ matrix.container_app }} \
-                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-                --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
-                --image "$IMAGE" \
-                --ingress ${{ matrix.ingress }} \
-                --target-port ${{ matrix.port }} \
-                --min-replicas 1 \
-                --max-replicas 1 \
-                --env-vars $SERVICE_ENV_VARS \
-                --registry-server ghcr.io \
-                --registry-username "${{ github.actor }}" \
-                --registry-password "${{ secrets.GHCR_PAT }}"
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+              --image "$IMAGE" \
+              --ingress ${{ matrix.ingress }} \
+              --target-port ${{ matrix.port }} \
+               --min-replicas 1 \
+              --max-replicas 1 \
+              --env-vars $SERVICE_ENV_VARS \
+              --registry-server ghcr.io \
+              --registry-username "${{ github.actor }}" \
+              --registry-password "${{ secrets.GHCR_PAT }}"
             fi
           fi
 
