@@ -821,7 +821,6 @@ jobs:
                 --registry-server ghcr.io \
                 --registry-username "${{ github.actor }}" \
                 --registry-password "${{ secrets.GHCR_PAT }}"
-          
             else
               az containerapp create \
               --name ${{ matrix.container_app }} \
