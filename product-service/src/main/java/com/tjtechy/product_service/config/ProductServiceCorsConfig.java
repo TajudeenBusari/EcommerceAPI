@@ -18,14 +18,7 @@ public class ProductServiceCorsConfig implements WebMvcConfigurer {
   public void addCorsMappings(CorsRegistry registry) {
     registry.addMapping("/**")
             .allowedOriginPatterns(
-                    "http://localhost:8080", "http://localhost:8083"
-//                    "http://localhost:[*]",
-//                    "http://127.0.0.1:[*]"
-//                   "http://host.docker.internal:",
-//                "http://api-gateway:[*]",
-//                    "http://172.18.*.*.*:[*]", //new //internal docker network range
-//                    "http://product-service:[*]"
-            ) // Allow all origins
+                    "http://localhost:8080", "http://localhost:8083", "https://ecommerce-api-gateway.happybeach-3b6bb423.swedencentral.azurecontainerapps.io") // Allow all origins
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH") // Allow specific methods
             .allowedHeaders("*") // Allow all headers
             .allowCredentials(true); // Allow credentials

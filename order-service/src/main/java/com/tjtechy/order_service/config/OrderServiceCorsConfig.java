@@ -17,7 +17,7 @@ public class OrderServiceCorsConfig implements WebMvcConfigurer {
   public void addCorsMappings(CorsRegistry registry) {
     registry.addMapping("/**")
             .allowedOriginPatterns(
-                    "http://localhost:8080", "http://localhost:8082"
+                    "http://localhost:8080", "http://localhost:8082", "https://ecommerce-api-gateway.happybeach-3b6bb423.swedencentral.azurecontainerapps.io"
             ) // Allow all origins
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Allow specific methods
             .allowedHeaders("*") // Allow all headers

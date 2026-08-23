@@ -127,6 +127,7 @@ public class SecurityConfiguration {
             .authorizeExchange(exchanges -> exchanges
                     //user-service/auth-service endpoints security rules
                     .pathMatchers(HttpMethod.POST, baseUrl + "/auth/login").permitAll()
+                    .pathMatchers(HttpMethod.OPTIONS, baseUrl + "/**").permitAll()
                     .pathMatchers(HttpMethod.GET, "/oauth2/jwks").permitAll() //allow unauthenticated access to the JWK Set endpoint for JWT verification
                     .pathMatchers(HttpMethod.POST, baseUrl + "/user/register").hasAnyAuthority("ROLE_ADMIN")
                     .pathMatchers(HttpMethod.GET, baseUrl + "/user").hasAnyAuthority("ROLE_ADMIN")

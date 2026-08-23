@@ -15,7 +15,7 @@ public class NotificationServiceCorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:8080", "http://localhost:8085")
+                .allowedOriginPatterns("http://localhost:8080", "http://localhost:8085", "https://ecommerce-api-gateway.happybeach-3b6bb423.swedencentral.azurecontainerapps.io")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
                 .allowCredentials(true);

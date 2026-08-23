@@ -31,7 +31,8 @@ public class InventoryServiceCorsConfig implements WebMvcConfigurer {
                     "http://127.0.0.1:[*]",
                     "http://host.docker.internal:[*]",
                     "http://api-gateway:[*]",
-                    "http://172.18.*.*.*:[*]" //new //internal docker network range
+                    "http://172.18.*.*.*:[*]", //new //internal docker network range
+                    "https://ecommerce-api-gateway.happybeach-3b6bb423.swedencentral.azurecontainerapps.io" // Allow the API Gateway origin
             )
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Allow specific methods
             .allowedHeaders("*") // Allow all headers

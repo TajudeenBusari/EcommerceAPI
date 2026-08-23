@@ -23,13 +23,17 @@ public class CorsConfig {
     CorsConfiguration configuration = new CorsConfiguration();
 
     //Allow both Gateway and direct access
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "http://localhost:8086"));
+    //configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "http://localhost:8086"));
+    configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "https://ecommerce-api-gateway.happybeach-3b6bb423.swedencentral.azurecontainerapps.io"));
 
     //Allow all HTTP methods
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
     //Allow all headers
     configuration.setAllowedHeaders(List.of("*"));
+
+    // Optional but useful for Authorization header visibility
+    configuration.setExposedHeaders(List.of("Authorization"));
 
     //Allow credentials (cookies, authorization headers, etc.)
     configuration.setAllowCredentials(true);
