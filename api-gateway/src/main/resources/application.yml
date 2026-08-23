@@ -12,15 +12,16 @@ spring:
           enabled: true
           #new
       globalcors:
+        add-to-simple-url-handler-mapping: true
         #THE CORS CONFIG CAN ALSO BE DONE VIA A BEAN INSTEAD OF YAML
         cors-configurations:
+
           '[/**]':
             allowedOriginPatterns: #allow all origins
               - "http://localhost:*"
               - "http://127.0.0.1:*"
-              #- "http://host.docker.internal:[*]" #for docker desktop
-              #- "http://api-gateway:[*]" #for docker-compose internal access http://172.18.0.15
-              #- "http://172.18.0.*:[*]" #for docker-compose internal access
+              - "https://ecommerce-api-gateway.happybeach-3b6bb423.swedencentral.azurecontainerapps.io"
+
             allowedMethods: #allow all methods
               - GET
               - POST
