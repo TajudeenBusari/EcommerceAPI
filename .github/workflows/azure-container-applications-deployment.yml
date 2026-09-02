@@ -493,88 +493,17 @@ jobs:
           echo "   Services inside the environment can reach it using the internal FQDN:"
           echo "   https://${CONFIG_FQDN}"
 
-  #===========================================================#
-  # Deploy all other microservices
-  #===========================================================#
-  deploy:
-    name: Deploy ${{ matrix.service }} to Azure Container Apps
+  #=============================================================#
+  # First deploy user-service to create the admin user and
+  # generate the JWT public/private keys for other services to use
+  #=========================================================#
+  deploy-user-service:
+    name: Deploy user-service to Azure Container Apps
     needs: deploy-config-server
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: api-gateway
-            container_app: ecommerce-api-gateway
-            port: 8080
-            ingress: external
-            uses_data_services: false
-            uses_firebase: false
-            uses_mailtrap: false
-            uses_twilio: false
-            uses_admin_secret: false
-            uses_r2dbc: false
-
-          - service: inventory-service
-            container_app: ecommerce-inventory-service
-            port: 8084
-            ingress: external #temporarily set to external for testing, change to internal in production
-            database: ECommerce-Inventory-Service
-            uses_data_services: true
-            uses_firebase: false
-            uses_mailtrap: false
-            uses_twilio: false
-            uses_admin_secret: false
-            uses_r2dbc: false
-
-          - service: notification-service
-            container_app: ecommerce-notification-service
-            port: 8085
-            ingress: internal
-            database: ECommerce-Notification-Service
-            uses_data_services: true
-            uses_firebase: true
-            uses_mailtrap: true
-            uses_twilio: true
-            uses_admin_secret: false
-            uses_r2dbc: false
-
-          - service: order-service
-            container_app: ecommerce-order-service
-            port: 8082
-            ingress: internal
-            database: ECommerce-Order-Service
-            uses_data_services: true
-            uses_firebase: false
-            uses_mailtrap: false
-            uses_twilio: false
-            uses_admin_secret: false
-            uses_r2dbc: false
-
-          - service: product-service
-            container_app: ecommerce-product-service
-            port: 8083
-            ingress: internal
-            database: ECommerce-Product-Service
-            uses_data_services: true
-            uses_firebase: false
-            uses_mailtrap: false
-            uses_twilio: false
-            uses_admin_secret: false
-            uses_r2dbc: false
-
-          - service: user-service
-            container_app: ecommerce-user-service
-            port: 8086
-            ingress: internal
-            database: ECommerce-User-Service
-            uses_data_services: true
-            uses_firebase: false
-            uses_mailtrap: false
-            uses_twilio: false
-            uses_admin_secret: true
-            uses_r2dbc: true
+    outputs:
+      user_service_fqdn: ${{ steps.user_service_fqdn.outputs.fqdn }}
 
     steps:
       - name: Azure Login using Github OIDC
@@ -593,10 +522,347 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      # ==================== FIXED: Get both FQDNs with Retry ====================
+      #get eureka and config server fqdn from previous steps
+      - name: Get Eureka and Config Servers URLS with retry
+        run: |
+          echo "Getting Eureka FQDN..."
+          
+          EUREKA_FQDN=""
+          
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            EUREKA_FQDN=$(az containerapp show \
+              --name ecommerce-eureka-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          echo "Getting Config Server FQDN..."
+          
+          CONFIG_FQDN=""
+          
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            CONFIG_FQDN=$(az containerapp show \
+              --name ecommerce-config-server \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          if [ -z "$CONFIG_FQDN" ]; then
+            echo "ERROR: Could not retrieve Config Server FQDN."
+            exit 1
+          fi
+          
+          if [ -z "$EUREKA_FQDN" ]; then
+            echo "ERROR: Could not retrieve Eureka Server FQDN."
+            exit 1
+          fi
+          
+          echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
+          echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
+          echo "Eureka Server Internal FQDN: $EUREKA_FQDN"
+          echo "Config Server Internal FQDN: $CONFIG_FQDN"
+          echo ""
+          echo "NOTE: Eureka Server is deployed with internal ingress."
+          echo "   It is only accessible from within the Container Apps environment."
+          echo "   Services inside the environment can reach it using the internal FQDN:"
+
+      #Create or Update user-service
+      - name: Create or Update user-service
+        run: |
+          IMAGE="ghcr.io/${{ env.REPO }}/user-service:${{ github.sha }}"
+          EUREKA_URL="https://${EUREKA_FQDN}/eureka/"
+          CONFIG_URL="https://${CONFIG_FQDN}"
+          
+          SERVICE_ENV_VARS="\
+          SPRING_APPLICATION_NAME=user-service \
+          SPRING_PROFILES_ACTIVE=default \
+          SERVER_PORT=8086 \
+          EUREKA_CLIENT_REGISTER_WITH_EUREKA=true \
+          EUREKA_CLIENT_FETCH_REGISTRY=true \
+          EUREKA_SERVER_URL=$EUREKA_URL \
+          EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL \
+          SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL \
+          DB_HOST=ecommerce-java.postgres.database.azure.com \
+          DB_NAME=ECommerce-User-Service \
+          DB_USER=${{ secrets.DB_USER }} \
+          DB_PASSWORD=secretref:db-password \
+          DB_MAX_POOL_SIZE=3 \
+          DB_MIN_IDLE=1 \
+          DB_CONNECTION_TIMEOUT=30000 \
+          DB_MAX_LIFETIME=1800000 \
+          DB_IDLE_TIMEOUT=600000 \
+          DB_SSL_MODE=require \
+          REDIS_HOST=ecommerce-java-redis.swedencentral.redis.azure.net \
+          REDIS_PORT=10000 \
+          REDIS_PASSWORD=secretref:redis-password \
+          REDIS_SSL_ENABLED=true \
+          ADMIN_PASSWORD=secretref:admin-password"
+          
+          echo "Deploying:"
+          echo "  Service: user-service"
+          echo "  Container App: ecommerce-user-service"
+          echo "  Image: $IMAGE"
+          echo "  Port: 8086"
+          echo "  Ingress: internal"
+          echo "  Config URL: $CONFIG_URL"
+          echo "  Eureka URL: $EUREKA_URL"
+          echo "  Database: ECommerce-User-Service"
+          echo "  DB_HOST: ecommerce-java.postgres.database.azure.com"
+          echo "  DB_USER configured: yes"
+          echo "  R2DBC SSL mode: require"
+          echo "  REDIS_HOST: ecommerce-java-redis.swedencentral.redis.azure.net"
+          echo "  REDIS_PORT: 10000"
+          echo "  REDIS_SSL_ENABLED: true"
+          echo "  ADMIN_PASSWORD configured: yes"
+          
+          if az containerapp show \
+            --name ecommerce-user-service \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            > /dev/null 2>&1; then
+          
+            echo "ecommerce-user-service already exists. Updating..."
+          
+            # Store PostgreSQL, Redis and admin secrets
+            az containerapp secret set \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --secrets \
+                db-password="${{ secrets.DB_PASSWORD }}" \
+                redis-password="${{ secrets.REDIS_PASSWORD }}" \
+                admin-password="${{ secrets.ADMIN_PASSWORD }}"
+          
+          # Update image and environment variables
+            az containerapp update \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --image "$IMAGE" \
+              --set-env-vars $SERVICE_ENV_VARS
+          
+           # Keep ingress target port aligned with user-service
+            az containerapp ingress update \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --target-port 8086 \
+              --transport auto
+          
+          else
+          
+            echo "Container App does not exist. Creating ..."
+          
+            az containerapp create \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.AZURE_CONTAINERAPPS_ENVIRONMENT }} \
+              --image "$IMAGE" \
+              --ingress internal \
+              --target-port 8086 \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --secrets \
+                db-password="${{ secrets.DB_PASSWORD }}" \
+                redis-password="${{ secrets.REDIS_PASSWORD }}" \
+                admin-password="${{ secrets.ADMIN_PASSWORD }}" \
+              --env-vars $SERVICE_ENV_VARS \
+              --registry-server ghcr.io \
+              --registry-username "${{ github.actor }}" \
+              --registry-password "${{ secrets.GHCR_PAT }}"
+          
+          fi
+
+      #wait for user-service to be ready before deploying other services that depend on it
+      - name: Wait for user-service readiness
+        shell: bash
+        run: |
+          echo "Waiting for user-service to be ready..."
+          for i in {1..20}; do
+          
+            LATEST_REVISION=$(az containerapp show \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.latestRevisionName" \
+              -o tsv 2>/dev/null || echo "")
+          
+            READY_REVISION=$(az containerapp show \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.latestReadyRevisionName" \
+              -o tsv \
+              2>/dev/null || echo "")
+          
+            echo "Attempt $i/20 - Latest Revision: $LATEST_REVISION, Ready Revision: $READY_REVISION"
+          
+            if [ -n "$LATEST_REVISION" ] && \
+              [ "$LATEST_REVISION" = "$READY_REVISION" ]; then
+              echo "ecommerce-user-service is running and has a ready revision."
+              break
+            fi
+          
+            if [ "$i" -eq 20 ]; then
+              echo "user-service did not become ready."
+              exit 1
+            fi
+          
+            sleep 10
+          done
+
+      # Get user-service FQDN and expose it as an output for other jobs
+      - name: Get user-service FQDN
+        id: user_service_fqdn
+        run: |
+          echo "Getting user-service FQDN..."
+          
+          USER_SERVICE_FQDN=""
+          
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            USER_SERVICE_FQDN=$(az containerapp show \
+              --name ecommerce-user-service \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.configuration.ingress.fqdn" \
+              -o tsv \
+              --only-show-errors 2>/dev/null) && break
+            echo "Attempt $i failed. Retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          if [ -z "$USER_SERVICE_FQDN" ]; then
+            echo "ERROR: Could not retrieve user-service FQDN."
+            exit 1
+          fi
+          echo "fqdn=$USER_SERVICE_FQDN" >> "$GITHUB_OUTPUT"
+          
+          echo "User Service FQDN: $USER_SERVICE_FQDN"
+          echo "JWKS URL: https://${USER_SERVICE_FQDN}/oauth2/jwks"
+
+
+      #show final status of user-service
+      - name: Show final status of user-service
+        run: |
+          echo "Final status of user-service:"
+          az containerapp show \
+            --name ecommerce-user-service \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "{
+              name: name,
+              status: properties.runningStatus,
+              fqdn: properties.configuration.ingress.fqdn,
+              external:properties.configuration.ingress.external,
+              targetPort:properties.configuration.ingress.targetPort,
+              latestRevision: properties.latestReadyRevisionName,
+              runningStatus: properties.runningStatus
+          }" \
+          -o json
+  #===========================================================#
+  # Deploy all other microservices
+  #===========================================================#
+  deploy:
+    name: Deploy ${{ matrix.service }} to Azure Container Apps
+    needs:
+      - deploy-config-server
+      - deploy-user-service
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api-gateway
+            container_app: ecommerce-api-gateway
+            port: 8080
+            ingress: external
+            uses_data_services: false
+            uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
+            uses_admin_secret: false
+            uses_r2dbc: false
+            uses_jwt_validation: false
+
+          - service: inventory-service
+            container_app: ecommerce-inventory-service
+            port: 8084
+            ingress: internal #temporarily set to external for testing, change to internal in production
+            database: ECommerce-Inventory-Service
+            uses_data_services: true
+            uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
+            uses_admin_secret: false
+            uses_r2dbc: false
+            uses_jwt_validation: true
+
+          - service: notification-service
+            container_app: ecommerce-notification-service
+            port: 8085
+            ingress: internal
+            database: ECommerce-Notification-Service
+            uses_data_services: true
+            uses_firebase: true
+            uses_mailtrap: true
+            uses_twilio: true
+            uses_admin_secret: false
+            uses_r2dbc: false
+            uses_jwt_validation: true
+
+          - service: order-service
+            container_app: ecommerce-order-service
+            port: 8082
+            ingress: internal
+            database: ECommerce-Order-Service
+            uses_data_services: true
+            uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
+            uses_admin_secret: false
+            uses_r2dbc: false
+            uses_jwt_validation: true
+
+          - service: product-service
+            container_app: ecommerce-product-service
+            port: 8083
+            ingress: internal
+            database: ECommerce-Product-Service
+            uses_data_services: true
+            uses_firebase: false
+            uses_mailtrap: false
+            uses_twilio: false
+            uses_admin_secret: false
+            uses_r2dbc: false
+            uses_jwt_validation: true
+
+    steps:
+      - name: Azure Login using Github OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-oidc: true
+
+      - name: Install Azure Container Apps Extension
+        run: |
+          az extension add --name containerapp --upgrade
+
+      - name: Lowercase the repo name
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      # ==================== FIXED: Get Service FQDNs with Retry ====================
       - name: Get Service URLs with retry
         run: |
           echo "Getting Eureka FQDN..."
+          
+          EUREKA_FQDN=""
+          
           for i in {1..5}; do
             EUREKA_FQDN=$(az containerapp show \
               --name ecommerce-eureka-server \
@@ -635,8 +901,10 @@ jobs:
           
           echo "EUREKA_FQDN=$EUREKA_FQDN" >> $GITHUB_ENV
           echo "CONFIG_FQDN=$CONFIG_FQDN" >> $GITHUB_ENV
+          
           echo "Eureka FQDN: $EUREKA_FQDN"
           echo "Config FQDN: $CONFIG_FQDN"
+          echo "User Service FQDN: ${{ needs.deploy-user-service.outputs.user_service_fqdn }}"
 
       - name: Create or Update ${{ matrix.container_app }}
         run: |
@@ -644,6 +912,7 @@ jobs:
           
           EUREKA_URL="https://${EUREKA_FQDN}/eureka/"
           CONFIG_URL="https://${CONFIG_FQDN}"
+          JWK_URL="https://${{ needs.deploy-user-service.outputs.user_service_fqdn }}/oauth2/jwks"
           
           BASE_ENV_VARS="\
           SPRING_APPLICATION_NAME=${{ matrix.service }} \
@@ -654,7 +923,8 @@ jobs:
           EUREKA_SERVER_URL=$EUREKA_URL \
           EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=$EUREKA_URL \
           SPRING_CONFIG_IMPORT=optional:configserver:$CONFIG_URL"
-          # Build base/data-service environment variables only for services that require it
+          
+          # Build base/data-service (database and redis) environment variables only for services that require it
           if [ "${{ matrix.uses_data_services }}" = "true" ]; then
             SERVICE_ENV_VARS="$BASE_ENV_VARS \
             DB_HOST=ecommerce-java.postgres.database.azure.com \
@@ -673,16 +943,25 @@ jobs:
           else
             SERVICE_ENV_VARS="$BASE_ENV_VARS"
           fi
-          # Add R2DBC SSL configuration only for services that require it
+          
+          # Add R2DBC SSL configuration only for services that require it. keep this in case another service needs R2DBC in the future
           if [ "${{ matrix.uses_r2dbc }}" = "true" ]; then
             SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
             DB_SSL_MODE=require"
           fi
+          
+          #Add JWKS endpoint only for services that require it
+          if [ "${{ matrix.uses_jwt_validation }}" = "true" ]; then
+            SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
+            JWK_SET_URI=$JWK_URL"
+          fi
+          
           #Add Firebase config only for services that require it
           if [ "${{ matrix.uses_firebase }}" = "true" ]; then
             SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
             FIREBASE_CONFIG_BASE64=secretref:firebase-config-base64"
           fi
+          
           #Mailtrap
           if [ "${{ matrix.uses_mailtrap }}" = "true" ]; then
             SERVICE_ENV_VARS="$SERVICE_ENV_VARS \
@@ -712,6 +991,11 @@ jobs:
           echo "  Config URL: $CONFIG_URL"
           echo "  Eureka URL: $EUREKA_URL"
           echo "  SPRING_CONFIG_IMPORT: optional:configserver:$CONFIG_URL"
+          
+          if [ "${{ matrix.uses_jwt_validation }}" = "true" ]; then
+            echo "  JWK_SET_URI: $JWK_URL"
+          fi
+          
           if [ "${{ matrix.uses_data_services }}" = "true" ]; then
             echo "  Database: ${{ matrix.database }}"
             echo "  DB_HOST: ecommerce-java.postgres.database.azure.com"
@@ -722,10 +1006,13 @@ jobs:
           else
             echo "  Database/Redis configuration: not required for this service"
           fi
-          
+               
+          # Currently no service in this matrix uses R2DBC,
+          # but keep this in case another service needs it in the future
           if [ "${{ matrix.uses_r2dbc }}" = "true" ]; then
             echo "  R2DBC SSL mode: require"
           fi
+          
           if az containerapp show \
             --name ${{ matrix.container_app }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -847,7 +1134,7 @@ jobs:
               --image "$IMAGE" \
               --ingress ${{ matrix.ingress }} \
               --target-port ${{ matrix.port }} \
-               --min-replicas 1 \
+              --min-replicas 1 \
               --max-replicas 1 \
               --env-vars $SERVICE_ENV_VARS \
               --registry-server ghcr.io \
@@ -861,21 +1148,31 @@ jobs:
         run: |
           echo "Waiting for ${{ matrix.service }} to be ready..."
           for i in {1..20}; do
-            STATUS=$(az containerapp show \
+          
+            LATEST_REVISION=$(az containerapp show \
               --name ${{ matrix.container_app }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --query "properties.runningStatus" \
-              -o tsv 2>/dev/null || echo "Unknown")
+              --query "properties.latestRevisionName" \
+              -o tsv 2>/dev/null || echo "")
+            
+            READY_REVISION=$(az containerapp show \
+              --name ${{ matrix.container_app }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "properties.latestReadyRevisionName" \
+              -o tsv \
+              2>/dev/null || echo "")
           
-            echo "Attempt $i/20 - Status: $STATUS"
+            echo "Attempt $i/20 - Latest Revision: $LATEST_REVISION, Ready Revision: $READY_REVISION"
           
-            if [ "$STATUS" = "Running" ]; then
-              echo "${{ matrix.container_app }} is running"
+            if [ -n "$LATEST_REVISION" ] && \
+              [ "$LATEST_REVISION" = "$READY_REVISION" ]; then
+              echo "${{ matrix.container_app }} latest revision is ready."
               break
             fi
           
             if [ "$i" -eq 20 ]; then
-              echo "Service may not be ready yet"
+              echo "ERROR: ${{ matrix.container_app }} did not become ready."
+              exit 1
             fi
           
             sleep 10
